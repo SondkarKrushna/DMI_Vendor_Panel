@@ -49,6 +49,7 @@ const Table = ({
                 <input
                   type="checkbox"
                   className="w-5 h-5 rounded border-white/40 bg-white/20 accent-[#FAB800]"
+                  checked={data?.length > 0 && data.every(row => selectedRows.includes(row.id))}
                   onChange={(e) => onSelectAll && onSelectAll(e.target.checked)}
                 />
               </th>

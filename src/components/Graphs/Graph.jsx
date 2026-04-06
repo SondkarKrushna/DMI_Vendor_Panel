@@ -16,7 +16,7 @@ const Graph = ({ revenueData = [], usageData = [] }) => {
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       
       {/* Revenue Overview */}
-      <div className="bg-white p-5 rounded-2xl shadow-md">
+      <div className="bg-white p-5 border border-gray-300 rounded-2xl shadow-md">
         <h2 className="text-lg font-semibold mb-4">Revenue Overview</h2>
         
         <ResponsiveContainer width="100%" height={250}>
@@ -52,7 +52,7 @@ const Graph = ({ revenueData = [], usageData = [] }) => {
       </div>
 
       {/* Punch Usage */}
-      <div className="bg-white p-5 rounded-2xl shadow-md">
+      <div className="bg-white p-5 border border-gray-300 rounded-2xl shadow-md">
         <h2 className="text-lg font-semibold mb-4">Punch Usage</h2>
 
         <ResponsiveContainer width="100%" height={250}>

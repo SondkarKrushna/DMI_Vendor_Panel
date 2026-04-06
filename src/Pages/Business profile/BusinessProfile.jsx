@@ -1,12 +1,12 @@
 import React from 'react';
 import Button from '../../components/buttons/Button';
-import { FileText, Upload, User, PenSquare, Download, CheckCircle, SquarePen } from 'lucide-react'
+import { FileText, Upload, User, PenSquare, Download, CheckCircle, SquarePen, ArrowDownToLine } from 'lucide-react'
 import Layout from '../../components/layout/Layout'
 
 const BusinessProfile = () => {
   return (
     <Layout>
-      <div className="p-4 sm:p-5 space-y-6 bg-white min-h-screen pb-10">
+      <div className="p-1 sm:p-2 space-y-6 bg-white min-h-screen pb-10">
         
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -17,8 +17,8 @@ const BusinessProfile = () => {
           
           <div className="flex gap-3 w-full sm:w-auto">
             <Button text="Edit Profile" icon={SquarePen} className="flex-1 sm:flex-none" />
-            <button className="flex-1 sm:flex-none bg-[#f5c518] hover:bg-[#d4a017] text-black px-4 py-2 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors">
-              <Download size={18} />
+            <button className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold shadow-md hover:scale-105 hover:shadow-lg active:scale-95 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2">
+              <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" />
               Export
             </button>
           </div>
@@ -74,7 +74,7 @@ const BusinessProfile = () => {
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <div className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-500 text-sm min-h-[80px]">Professional IT services provider company</div>
+                <div className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-500 text-sm">Professional IT services provider company</div>
               </div>
             </div>
           </div>

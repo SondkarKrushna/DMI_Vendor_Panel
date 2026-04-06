@@ -59,7 +59,10 @@ const DMIPremiumCard = ({
           position: relative;
           overflow: hidden;
           background: linear-gradient(135deg, #7e1080 30%, #1a031a 100%,  #1a0040 100%);
-          box-shadow: 0 30px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06), inset 0 1px 0 rgba(255,255,255,0.12);
+          box-shadow: 
+  0 10px 20px rgba(0,0,0,0.2), 
+  0 0 0 1px rgba(255,255,255,0.06), 
+  inset 0 1px 0 rgba(255,255,255,0.12);
           transform-style: preserve-3d;
           transition: transform 0.4s ease, box-shadow 0.4s ease;
         }

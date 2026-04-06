@@ -3,14 +3,14 @@ import Layout from "../../components/layout/Layout";
 import Button from "../../components/buttons/Button";
 import cardDesign from "../../../public/images/card-design.png";
 import logo from "../../../public/logo.png";
-import { Search as SearchIcon } from "lucide-react";
+import { ArrowDownToLine, Search as SearchIcon } from "lucide-react";
 import DMIPremiumCard from '../../components/DMIPremiumCard'
 const CardHolder = () => {
   const [activeTab, setActiveTab] = useState("Punch");
 
   return (
     <Layout>
-      <div className="p-4 sm:p-6 lg:p-8 bg-white min-h-screen">
+      <div className="p-1 sm:p-2 bg-white min-h-screen">
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div>
@@ -20,16 +20,17 @@ const CardHolder = () => {
 
           <div className="flex gap-3 w-full sm:w-auto">
             <button className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold shadow-md hover:scale-105 hover:shadow-lg active:scale-95 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2">
-              <span className="text-xl leading-none">⇊</span> Export
+              <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" />
+              Export
             </button>
           </div>
         </div>
 
         {/* Search & Card Section */}
-        <div className="flex flex-col lg:flex-row gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
 
           {/* Search Cardholder */}
-          <div className="lg:w-3/5 bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex flex-col">
+          <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex flex-col h-full">
             <h2 className="text-lg font-semibold text-gray-800 mb-6">
               Search Cardholder
             </h2>
@@ -71,8 +72,10 @@ const CardHolder = () => {
           </div>
 
           {/* Card Preview */}
+          <div className="flex items-center justify-center h-full">
+            <DMIPremiumCard cardNumber={"4545 1456 6766 7871"} />
+          </div>
 
-          <DMIPremiumCard cardNumber={"4545 1456 6766 7871"} />
         </div>
 
         {/* Punch Details Section */}

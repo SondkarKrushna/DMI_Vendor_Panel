@@ -11,6 +11,7 @@ import {
   Mail,
   MessageCircle,
   Share2,
+  ArrowDownToLine,
 } from "lucide-react";
 
 const Affilation = () => {
@@ -25,7 +26,7 @@ const Affilation = () => {
 
   return (
     <Layout>
-      <div className="p-5 space-y-5 bg-white min-h-screen">
+      <div className="p-1 sm:p-2 space-y-5 bg-white min-h-screen">
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -35,6 +36,7 @@ const Affilation = () => {
           </div>
           <div className="flex gap-3 w-full sm:w-auto">
             <button className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold shadow-md hover:scale-105 hover:shadow-lg active:scale-95 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2">
+              <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" />
               Export
             </button>
           </div>
@@ -52,7 +54,7 @@ const Affilation = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
 
           {/* Referral Tools */}
-          <div className="bg-white rounded-2xl p-5 shadow-md space-y-4">
+          <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-md space-y-4">
 
             <h2 className="font-semibold">Your Referral Tools</h2>
 
@@ -90,32 +92,32 @@ const Affilation = () => {
             {/* Share Buttons */}
             <div className="grid grid-cols-3 gap-3">
 
-  {/* Email */}
-  <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 text-sm">
-    <Share2 size={14} className="text-purple-600" />
-    Email
-  </button>
+              {/* Email */}
+              <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 text-sm">
+                <Share2 size={14} className="text-purple-600" />
+                Email
+              </button>
 
-  {/* WhatsApp */}
-  <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 text-sm">
-    <Share2 size={14} className="text-green-500" />
-    WhatsApp
-  </button>
+              {/* WhatsApp */}
+              <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 text-sm">
+                <Share2 size={14} className="text-green-500" />
+                WhatsApp
+              </button>
 
-  {/* SMS */}
-  <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 text-sm">
-    <Share2 size={14} className="text-pink-500" />
-    SMS
-  </button>
+              {/* SMS */}
+              <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 text-sm">
+                <Share2 size={14} className="text-pink-500" />
+                SMS
+              </button>
 
-</div>
+            </div>
           </div>
 
           {/* Right Side */}
           <div className="space-y-5">
 
             {/* How it works */}
-            <div className="bg-white rounded-2xl p-5 shadow-md space-y-4">
+            <div className="bg-white border border-gray-300 rounded-2xl p-5 shadow-md space-y-4">
               <h2 className="font-semibold">How It Works ?</h2>
 
               {[1, 2, 3].map((step) => (
@@ -140,7 +142,7 @@ const Affilation = () => {
             </div>
 
             {/* Reward Structure */}
-            <div className="bg-yellow-50 border border-yellow-300 rounded-2xl p-5 space-y-3">
+            <div className="bg-yellow-50 border border-yellow-500 rounded-2xl p-5 space-y-3">
               <h2 className="font-semibold">Reward Structure</h2>
 
               <div className="flex justify-between text-sm">
@@ -157,7 +159,7 @@ const Affilation = () => {
         </div>
 
         {/* Bottom Referrals */}
-        <div className="bg-white rounded-2xl p-5 shadow-md">
+        <div className="bg-white border border-gray-300 rounded-2xl p-5 shadow-md">
           <h2 className="font-semibold mb-4">My Referrals (03)</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

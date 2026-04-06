@@ -4,7 +4,7 @@ import Card from "../../components/cards/Card";
 import Button from "../../components/buttons/Button";
 import Table from "../../components/table/Table";
 import Search from "../../components/search/Search";
-import { Users, Calendar, Eye } from "lucide-react";
+import { Users, Calendar, Eye, ArrowDownToLine } from "lucide-react";
 
 const Enrolling = () => {
 
@@ -94,7 +94,7 @@ const Enrolling = () => {
 
   return (
     <Layout>
-      <div className="p-4 sm:p-6 lg:p-8 bg-white min-h-screen">
+      <div className="p-1 sm:p-2 bg-white min-h-screen">
 
         {/* 🔥 Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -106,6 +106,7 @@ const Enrolling = () => {
           <div className="flex gap-3 w-full sm:w-auto">
             <Button text="Enroll New" className="flex-1 sm:flex-none" onClick={() => setShowModal(true)} />
             <button className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold shadow-md hover:scale-105 hover:shadow-lg active:scale-95 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2">
+              <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" />
               Export
             </button>
           </div>
@@ -200,104 +201,104 @@ const Enrolling = () => {
       </div>
       {/* Model */}
       {showModal && (
-  <div
-    className="fixed inset-0 bg-black/60 backdrop-blur flex items-center justify-center z-50"
-    onClick={() => setShowModal(false)}
-  >
-    <div
-      className="bg-white w-[420px] rounded-2xl p-6 shadow-lg"
-      onClick={(e) => e.stopPropagation()}
-    >
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur flex items-center justify-center z-[90]"
+          onClick={() => setShowModal(false)}
+        >
+          <div
+            className="bg-white w-[420px] rounded-2xl p-6 shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
 
-      {/* Title */}
-      <h2 className="text-lg font-semibold text-gray-800 mb-5">
-        Enroll New Cardholder
-      </h2>
+            {/* Title */}
+            <h2 className="text-lg font-semibold text-gray-800 mb-5">
+              Enroll New Cardholder
+            </h2>
 
-      {/* Form */}
-      <div className="space-y-4">
+            {/* Form */}
+            <div className="space-y-4">
 
-        {/* Card Type + CHF */}
-        <div className="flex gap-3">
-          <div className="w-1/2">
-            <label className="text-sm text-gray-500 mb-1 block">
-              Card Type
-            </label>
-            <input
-              type="text"
-              placeholder="Select"
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
-            />
+              {/* Card Type + CHF */}
+              <div className="flex gap-3">
+                <div className="w-1/2">
+                  <label className="text-sm text-gray-500 mb-1 block">
+                    Card Type
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Select"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
+                  />
+                </div>
+
+                <div className="w-1/2">
+                  <label className="text-sm text-gray-500 mb-1 block">
+                    CHF Number
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Enter"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Full Name */}
+              <div>
+                <label className="text-sm text-gray-500 mb-1 block">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
+                />
+              </div>
+
+              {/* Mobile */}
+              <div>
+                <label className="text-sm text-gray-500 mb-1 block">
+                  Mobile Number
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
+                />
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="text-sm text-gray-500 mb-1 block">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  placeholder="Enter"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
+                />
+              </div>
+
+              {/* Image */}
+              <div>
+                <label className="text-sm text-gray-500 mb-1 block">
+                  Image
+                </label>
+                <div className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-400">
+                  Upload
+                </div>
+              </div>
+
+            </div>
+
+            {/* Button */}
+            <div className="mt-6 flex justify-center">
+              <Button text="Add Cardholder" />
+            </div>
+
           </div>
-
-          <div className="w-1/2">
-            <label className="text-sm text-gray-500 mb-1 block">
-              CHF Number
-            </label>
-            <input
-              type="text"
-              placeholder="Enter"
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
-            />
-          </div>
         </div>
-
-        {/* Full Name */}
-        <div>
-          <label className="text-sm text-gray-500 mb-1 block">
-            Full Name
-          </label>
-          <input
-            type="text"
-            placeholder="Enter"
-            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
-          />
-        </div>
-
-        {/* Mobile */}
-        <div>
-          <label className="text-sm text-gray-500 mb-1 block">
-            Mobile Number
-          </label>
-          <input
-            type="text"
-            placeholder="Enter"
-            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
-          />
-        </div>
-
-        {/* Email */}
-        <div>
-          <label className="text-sm text-gray-500 mb-1 block">
-            Email
-          </label>
-          <input
-            type="email"
-            placeholder="Enter"
-            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
-          />
-        </div>
-
-        {/* Image */}
-        <div>
-          <label className="text-sm text-gray-500 mb-1 block">
-            Image
-          </label>
-          <div className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-400">
-            Upload
-          </div>
-        </div>
-
-      </div>
-
-      {/* Button */}
-      <div className="mt-6 flex justify-center">
-        <Button text="Add Cardholder" />
-      </div>
-
-    </div>
-  </div>
-)}
+      )}
     </Layout>
   );
 };

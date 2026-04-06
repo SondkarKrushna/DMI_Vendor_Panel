@@ -12,6 +12,7 @@ import {
   Clock,
   SquarePen,
   Trash2,
+  ArrowDownToLine,
 } from "lucide-react";
 
 const Advertisements = () => {
@@ -24,7 +25,7 @@ const Advertisements = () => {
 
   return (
     <Layout>
-      <div className="p-5 space-y-5 bg-white min-h-screen">
+      <div className="p-1 sm:p-2 space-y-5 bg-white min-h-screen">
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -36,6 +37,7 @@ const Advertisements = () => {
           <div className="flex gap-3 w-full sm:w-auto">
             <Button text="Add Ad" className="flex-1 sm:flex-none" onClick={() => setIsModalOpen(true)} />
             <button className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold shadow-md hover:scale-105 hover:shadow-lg active:scale-95 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2">
+              <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" />
               Export
             </button>
           </div>
@@ -153,7 +155,7 @@ const Advertisements = () => {
       {isModalOpen && (
   <div
     onClick={() => setIsModalOpen(false)}  // ✅ correct state + close on outside click
-    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur"
+    className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 backdrop-blur"
   >
 
     <div

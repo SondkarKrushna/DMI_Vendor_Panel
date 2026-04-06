@@ -4,11 +4,12 @@ import Card from "../../components/cards/Card";
 import Button from "../../components/buttons/Button";
 import Table from "../../components/table/Table";
 import Search from "../../components/search/Search";
-import { Phone, Clock, CheckCircle, Eye } from "lucide-react";
+import { Phone, Clock, CheckCircle, Eye, ArrowDownToLine } from "lucide-react";
 
 const CallNotepad = () => {
   const [selectedRows, setSelectedRows] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [activeTab, setActiveTab] = useState("Follow Ups");
 
   // ✅ Table Data
   const tableData = [
@@ -90,7 +91,7 @@ const CallNotepad = () => {
 
   return (
     <Layout>
-      <div className="p-4 sm:p-6 lg:p-8 bg-white min-h-screen">
+      <div className="p-1 sm:p-2 bg-white min-h-screen">
 
         {/* 🔥 Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -102,6 +103,7 @@ const CallNotepad = () => {
           <div className="flex gap-3 w-full sm:w-auto">
             <Button text="Add Call Note" className="flex-1 sm:flex-none" onClick={() => setShowModal(true)} />
             <button className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold shadow-md hover:scale-105 hover:shadow-lg active:scale-95 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2">
+              <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" />
               Export
             </button>
           </div>
@@ -117,13 +119,28 @@ const CallNotepad = () => {
 
         {/* ✅ Tabs */}
         <div className="flex gap-3 mb-4">
-          <button className="px-4 py-2 rounded-lg bg-yellow-400 text-black font-medium">
-            Follow Ups
-          </button>
-          <button className="px-4 py-2 rounded-lg bg-gray-200 text-gray-600">
-            Enquiries
-          </button>
-        </div>
+  <button
+    onClick={() => setActiveTab("Follow Ups")}
+    className={`px-4 py-2 rounded-lg font-medium ${
+      activeTab === "Follow Ups"
+        ? "bg-yellow-400 text-black"
+        : "bg-gray-200 text-gray-600"
+    }`}
+  >
+    Follow Ups
+  </button>
+
+  <button
+    onClick={() => setActiveTab("Enquiries")}
+    className={`px-4 py-2 rounded-lg font-medium ${
+      activeTab === "Enquiries"
+        ? "bg-yellow-400 text-black"
+        : "bg-gray-200 text-gray-600"
+    }`}
+  >
+    Enquiries
+  </button>
+</div>
 
         {/* 🔥 Search */}
         <div className="mb-4">
@@ -185,7 +202,7 @@ const CallNotepad = () => {
       {/* ✅ Modal */}
       {showModal && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur flex items-center justify-center z-50"
+          className="fixed inset-0 bg-black/60 backdrop-blur flex items-center justify-center z-[90]"
           onClick={() => setShowModal(false)}
         >
           <div

@@ -3,7 +3,7 @@ import Layout from "../../components/layout/Layout";
 import Graph from "../../components/Graphs/Graph";
 import Card from "../../components/cards/Card";
 // import Button from "../../components/buttons/Button";
-import { Users } from "lucide-react"
+import { Users, ArrowDownToLine } from "lucide-react"
 
 const Dashboard = () => {
   // Sample Data (you can replace with API)
@@ -39,7 +39,7 @@ const Dashboard = () => {
 
   return (
     <Layout>
-      <div className="p-4 md:p-6 bg-white min-h-screen">
+      <div className="p-1 md:p-2 bg-white min-h-screen">
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -50,6 +50,7 @@ const Dashboard = () => {
 
           <div className="flex gap-3 w-full sm:w-auto">
             <button className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold shadow-md hover:scale-105 hover:shadow-lg active:scale-95 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2">
+              <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" />
               Export
             </button>
           </div>
@@ -96,7 +97,7 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
           {/* Expiring Offers */}
-          <div className="bg-white p-5 rounded-2xl shadow-md">
+          <div className="bg-white p-5 border border-gray-300 rounded-2xl shadow-md">
             <h2 className="text-lg font-semibold mb-4">
               Expires Offers
             </h2>
@@ -123,38 +124,45 @@ const Dashboard = () => {
           </div>
 
           {/* Recent Offers */}
-          <div className="bg-white p-5 rounded-2xl shadow-md">
+          <div className="bg-white p-5 border border-gray-300 rounded-2xl shadow-md">
             <h2 className="text-lg font-semibold mb-4">
               Recent Offers
             </h2>
 
-            {[1, 2, 3].map((item, index) => (
-              <div
-                key={index}
-                className="flex justify-between items-center border-b py-3 last:border-none"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-yellow-400 text-white flex items-center justify-center rounded-full font-bold">
-                    JD
+            <div className="space-y-3">
+              {[1, 2, 3].map((item, index) => (
+                <div
+                  key={index}
+                  className="flex justify-between items-center bg-gray-100 px-4 py-3 rounded-xl"
+                >
+                  {/* Left */}
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-yellow-400 text-white flex items-center justify-center rounded-full font-bold text-sm">
+                      JD
+                    </div>
+
+                    <div>
+                      <p className="font-medium text-gray-800">
+                        John Doe
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        Premium Membership
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium">John Doe</p>
-                    <p className="text-sm text-gray-500">
-                      Premium Membership
+
+                  {/* Right */}
+                  <div className="text-right">
+                    <p className="text-green-600 font-semibold">
+                      $50
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      2 min ago
                     </p>
                   </div>
                 </div>
-
-                <div className="text-right">
-                  <p className="text-green-600 font-semibold">
-                    $50
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    2 min ago
-                  </p>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </div>

@@ -5,16 +5,18 @@ import Button from "../../components/buttons/Button";
 import Search from "../../components/search/Search";
 import Table from "../../components/table/Table";
 import service from "../../../public/images/service.png"
-import { 
-  Briefcase, 
-  Clock, 
-  CheckCircle, 
-  Edit3, 
-  Eye, 
-  Trash2 
+import {
+  Briefcase,
+  Clock,
+  CheckCircle,
+  Edit3,
+  Eye,
+  Trash2,
+  ArrowDownToLine
 } from "lucide-react";
 
 const Services = () => {
+  const [selectedRows, setSelectedRows] = useState([]);
   const [showModal, setShowModal] = useState(false);
 
   const columns = [
@@ -27,9 +29,9 @@ const Services = () => {
       accessor: "image",
       Cell: ({ value }) => (
         <div className="w-[82px] h-[52px] bg-gray-100 rounded-lg overflow-hidden border border-gray-100">
-          <img 
-            src={value} 
-            alt="Service" 
+          <img
+            src={value}
+            alt="Service"
             className="w-full h-full object-cover"
           />
         </div>
@@ -147,9 +149,26 @@ const Services = () => {
     },
   ];
 
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      const allIds = tableData.map((row) => row.id);
+      setSelectedRows(allIds);
+    } else {
+      setSelectedRows([]);
+    }
+  };
+
+const handleRowSelect = (id) => {
+  setSelectedRows((prev) =>
+    prev.includes(id)
+      ? prev.filter((item) => item !== id)
+      : [...prev, id]
+  );
+};
+
   return (
     <Layout>
-      <div className="p-4 sm:p-6 lg:p-8 bg-white min-h-screen">
+      <div className="p-1 sm:p-2 bg-white min-h-screen">
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -165,7 +184,8 @@ const Services = () => {
               onClick={() => setShowModal(true)}
             />
             <button className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold shadow-md hover:scale-105 hover:shadow-lg active:scale-95 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2">
-              <span className="text-xl leading-none">⇊</span> Export
+              <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" />
+              Export
             </button>
           </div>
         </div>
@@ -197,15 +217,15 @@ const Services = () => {
         </div>
 
         {/* Search Section */}
-        <div className="mb-6 rounded-[24px] overflow-hidden">
-           <Search />
+        <div className="mb-6">
+          <Search />
         </div>
 
         {/* ✅ MOBILE VIEW */}
         <div className="block md:hidden space-y-4 mb-4">
           {tableData.map((item, index) => (
             <div key={index} className="bg-white rounded-2xl shadow p-4 space-y-3 border border-gray-100">
-              
+
               <div className="flex justify-between items-start">
                 <div className="flex gap-3">
                   <img src={item.image} alt={item.name} className="w-16 h-16 rounded-xl object-cover bg-gray-100" />
@@ -237,11 +257,10 @@ const Services = () => {
                 </div>
                 <div className="flex justify-between items-center text-sm py-1">
                   <span className="text-gray-500">Status</span>
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                    item.status === 'Pending' ? 'bg-[#FFF8E7] text-[#FAB800]' :
-                    item.status === 'Approved' ? 'bg-[#E6F9F0] text-[#00C853]' :
-                    'bg-[#FFEBEB] text-[#FF5252]'
-                  }`}>{item.status}</span>
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${item.status === 'Pending' ? 'bg-[#FFF8E7] text-[#FAB800]' :
+                      item.status === 'Approved' ? 'bg-[#E6F9F0] text-[#00C853]' :
+                        'bg-[#FFEBEB] text-[#FF5252]'
+                    }`}>{item.status}</span>
                 </div>
               </div>
             </div>
@@ -252,7 +271,13 @@ const Services = () => {
         <div className="hidden md:block">
           <div className="overflow-x-auto pb-4">
             <div className="min-w-[1000px]">
-              <Table columns={columns} data={tableData} />
+              <Table
+                columns={columns}
+                data={tableData}
+                selectedRows={selectedRows}
+                onRowSelect={handleRowSelect}
+                onSelectAll={handleSelectAll}
+              />
             </div>
           </div>
         </div>
@@ -260,100 +285,100 @@ const Services = () => {
       </div>
       {/* Model */}
       {showModal && (
-  <div 
-  onClick={() => setShowModal(false)}
-  className="fixed inset-0 bg-black/60 backdrop-blur flex items-center justify-center z-50">
-    
-    <div className="bg-white w-[420px] rounded-2xl p-6 shadow-lg relative">
+        <div
+          onClick={() => setShowModal(false)}
+          className="fixed inset-0 bg-black/60 backdrop-blur flex items-center justify-center z-[90]">
 
-      {/* Title */}
-      <h2 className="text-lg font-semibold text-gray-800 mb-5">
-        Add Service
-      </h2>
+          <div className="bg-white w-[420px] rounded-2xl p-6 shadow-lg relative">
 
-      {/* Form */}
-      <div className="space-y-4">
+            {/* Title */}
+            <h2 className="text-lg font-semibold text-gray-800 mb-5">
+              Add Service
+            </h2>
 
-        {/* Service Name */}
-        <div>
-          <label className="text-sm text-gray-500 mb-1 block">
-            Service Name
-          </label>
-          <input
-            type="text"
-            placeholder="Enter"
-            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-          />
-        </div>
+            {/* Form */}
+            <div className="space-y-4">
 
-        {/* Price */}
-        <div>
-          <label className="text-sm text-gray-500 mb-1 block">
-            Price
-          </label>
-          <input
-            type="number"
-            placeholder="0.00"
-            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-          />
-        </div>
+              {/* Service Name */}
+              <div>
+                <label className="text-sm text-gray-500 mb-1 block">
+                  Service Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
 
-        {/* Card Type + Discount */}
-        <div className="flex gap-3">
-          <div className="w-1/2">
-            <label className="text-sm text-gray-500 mb-1 block">
-              Card Type
-            </label>
-            <input
-              type="text"
-              placeholder="Select"
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
-            />
+              {/* Price */}
+              <div>
+                <label className="text-sm text-gray-500 mb-1 block">
+                  Price
+                </label>
+                <input
+                  type="number"
+                  placeholder="0.00"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+              </div>
+
+              {/* Card Type + Discount */}
+              <div className="flex gap-3">
+                <div className="w-1/2">
+                  <label className="text-sm text-gray-500 mb-1 block">
+                    Card Type
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Select"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
+                  />
+                </div>
+
+                <div className="w-1/2">
+                  <label className="text-sm text-gray-500 mb-1 block">
+                    Discount (%)
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="0"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="text-sm text-gray-500 mb-1 block">
+                  Description
+                </label>
+                <textarea
+                  placeholder="Enter"
+                  rows={2}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm resize-none"
+                />
+              </div>
+
+              {/* Image Upload */}
+              <div>
+                <label className="text-sm text-gray-500 mb-1 block">
+                  Image
+                </label>
+                <div className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-400">
+                  Upload
+                </div>
+              </div>
+
+            </div>
+
+            {/* Button */}
+            <div className="mt-6 flex justify-center">
+              <Button text="Add Service" />
+            </div>
           </div>
-
-          <div className="w-1/2">
-            <label className="text-sm text-gray-500 mb-1 block">
-              Discount (%)
-            </label>
-            <input
-              type="number"
-              placeholder="0"
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
-            />
-          </div>
         </div>
-
-        {/* Description */}
-        <div>
-          <label className="text-sm text-gray-500 mb-1 block">
-            Description
-          </label>
-          <textarea
-            placeholder="Enter"
-            rows={2}
-            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm resize-none"
-          />
-        </div>
-
-        {/* Image Upload */}
-        <div>
-          <label className="text-sm text-gray-500 mb-1 block">
-            Image
-          </label>
-          <div className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-400">
-            Upload
-          </div>
-        </div>
-
-      </div>
-
-      {/* Button */}
-      <div className="mt-6 flex justify-center">
-        <Button text="Add Service" />
-      </div>
-    </div>
-  </div>
-)}
+      )}
     </Layout>
   );
 };
