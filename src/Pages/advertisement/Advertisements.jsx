@@ -172,7 +172,7 @@ const Advertisements = () => {
         {/* Row */}
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
-            <label className="text-sm text-gray-600">
+            <label className="text-sm text-black">
               Advertisement Type
             </label>
             <input
@@ -182,7 +182,7 @@ const Advertisements = () => {
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-sm text-gray-600">
+            <label className="text-sm text-black">
               Business Vertical
             </label>
             <input
@@ -194,7 +194,7 @@ const Advertisements = () => {
 
         {/* Title */}
         <div className="flex flex-col gap-1">
-          <label className="text-sm text-gray-600">Title</label>
+          <label className="text-sm text-black">Title</label>
           <input
             placeholder="Enter"
             className="w-full px-4 py-3 rounded-xl bg-gray-100 outline-none text-sm"
@@ -203,8 +203,9 @@ const Advertisements = () => {
 
         {/* Valid Till */}
         <div className="flex flex-col gap-1">
-          <label className="text-sm text-gray-600">Valid Till</label>
+          <label className="text-sm text-black">Valid Till</label>
           <input
+            type="date"
             placeholder="Enter"
             className="w-full px-4 py-3 rounded-xl bg-gray-100 outline-none text-sm"
           />
@@ -212,7 +213,7 @@ const Advertisements = () => {
 
         {/* Image */}
         <div className="flex flex-col gap-1">
-          <label className="text-sm text-gray-600">Image</label>
+          <label className="text-sm text-black">Image</label>
           <input
             type="file"
             className="w-full px-4 py-3 rounded-xl bg-gray-100 outline-none text-sm"

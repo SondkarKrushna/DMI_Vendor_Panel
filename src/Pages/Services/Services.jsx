@@ -301,7 +301,7 @@ const handleRowSelect = (id) => {
 
               {/* Service Name */}
               <div>
-                <label className="text-sm text-gray-500 mb-1 block">
+                <label className="text-sm text-black mb-1 block">
                   Service Name
                 </label>
                 <input
@@ -313,7 +313,7 @@ const handleRowSelect = (id) => {
 
               {/* Price */}
               <div>
-                <label className="text-sm text-gray-500 mb-1 block">
+                <label className="text-sm text-black mb-1 block">
                   Price
                 </label>
                 <input
@@ -326,7 +326,7 @@ const handleRowSelect = (id) => {
               {/* Card Type + Discount */}
               <div className="flex gap-3">
                 <div className="w-1/2">
-                  <label className="text-sm text-gray-500 mb-1 block">
+                  <label className="text-sm text-black mb-1 block">
                     Card Type
                   </label>
                   <input
@@ -337,7 +337,7 @@ const handleRowSelect = (id) => {
                 </div>
 
                 <div className="w-1/2">
-                  <label className="text-sm text-gray-500 mb-1 block">
+                  <label className="text-sm text-black mb-1 block">
                     Discount (%)
                   </label>
                   <input
@@ -350,7 +350,7 @@ const handleRowSelect = (id) => {
 
               {/* Description */}
               <div>
-                <label className="text-sm text-gray-500 mb-1 block">
+                <label className="text-sm text-black mb-1 block">
                   Description
                 </label>
                 <textarea
@@ -362,7 +362,7 @@ const handleRowSelect = (id) => {
 
               {/* Image Upload */}
               <div>
-                <label className="text-sm text-gray-500 mb-1 block">
+                <label className="text-sm text-black mb-1 block">
                   Image
                 </label>
                 <div className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-400">

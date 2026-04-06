@@ -51,11 +51,10 @@ const CallNotepad = () => {
       accessor: "status",
       Cell: ({ value }) => (
         <span
-          className={`px-3 py-1 rounded-full text-xs font-semibold ${
-            value === "Pending"
+          className={`px-3 py-1 rounded-full text-xs font-semibold ${value === "Pending"
               ? "bg-yellow-100 text-yellow-600"
               : "bg-green-100 text-green-600"
-          }`}
+            }`}
         >
           {value}
         </span>
@@ -119,28 +118,26 @@ const CallNotepad = () => {
 
         {/* ✅ Tabs */}
         <div className="flex gap-3 mb-4">
-  <button
-    onClick={() => setActiveTab("Follow Ups")}
-    className={`px-4 py-2 rounded-lg font-medium ${
-      activeTab === "Follow Ups"
-        ? "bg-yellow-400 text-black"
-        : "bg-gray-200 text-gray-600"
-    }`}
-  >
-    Follow Ups
-  </button>
+          <button
+            onClick={() => setActiveTab("Follow Ups")}
+            className={`px-4 py-2 rounded-lg font-medium ${activeTab === "Follow Ups"
+                ? "bg-yellow-400 text-black"
+                : "bg-gray-200 text-gray-600"
+              }`}
+          >
+            Follow Ups
+          </button>
 
-  <button
-    onClick={() => setActiveTab("Enquiries")}
-    className={`px-4 py-2 rounded-lg font-medium ${
-      activeTab === "Enquiries"
-        ? "bg-yellow-400 text-black"
-        : "bg-gray-200 text-gray-600"
-    }`}
-  >
-    Enquiries
-  </button>
-</div>
+          <button
+            onClick={() => setActiveTab("Enquiries")}
+            className={`px-4 py-2 rounded-lg font-medium ${activeTab === "Enquiries"
+                ? "bg-yellow-400 text-black"
+                : "bg-gray-200 text-gray-600"
+              }`}
+          >
+            Enquiries
+          </button>
+        </div>
 
         {/* 🔥 Search */}
         <div className="mb-4">
@@ -170,11 +167,10 @@ const CallNotepad = () => {
               <div className="flex justify-between text-sm">
                 <span>{item.date}</span>
                 <span
-                  className={`px-2 py-1 rounded-full text-xs ${
-                    item.status === "Pending"
+                  className={`px-2 py-1 rounded-full text-xs ${item.status === "Pending"
                       ? "bg-yellow-100 text-yellow-600"
                       : "bg-green-100 text-green-600"
-                  }`}
+                    }`}
                 >
                   {item.status}
                 </span>
@@ -209,40 +205,63 @@ const CallNotepad = () => {
             className="bg-white w-[400px] rounded-2xl p-6 shadow-lg"
             onClick={(e) => e.stopPropagation()}
           >
-
             <h2 className="text-lg font-semibold mb-4">
               Add Call Note
             </h2>
 
             <div className="space-y-4">
 
-              <input
-                type="text"
-                placeholder="Full Name"
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
-              />
+              {/* Full Name */}
+              <div>
+                <label className="block text-sm text-black mb-1">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="Full Name"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
+                />
+              </div>
 
-              <input
-                type="text"
-                placeholder="Mobile Number"
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
-              />
+              {/* Mobile Number */}
+              <div>
+                <label className="block text-sm text-black mb-1">
+                  Mobile Number
+                </label>
+                <input
+                  type="text"
+                  placeholder="Mobile Number"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
+                />
+              </div>
 
-              <textarea
-                placeholder="Call Note"
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
-              />
+              {/* Call Note */}
+              <div>
+                <label className="block text-sm text-black mb-1">
+                  Call Note
+                </label>
+                <textarea
+                  placeholder="Call Note"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
+                />
+              </div>
 
-              <input
-                type="date"
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
-              />
+              {/* Date */}
+              <div>
+                <label className="block text-sm text-black mb-1">
+                  Date
+                </label>
+                <input
+                  type="date"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
+                />
+              </div>
+
             </div>
 
             <div className="mt-6 flex justify-center">
               <Button text="Add Call Note" />
             </div>
-
           </div>
         </div>
       )}

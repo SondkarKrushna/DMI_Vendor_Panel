@@ -161,37 +161,62 @@ const Offers = () => {
             <div className="space-y-4">
 
               {/* Image Upload */}
-              <input
-                type="file"
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
-              />
-
-              {/* Title */}
-              <input
-                type="text"
-                placeholder="e.g 20% off on dev courses"
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
-              />
-
-              {/* Discount + Date */}
-              <div className="flex gap-3">
+              <div>
+                <label className="block text-sm text-black mb-1">
+                  Upload Image
+                </label>
                 <input
-                  type="text"
-                  placeholder="e.g 10%"
-                  className="w-1/2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
-                />
-
-                <input
-                  type="date"
-                  className="w-1/2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
+                  type="file"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
                 />
               </div>
 
+              {/* Title */}
+              <div>
+                <label className="block text-sm text-black mb-1">
+                  Offer Title
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g 20% off on dev courses"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
+                />
+              </div>
+
+              {/* Discount + Date */}
+              <div className="flex gap-3">
+                <div className="w-1/2">
+                  <label className="block text-sm text-black mb-1">
+                    Discount
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="e.g 10%"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
+                  />
+                </div>
+
+                <div className="w-1/2">
+                  <label className="block text-sm text-black mb-1">
+                    Expiry Date
+                  </label>
+                  <input
+                    type="date"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
+                  />
+                </div>
+              </div>
+
               {/* Terms */}
-              <textarea
-                placeholder="Enter terms & conditions"
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
-              />
+              <div>
+                <label className="block text-sm text-black mb-1">
+                  Terms & Conditions
+                </label>
+                <textarea
+                  placeholder="Enter terms & conditions"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
+                />
+              </div>
             </div>
 
             {/* Button */}

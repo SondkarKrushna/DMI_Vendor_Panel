@@ -221,7 +221,7 @@ const Enrolling = () => {
               {/* Card Type + CHF */}
               <div className="flex gap-3">
                 <div className="w-1/2">
-                  <label className="text-sm text-gray-500 mb-1 block">
+                  <label className="text-sm text-black mb-1 block">
                     Card Type
                   </label>
                   <input
@@ -232,7 +232,7 @@ const Enrolling = () => {
                 </div>
 
                 <div className="w-1/2">
-                  <label className="text-sm text-gray-500 mb-1 block">
+                  <label className="text-sm text-black mb-1 block">
                     CHF Number
                   </label>
                   <input
@@ -245,7 +245,7 @@ const Enrolling = () => {
 
               {/* Full Name */}
               <div>
-                <label className="text-sm text-gray-500 mb-1 block">
+                <label className="text-sm text-black mb-1 block">
                   Full Name
                 </label>
                 <input
@@ -257,7 +257,7 @@ const Enrolling = () => {
 
               {/* Mobile */}
               <div>
-                <label className="text-sm text-gray-500 mb-1 block">
+                <label className="text-sm text-black mb-1 block">
                   Mobile Number
                 </label>
                 <input
@@ -269,7 +269,7 @@ const Enrolling = () => {
 
               {/* Email */}
               <div>
-                <label className="text-sm text-gray-500 mb-1 block">
+                <label className="text-sm text-black mb-1 block">
                   Email
                 </label>
                 <input
@@ -281,7 +281,7 @@ const Enrolling = () => {
 
               {/* Image */}
               <div>
-                <label className="text-sm text-gray-500 mb-1 block">
+                <label className="text-sm text-black mb-1 block">
                   Image
                 </label>
                 <div className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-400">
