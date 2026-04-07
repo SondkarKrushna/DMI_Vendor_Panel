@@ -7,31 +7,68 @@ import { toast } from 'react-toastify';
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [identifier, setIdentifier] = useState(''); // ✅ changed
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
-  const navigate = useNavigate();
 
-  const [loginVendor, { isLoading, error }] = useLoginVendorMutation();
+  // Local state for validation errors
+  const [formErrors, setFormErrors] = useState({});
+
+  const navigate = useNavigate();
+  const [loginVendor, { isLoading }] = useLoginVendorMutation();
+
+  // Validation Logic
+
+  const validate = () => {
+    const errors = {};
+    const phoneRegex = /^[0-9]{10}$/; // Adjust regex based on your country requirements
+
+    if (!identifier) {
+      errors.identifier = "Mobile number is required";
+    } else if (!phoneRegex.test(identifier)) {
+      errors.identifier = "Please enter a valid 10-digit mobile number";
+    }
+
+    if (!password) {
+      errors.password = "Password is required";
+    } else if (password.length < 6) {
+      errors.password = "Password must be at least 6 characters";
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
 
+    // 1. Client-side Validation
+    if (!validate()) {
+      message.error("fill all the details");
+      return;
+    }
+
     try {
+      // 2. API Call
       const res = await loginVendor({
         identifier,
         password
       }).unwrap();
 
+      // 3. Success Handling
       localStorage.setItem("token", res.token);
       localStorage.setItem("role", res.user?.role);
       localStorage.setItem("user", JSON.stringify(res.user));
 
-      toast.success("Login successful!");
+      toast.success(res.message || "Login successful!"); // Display API success message
       navigate('/dashboard');
 
     } catch (err) {
+      // 4. API Error Handling
       console.error("Login failed:", err);
-      toast.error(err?.data?.message || "Login failed");
+
+      // Capturing the error message from API response
+      const errorMessage = err?.data?.message || err?.error || "Login failed. Please try again.";
+      toast.error(errorMessage);
     }
   };
 
@@ -64,22 +101,62 @@ const Login = () => {
 
           <form onSubmit={handleLogin} className="space-y-6">
 
-            {/* IDENTIFIER FIELD (UI SAME, ONLY LOGIC CHANGED) */}
+            {/* IDENTIFIER FIELD */}
             <div className="group">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Mobile Number
               </label>
               <div className="relative">
-                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                <input
-                  type="number"   // ✅ changed from number/email
-                  required
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-[#7E1080] outline-none"
-                  placeholder="Enter phone number"
+                <Phone
+                  className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${formErrors.identifier ? 'text-red-500' : 'text-gray-400'
+                    }`}
+                  size={20}
                 />
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={identifier}
+                  onChange={(e) => {
+                    // 1. Remove non-numeric characters
+                    const val = e.target.value.replace(/\D/g, '');
+
+                    // 2. Limit input to exactly 10 digits
+                    if (val.length <= 10) {
+                      setIdentifier(val);
+                    }
+
+                    // 3. Clear error message when user starts typing again
+                    if (formErrors.identifier) {
+                      setFormErrors({ ...formErrors, identifier: "" });
+                    }
+                  }}
+                  // Optional: Add blur validation to check length when user leaves the field
+                  onBlur={() => {
+                    if (identifier.length > 0 && identifier.length < 10) {
+                      setFormErrors({ ...formErrors, identifier: "Mobile number must be exactly 10 digits" });
+                    }
+                  }}
+                  className={`w-full pl-12 pr-4 py-4 bg-gray-50 border transition-all rounded-2xl outline-none ${formErrors.identifier
+                    ? 'border-red-500 focus:ring-2 focus:ring-red-200'
+                    : 'border-gray-200 focus:ring-2 focus:ring-[#7E1080]'
+                    }`}
+                  placeholder="Enter 10-digit number"
+                />
+
+                {/* Success indicator when exactly 10 digits are entered */}
+                {identifier.length === 10 && !formErrors.identifier && (
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-green-500 text-xs font-bold">
+                    ✓ Valid
+                  </span>
+                )}
               </div>
+
+              {/* Validation Message Display */}
+              {formErrors.identifier && (
+                <p className="text-red-500 text-xs mt-1 ml-2 font-medium animate-pulse">
+                  {formErrors.identifier}
+                </p>
+              )}
             </div>
 
             {/* PASSWORD */}
@@ -88,14 +165,16 @@ const Login = () => {
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 ${formErrors.password ? 'text-red-400' : 'text-gray-400'}`} size={20} />
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  required
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-12 pr-12 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-[#7E1080] outline-none"
-                  placeholder="••••••••"
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (formErrors.password) setFormErrors({ ...formErrors, password: "" });
+                  }}
+                  className={`w-full pl-12 pr-12 py-4 bg-gray-50 border ${formErrors.password ? 'border-red-500 focus:ring-red-200' : 'border-gray-200 focus:ring-[#7E1080]'} rounded-2xl outline-none transition-all`}
+                  placeholder="Enter Password"
                 />
                 <button
                   type="button"
@@ -105,23 +184,23 @@ const Login = () => {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+              {formErrors.password && (
+                <p className="text-red-500 text-xs mt-1 ml-2">{formErrors.password}</p>
+              )}
             </div>
 
-            {/* BUTTON */}
+            {/* SUBMIT BUTTON */}
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-[#7E1080] text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2"
+              className="w-full bg-[#7E1080] hover:bg-[#630d64] transition-colors text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 disabled:opacity-70"
             >
-              {isLoading ? <PulseLoader size={8} color="#fff" /> : "Sign In"}
+              {isLoading ? <PulseLoader size={8} color="#fff" /> : (
+                <>
+                  Sign In <ArrowRight size={18} />
+                </>
+              )}
             </button>
-
-            {/* ERROR */}
-            {error && (
-              <p className="text-red-500 text-sm">
-                {error?.data?.message || error?.error || "Login failed"}
-              </p>
-            )}
 
           </form>
 
