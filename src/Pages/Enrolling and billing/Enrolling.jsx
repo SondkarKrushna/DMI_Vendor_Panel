@@ -40,7 +40,7 @@ const Enrolling = () => {
 
   const queryParams =
     activeFilter === "custom" && dateRange.startDate && dateRange.endDate
-      ? { filter: `range-${dateRange.startDate},${dateRange.endDate}` }
+      ? { filter: `custom-${dateRange.startDate},${dateRange.endDate}` }
       : { filter: activeFilter };
 
   const {
@@ -73,7 +73,7 @@ const Enrolling = () => {
     if (!formData.fullName.trim()) newErrors.fullName = "Full name is required";
     if (!formData.mobile.trim()) {
       newErrors.mobile = "Mobile number is required";
-    } else if (!/^[6-9]\d{9}$/.test(formData.mobile.trim())) {
+    } else if (!/^\d{10}$/.test(formData.mobile.trim())) {
       newErrors.mobile = "Enter a valid 10-digit mobile number";
     }
     if (!formData.email.trim()) {
@@ -140,12 +140,13 @@ const Enrolling = () => {
   };
 
   const allTableData = enrollments.map((item) => ({
-    id: item.chNo || item.chNo || "—",
-    name: item.userId?.fullName || item.fullName || "—",
-    contact: `${item.userId?.mobile || item.mobile || "—"}\n${item.userId?.email || item.email || "—"}`,
-    cardType: item.cardType || "—",
-    cardNumber: item.chNo || item.chfNumber || "—",
+    id: item.cardId?.chfNo || item.cardId?.chNo || item._id || "—",
+    name: item.userId?.fullName || "—",
+    contact: `${item.userId?.mobile || "—"}\n${item.userId?.email || "—"}`,
+    cardType: item.cardId?.cardType || "—",
+    cardNumber: item.cardId?.chfNo || item.cardId?.chNo || "—",
     status: item.status || "—",
+    enrollmentStatus: item.paymentStatus || "—",
     date: item.createdAt ? new Date(item.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—",
   }));
 
@@ -204,8 +205,8 @@ const Enrolling = () => {
 
           <div className="mb-6 flex justify-center">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 w-full max-w-7xl">
-              <Card title="Total Cardholders" amount={stats?.totalCardholders ?? allTableData.length ?? "0"} percentage={stats?.totalPercentage ?? 0} statusText="Increased by Last Month" icon={Users} />
-              <Card title="This Month" amount={stats?.thisMonthCardholders ?? "0"} percentage={stats?.monthPercentage ?? 0} statusText={stats?.monthPercentage >= 0 ? "Increased by Last Month" : "Decreased by Last Month"} isDecrease={stats?.monthPercentage < 0} icon={Calendar} />
+              <Card title="Total Enrollments" amount={stats?.totalEnrollments ?? allTableData.length ?? "0"} percentage={0} statusText="All Time" icon={Users} />
+              <Card title="This Month" amount={stats?.thisMonthEnrollments ?? "0"} percentage={0} statusText="Current Month" icon={Calendar} />
               <div className="hidden lg:block"></div><div className="hidden lg:block"></div>
             </div>
           </div>
@@ -235,7 +236,7 @@ const Enrolling = () => {
                   )
                 }] : [])
               ]}
-              actions={showRangePicker ? [{ label: "Apply Range", onClick: () => { if (dateRange.startDate && dateRange.endDate) { refetch(); } else { toast.error("Please select both dates"); } }, variant: 'primary' }] : []}
+              actions={showRangePicker ? [{ label: "Apply Range", onClick: () => { if (dateRange.startDate && dateRange.endDate) refetch(); else toast.error("Please select both dates"); }, variant: 'primary' }] : []}
             />
           </div>
 

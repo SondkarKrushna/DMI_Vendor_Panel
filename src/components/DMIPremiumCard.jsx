@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 
 const DMIPremiumCard = ({
   cardNumber,
+  cardAType = "Premium",
   cardName = "John Doe",
   validThru = "20 - 02 - 2026",
   membershipDate = "12-09-2026",
@@ -265,7 +266,7 @@ const DMIPremiumCard = ({
             </div>
 
             {/* Title */}
-            <div className="dmi-card-title">Premium Card</div>
+            <div className="dmi-card-title">{cardAType} Card</div>
 
             {/* Card Number */}
             <div className="dmi-card-number">
