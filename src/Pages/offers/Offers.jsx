@@ -4,10 +4,21 @@ import Card from "../../components/cards/Card";
 import Button from "../../components/buttons/Button";
 import { Tag, SquarePen, Trash2, ArrowDownToLine } from "lucide-react";
 import offer from "../../../public/images/offer.png";
+import { PulseLoader } from "react-spinners";
+import {
+  useGetOffersQuery,
+  useAddOfferMutation,
+  useUpdateOfferMutation
+} from "../../redux/api/offersApi";
 
 const Offers = () => {
   const [activeTab, setActiveTab] = useState("Active");
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const { data, isLoading, isError } = useGetOffersQuery();
+
+  const offers = data?.data || [];
+
   return (
     <Layout>
       <div className="p-1 md:p-2 bg-white min-h-screen">
@@ -79,7 +90,7 @@ const Offers = () => {
               className={`px-4 py-1 rounded-lg transition 
                   ${activeTab === tab
                   ? "bg-yellow-400 text-black font-semibold"
-                  : "bg-gray-200 text-gray-600"
+                  : "bg-gray-200 hover:bg-gray-300 text-gray-600"
                 }`}
             >
               {tab}
@@ -90,58 +101,83 @@ const Offers = () => {
         {/* Offer Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
 
-          {[1, 2, 3].map((_, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-xl shadow overflow-hidden"
-            >
-              {/* Image */}
-              <div className="h-40 w-full overflow-hidden">
-                <img
-                  src={offer}
-                  alt="Offer"
-                  className="w-full h-full object-cover"
-                />
-              </div>
+          {isLoading
+            ? Array(6).fill(0).map((_, i) => (
+              <div
+                key={i}
+                className="bg-white rounded-xl shadow overflow-hidden animate-pulse"
+              >
+                <div className="h-40 w-full bg-gray-300" />
 
-              {/* Content */}
-              <div className="p-4">
-                <h3 className="font-semibold text-md">
-                  20% Off On Development Courses
-                </h3>
+                <div className="p-4 space-y-3">
+                  <div className="h-4 bg-gray-300 rounded w-3/4" />
+                  <div className="h-3 bg-gray-200 rounded w-1/2" />
+                  <div className="h-3 bg-gray-200 rounded w-2/3" />
 
-                <div className="mt-3 text-sm text-gray-600 space-y-1">
-                  <p>
-                    Discount: <span className="font-medium">10%</span>
-                  </p>
-                  <p>
-                    Valid Till:{" "}
-                    <span className="font-medium">
-                      Feb 15, 2025
-                    </span>
-                  </p>
-                  <p>
-                    Terms:{" "}
-                    <span className="font-medium">
-                      Min Billing ₹1000
-                    </span>
-                  </p>
-                </div>
-
-                {/* Actions */}
-                <div className="flex flex-col sm:flex-row gap-2 justify-between mt-4">
-                  <button className="border bg-[#FFEAFF] border-[#7E1080] text-[#7E1080] px-3 py-1 rounded-lg text-sm w-full sm:w-auto flex items-center justify-center gap-2">
-                    <SquarePen size={16} />{" | "}
-                    Edit Offer Details
-                  </button>
-
-                  <button className="border bg-[#FFEAFF] border-[#7E1080] px-3 py-1 rounded-lg text-sm w-full sm:w-auto flex items-center justify-center">
-                    <Trash2 size={16} className="text-red-500" />
-                  </button>
+                  <div className="flex gap-2 mt-4">
+                    <div className="h-8 bg-gray-300 rounded w-full" />
+                    <div className="h-8 bg-gray-300 rounded w-10" />
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+            : offers.map((offer) => (
+              <div
+                key={offer._id}
+                className="bg-white rounded-xl shadow overflow-hidden"
+              >
+                <div className="h-40 w-full overflow-hidden">
+                  <img
+                    src={offer.image}
+                    alt={offer.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
+                <div className="p-4">
+                  <h3 className="font-semibold text-md">
+                    {offer.title}
+                  </h3>
+
+                  <div className="mt-3 text-sm text-gray-600 space-y-1">
+                    <p>
+                      Discount:{" "}
+                      <span className="font-medium">
+                        {offer.discount}%
+                      </span>
+                    </p>
+
+                    <p>
+                      Valid Till:{" "}
+                      <span className="font-medium">
+                        {new Date(offer.endDate).toLocaleDateString()}
+                      </span>
+                    </p>
+
+                    <p>
+                      Status:{" "}
+                      <span className="font-medium capitalize">
+                        {offer.status}
+                      </span>
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-2 justify-between mt-4">
+                    <button
+                      onClick={() => handleEdit(offer)}
+                      className="border bg-[#FFEAFF] border-[#7E1080] text-[#7E1080] px-3 py-1 rounded-lg text-sm flex items-center justify-center gap-2"
+                    >
+                      <SquarePen size={16} />
+                      Edit
+                    </button>
+
+                    <button className="border bg-[#FFEAFF] border-[#7E1080] px-3 py-1 rounded-lg text-sm flex items-center justify-center">
+                      <Trash2 size={16} className="text-red-500" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
         </div>
 
       </div>

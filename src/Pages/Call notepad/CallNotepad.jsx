@@ -52,8 +52,8 @@ const CallNotepad = () => {
       Cell: ({ value }) => (
         <span
           className={`px-3 py-1 rounded-full text-xs font-semibold ${value === "Pending"
-              ? "bg-yellow-100 text-yellow-600"
-              : "bg-green-100 text-green-600"
+            ? "bg-yellow-100 text-yellow-600"
+            : "bg-green-100 text-green-600"
             }`}
         >
           {value}
@@ -121,8 +121,8 @@ const CallNotepad = () => {
           <button
             onClick={() => setActiveTab("Follow Ups")}
             className={`px-4 py-2 rounded-lg font-medium ${activeTab === "Follow Ups"
-                ? "bg-yellow-400 text-black"
-                : "bg-gray-200 text-gray-600"
+              ? "bg-yellow-400 text-black"
+              : "bg-gray-200 text-gray-600"
               }`}
           >
             Follow Ups
@@ -131,8 +131,8 @@ const CallNotepad = () => {
           <button
             onClick={() => setActiveTab("Enquiries")}
             className={`px-4 py-2 rounded-lg font-medium ${activeTab === "Enquiries"
-                ? "bg-yellow-400 text-black"
-                : "bg-gray-200 text-gray-600"
+              ? "bg-yellow-400 text-black"
+              : "bg-gray-200 hover:bg-gray-300 text-gray-600"
               }`}
           >
             Enquiries
@@ -168,8 +168,8 @@ const CallNotepad = () => {
                 <span>{item.date}</span>
                 <span
                   className={`px-2 py-1 rounded-full text-xs ${item.status === "Pending"
-                      ? "bg-yellow-100 text-yellow-600"
-                      : "bg-green-100 text-green-600"
+                    ? "bg-yellow-100 text-yellow-600"
+                    : "bg-green-100 text-green-600"
                     }`}
                 >
                   {item.status}

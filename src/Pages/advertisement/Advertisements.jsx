@@ -85,7 +85,7 @@ const Advertisements = () => {
               className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
                 activeTab === tab
                   ? "bg-yellow-400 text-black"
-                  : "bg-white text-gray-600 hover:bg-gray-100"
+                  : "bg-gray-200 text-gray-600 hover:bg-gray-300"
               }`}
             >
               {tab}
