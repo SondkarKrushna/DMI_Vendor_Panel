@@ -14,10 +14,126 @@ import {
   Trash2,
   ArrowDownToLine
 } from "lucide-react";
+import { toast } from "react-toastify";
+import { PulseLoader } from "react-spinners";
+import {
+  useGetServicesQuery,
+  useAddServiceMutation,
+  useUpdateServiceMutation,
+  useDeleteServiceMutation
+} from "../../redux/api/servicesApi";
+
 
 const Services = () => {
   const [selectedRows, setSelectedRows] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [editingService, setEditingService] = useState(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    price: "",
+    cardType: "",
+    discount: "",
+    description: "",
+    image: null
+  });
+  const [errors, setErrors] = useState({});
+
+  const { data, isLoading, isError } = useGetServicesQuery();
+  const [addService, { isLoading: isAdding }] = useAddServiceMutation();
+  const [updateService, { isLoading: isUpdating }] = useUpdateServiceMutation();
+  const [deleteService] = useDeleteServiceMutation();
+
+  const services = data?.data || [];
+
+  const handleEdit = (service) => {
+    setErrors({});
+    setEditingService(service);
+    setFormData({
+      name: service.serviceName,
+      price: service.price,
+      cardType: service.cardType,
+      discount: service.discountRate,
+      description: service.description || "",
+      image: service.image
+    });
+    setShowModal(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm("Are you sure you want to delete this service?")) {
+      try {
+        await deleteService(id).unwrap();
+        toast.success("Service deleted successfully!");
+      } catch (error) {
+        toast.error(error?.data?.message || "Failed to delete service");
+      }
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value, files } = e.target;
+    if (name === "image") {
+      setFormData({ ...formData, image: files[0] });
+      setErrors({ ...errors, image: null });
+    } else {
+      setFormData({ ...formData, [name]: value });
+      setErrors({ ...errors, [name]: null });
+    }
+  };
+
+  const validate = () => {
+    let newErrors = {};
+    if (!formData.name) newErrors.name = "Service Name is required";
+    if (!formData.price) newErrors.price = "Price is required";
+    if (!formData.cardType) newErrors.cardType = "Card Type is required";
+    if (formData.discount === "") newErrors.discount = "Discount is required";
+    if (!formData.description) newErrors.description = "Description is required";
+    if (!editingService && !formData.image) newErrors.image = "Image is required";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validate()) return;
+    const serviceData = new FormData();
+    serviceData.append("serviceName", formData.name);
+    serviceData.append("price", formData.price);
+    serviceData.append("cardType", formData.cardType);
+    serviceData.append("discountRate", formData.discount);
+    serviceData.append("description", formData.description);
+    if (formData.image instanceof File) {
+      serviceData.append("image", formData.image);
+    }
+
+    try {
+      if (editingService) {
+        await updateService({ id: editingService._id, data: serviceData }).unwrap();
+        toast.success("Service updated successfully!");
+      } else {
+        await addService(serviceData).unwrap();
+        toast.success("Service added successfully!");
+      }
+      setShowModal(false);
+      resetForm();
+    } catch (error) {
+      toast.error(error?.data?.message || "Operation failed");
+    }
+  };
+
+  const resetForm = () => {
+    setEditingService(null);
+    setErrors({});
+    setFormData({
+      name: "",
+      price: "",
+      cardType: "",
+      discount: "",
+      description: "",
+      image: null
+    });
+  };
 
   const columns = [
     {
@@ -39,11 +155,12 @@ const Services = () => {
     },
     {
       header: "SERVICE",
-      accessor: "name",
+      accessor: "serviceName", // ✅ Changed from "name" to "serviceName"
       Cell: ({ row }) => (
         <div>
-          <p className="font-semibold text-gray-900">{row.name}</p>
-          <p className="text-xs text-gray-400 font-normal">Static & dynamic sites</p>
+          {/* ✅ Changed row.name to row.serviceName */}
+          <p className="font-semibold text-gray-900">{row.serviceName}</p>
+          <p className="text-xs text-gray-400 font-normal truncate max-w-[150px]">{row.description || "N/A"}</p>
         </div>
       ),
     },
@@ -58,7 +175,7 @@ const Services = () => {
     },
     {
       header: "DISCOUNT",
-      accessor: "discount",
+      accessor: "discountRate", // ✅ Changed from "discount" to "discountRate"
       Cell: ({ value }) => <span>{value}%</span>,
     },
     {
@@ -80,15 +197,21 @@ const Services = () => {
     {
       header: "ACTION",
       accessor: "action",
-      Cell: () => (
+      Cell: ({ row }) => (
         <div className="flex items-center gap-3">
-          <button className="text-purple-600 hover:text-purple-800 transition">
+          <button
+            onClick={() => handleEdit(row)}
+            className="text-purple-600 hover:text-purple-800 transition"
+          >
             <Edit3 size={18} />
           </button>
           <button className="text-yellow-500 hover:text-yellow-700 transition">
             <Eye size={18} />
           </button>
-          <button className="text-red-500 hover:text-red-700 transition">
+          <button
+            onClick={() => handleDelete(row._id)}
+            className="text-red-500 hover:text-red-700 transition"
+          >
             <Trash2 size={18} />
           </button>
         </div>
@@ -158,13 +281,13 @@ const Services = () => {
     }
   };
 
-const handleRowSelect = (id) => {
-  setSelectedRows((prev) =>
-    prev.includes(id)
-      ? prev.filter((item) => item !== id)
-      : [...prev, id]
-  );
-};
+  const handleRowSelect = (id) => {
+    setSelectedRows((prev) =>
+      prev.includes(id)
+        ? prev.filter((item) => item !== id)
+        : [...prev, id]
+    );
+  };
 
   return (
     <Layout>
@@ -201,7 +324,7 @@ const handleRowSelect = (id) => {
           />
           <Card
             title="Pending Services"
-            amount="20"
+            amount={services.filter(s => s.status === 'Pending').length.toString()}
             percentage={-30}
             statusText="Decreased By Yesterday"
             isDecrease
@@ -228,17 +351,27 @@ const handleRowSelect = (id) => {
 
               <div className="flex justify-between items-start">
                 <div className="flex gap-3">
-                  <img src={item.image} alt={item.name} className="w-16 h-16 rounded-xl object-cover bg-gray-100" />
+                  <img src={item.image} alt={item.serviceName} className="w-16 h-16 rounded-xl object-cover bg-gray-100" />
                   <div>
                     <span className="text-xs text-gray-500">{item.serviceId}</span>
-                    <h3 className="font-semibold text-gray-800">{item.name}</h3>
-                    <p className="text-xs text-gray-400">Static & dynamic sites</p>
+                    <h3 className="font-semibold text-gray-800">{item.serviceName}</h3>
+                    <p className="text-xs text-gray-400 truncate max-w-[150px]">{item.description || "N/A"}</p>
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <button className="text-purple-600"><Edit3 size={16} /></button>
+                  <button
+                    onClick={() => handleEdit(item)}
+                    className="text-purple-600"
+                  >
+                    <Edit3 size={16} />
+                  </button>
                   <button className="text-yellow-500"><Eye size={16} /></button>
-                  <button className="text-red-500"><Trash2 size={16} /></button>
+                  <button
+                    onClick={() => handleDelete(item._id)}
+                    className="text-red-500"
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </div>
               </div>
 
@@ -253,13 +386,13 @@ const handleRowSelect = (id) => {
                 </div>
                 <div className="flex justify-between text-sm py-1">
                   <span className="text-gray-500">Discount</span>
-                  <span>{item.discount}%</span>
+                  <span>{item.discountRate}%</span>
                 </div>
                 <div className="flex justify-between items-center text-sm py-1">
                   <span className="text-gray-500">Status</span>
                   <span className={`px-3 py-1 rounded-full text-xs font-bold ${item.status === 'Pending' ? 'bg-[#FFF8E7] text-[#FAB800]' :
-                      item.status === 'Approved' ? 'bg-[#E6F9F0] text-[#00C853]' :
-                        'bg-[#FFEBEB] text-[#FF5252]'
+                    item.status === 'Approved' ? 'bg-[#E6F9F0] text-[#00C853]' :
+                      'bg-[#FFEBEB] text-[#FF5252]'
                     }`}>{item.status}</span>
                 </div>
               </div>
@@ -289,7 +422,8 @@ const handleRowSelect = (id) => {
           onClick={() => setShowModal(false)}
           className="fixed inset-0 bg-black/60 backdrop-blur flex items-center justify-center z-[90]">
 
-          <div 
+          <form
+            onSubmit={handleSubmit}
             onClick={(e) => e.stopPropagation()}
             className="bg-white w-[420px] rounded-2xl p-6 shadow-lg relative">
 
@@ -303,82 +437,135 @@ const handleRowSelect = (id) => {
 
               {/* Service Name */}
               <div>
-                <label className="text-sm text-black mb-1 block">
-                  Service Name
+                <label className="text-sm text-black mb-1 block font-medium">
+                  Service Name <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  placeholder="Enter"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="Enter service name"
+                  className={`w-full bg-gray-50 border ${errors.name ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500`}
                 />
+                {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
               </div>
 
               {/* Price */}
               <div>
-                <label className="text-sm text-black mb-1 block">
-                  Price
+                <label className="text-sm text-black mb-1 block font-medium">
+                  Price <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
+                  name="price"
+                  value={formData.price}
+                  onChange={handleChange}
                   placeholder="0.00"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  min="0"
+                  className={`w-full bg-gray-50 border ${errors.price ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500`}
                 />
+                {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price}</p>}
               </div>
 
               {/* Card Type + Discount */}
               <div className="flex gap-3">
                 <div className="w-1/2">
-                  <label className="text-sm text-black mb-1 block">
-                    Card Type
+                  <label className="text-sm text-black mb-1 block font-medium">
+                    Card Type <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
-                    placeholder="Select"
-                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
-                  />
+                  <select
+                    name="cardType"
+                    value={formData.cardType}
+                    onChange={handleChange}
+                    className={`w-full bg-gray-50 border ${errors.cardType ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                  >
+                    <option value="" disabled>Select Card Type</option>
+                    <option value="Silver">Silver</option>
+                    <option value="Gold">Gold</option>
+                    <option value="Platinum">Platinum</option>
+                    <option value="Diamond">Diamond</option>
+                    <option value="Vip">Vip</option>
+                  </select>
+                  {errors.cardType && <p className="text-red-500 text-xs mt-1">{errors.cardType}</p>}
                 </div>
 
                 <div className="w-1/2">
-                  <label className="text-sm text-black mb-1 block">
-                    Discount (%)
+                  <label className="text-sm text-black mb-1 block font-medium">
+                    Discount (%) <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="number"
+                    name="discount"
+                    value={formData.discount}
+                    onChange={handleChange}
                     placeholder="0"
-                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
+                    min="0"
+                    max="100"
+                    className={`w-full bg-gray-50 border ${errors.discount ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500`}
                   />
+                  {errors.discount && <p className="text-red-500 text-xs mt-1">{errors.discount}</p>}
                 </div>
               </div>
 
               {/* Description */}
               <div>
-                <label className="text-sm text-black mb-1 block">
-                  Description
+                <label className="text-sm text-black mb-1 block font-medium">
+                  Description <span className="text-red-500">*</span>
                 </label>
                 <textarea
-                  placeholder="Enter"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  placeholder="Enter description"
                   rows={2}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm resize-none"
+                  className={`w-full bg-gray-50 border ${errors.description ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-purple-500`}
                 />
+                {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
               </div>
 
               {/* Image Upload */}
               <div>
-                <label className="text-sm text-black mb-1 block">
-                  Image
+                <label className="text-sm text-black mb-1 block font-medium">
+                  Image {!editingService && <span className="text-red-500">*</span>}
                 </label>
-                <div className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-400">
-                  Upload
-                </div>
+                <input
+                  type="file"
+                  name="image"
+                  accept="image/*"
+                  onChange={handleChange}
+                  className={`w-full bg-gray-50 border ${errors.image ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                />
+                {errors.image && <p className="text-red-500 text-xs mt-1">{errors.image}</p>}
+                {formData.image && (
+                  <div className="mt-2">
+                    <p className="text-xs text-gray-500 mb-1">Preview:</p>
+                    <img
+                      src={formData.image instanceof File ? URL.createObjectURL(formData.image) : formData.image}
+                      alt="Preview"
+                      className="w-24 h-24 object-cover rounded-xl border border-gray-200"
+                    />
+                  </div>
+                )}
               </div>
 
             </div>
 
             {/* Button */}
             <div className="mt-6 flex justify-center">
-              <Button text="Add Service" />
+              <button
+                type="submit"
+                disabled={isAdding || isUpdating}
+                className="w-full bg-[#7E1080] text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2"
+              >
+                {(isAdding || isUpdating) ? (
+                  <PulseLoader size={8} color="#fff" />
+                ) : (
+                  editingService ? "Update Service" : "Add Service"
+                )}
+              </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
     </Layout>

@@ -2,8 +2,8 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 const baseUrl = import.meta.env.VITE_BACKEND_URL;
 
-export const advertisementsApi = createApi({
-  reducerPath: "advertisementsApi",
+export const servicesApi = createApi({
+  reducerPath: "servicesApi",
 
   baseQuery: fetchBaseQuery({
     baseUrl,
@@ -19,53 +19,52 @@ export const advertisementsApi = createApi({
     },
   }),
 
-  tagTypes: ["Advertisements"],
+  tagTypes: ["Services"],
 
   endpoints: (builder) => ({
     // ✅ CREATE
-    addAdvertisement: builder.mutation({
+    addService: builder.mutation({
       query: (data) => ({
-        url: "/api/vendor/create/ads",
+        url: "/api/services/create",
         method: "POST",
         body: data,
       }),
-      invalidatesTags: ["Advertisements"],
+      invalidatesTags: ["Services"],
     }),
 
     // ✅ UPDATE
-    updateAdvertisement: builder.mutation({
+    updateService: builder.mutation({
       query: ({ id, data }) => ({
-        url: `/api/vendor/update/ads/${id}`,
+        url: `/api/services/update/${id}`,
         method: "PUT",
         body: data,
       }),
-      invalidatesTags: ["Advertisements"],
+      invalidatesTags: ["Services"],
     }),
 
     // ✅ DELETE
-    deleteAdvertisement: builder.mutation({
+    deleteService: builder.mutation({
       query: (id) => ({
-        url: `/api/vendor/delete/ads/${id}`,
+        url: `/api/services/delete/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Advertisements"],
+      invalidatesTags: ["Services"],
     }),
 
     // ✅ READ
-    getAdvertisements: builder.query({
+    getServices: builder.query({
       query: (params) => ({
-        url: "/api/vendor/get/ads",
-        params,
+        url: "/api/services/my-services",
+        params, // dynamically passes ?page=1&limit=10, etc.
       }),
-      providesTags: ["Advertisements"],
+      providesTags: ["Services"],
     }),
   }),
 });
 
-// ✅ Export hooks
 export const {
-  useAddAdvertisementMutation,
-  useUpdateAdvertisementMutation,
-  useDeleteAdvertisementMutation,
-  useGetAdvertisementsQuery,
-} = advertisementsApi;
+  useAddServiceMutation,
+  useUpdateServiceMutation,
+  useDeleteServiceMutation,
+  useGetServicesQuery,
+} = servicesApi;
