@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, User, ArrowRight } from 'lucide-react';
-import { PulseLoader } from 'react-spinners/PulseLoader';
+import { PulseLoader } from 'react-spinners';
 import { useRegisterVendorMutation } from '../../redux/api/authapi';
 import { toast } from 'react-toastify';
 

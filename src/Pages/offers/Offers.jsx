@@ -1,23 +1,110 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/cards/Card";
 import Button from "../../components/buttons/Button";
 import { Tag, SquarePen, Trash2, ArrowDownToLine } from "lucide-react";
-import offer from "../../../public/images/offer.png";
+import offerImg from "../../../public/images/offer.png";
 import { PulseLoader } from "react-spinners";
+import { toast } from "react-toastify";
 import {
   useGetOffersQuery,
   useAddOfferMutation,
-  useUpdateOfferMutation
+  useUpdateOfferMutation,
+  useDeleteOfferMutation
 } from "../../redux/api/offersApi";
 
 const Offers = () => {
   const [activeTab, setActiveTab] = useState("Active");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingOffer, setEditingOffer] = useState(null);
+  const [formData, setFormData] = useState({
+    title: "",
+    discount: "",
+    startDate: "",
+    endDate: "",
+    description: "",
+    image: null
+  });
 
   const { data, isLoading, isError } = useGetOffersQuery();
+  const [addOffer, { isLoading: isAdding }] = useAddOfferMutation();
+  const [updateOffer, { isLoading: isUpdating }] = useUpdateOfferMutation();
+  const [deleteOffer] = useDeleteOfferMutation();
 
   const offers = data?.data || [];
+
+  const handleEdit = (offer) => {
+    setEditingOffer(offer);
+    setFormData({
+      title: offer.title,
+      discount: offer.discount,
+      startDate: offer.startDate ? offer.startDate.split('T')[0] : "",
+      endDate: offer.endDate ? offer.endDate.split('T')[0] : "",
+      description: offer.description || "",
+      image: offer.image
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm("Are you sure you want to delete this offer?")) {
+      try {
+        await deleteOffer(id).unwrap();
+        toast.success("Offer deleted successfully!");
+      } catch (error) {
+        toast.error(error?.data?.message || "Failed to delete offer");
+      }
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value, files } = e.target;
+    if (name === "image") {
+      setFormData({ ...formData, image: files[0] });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    const offerData = new FormData();
+    offerData.append("title", formData.title);
+    offerData.append("discount", formData.discount);
+    offerData.append("startDate", formData.startDate);
+    offerData.append("endDate", formData.endDate);
+    offerData.append("description", formData.description);
+    if (formData.image instanceof File) {
+      offerData.append("image", formData.image);
+    }
+
+    try {
+      if (editingOffer) {
+        await updateOffer({ id: editingOffer._id, data: offerData }).unwrap();
+        toast.success("Offer updated successfully!");
+      } else {
+        await addOffer(offerData).unwrap();
+        toast.success("Offer added successfully!");
+      }
+      setIsModalOpen(false);
+      resetForm();
+    } catch (error) {
+      toast.error(error?.data?.message || "Operation failed");
+    }
+  };
+
+  const resetForm = () => {
+    setEditingOffer(null);
+    setFormData({
+      title: "",
+      discount: "",
+      startDate: "",
+      endDate: "",
+      description: "",
+      image: null
+    });
+  };
 
   return (
     <Layout>
@@ -34,7 +121,10 @@ const Offers = () => {
             <Button
               text="Add Offer"
               className="flex-1 sm:flex-none"
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => {
+                resetForm();
+                setIsModalOpen(true);
+              }}
             />
             <button className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold shadow-md hover:scale-105 hover:shadow-lg active:scale-95 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2">
               <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -48,7 +138,7 @@ const Offers = () => {
 
           <Card
             title="Total Offers"
-            amount="2100"
+            amount={offers.length.toString()}
             percentage={42}
             statusText="Increased by Yesterday"
             icon={Tag}
@@ -65,7 +155,7 @@ const Offers = () => {
 
           <Card
             title="Active Offers"
-            amount="04"
+            amount={offers.filter(o => o.status === 'active').length.toString()}
             percentage={42}
             statusText="Increased by Last Month"
             icon={Tag}
@@ -73,7 +163,7 @@ const Offers = () => {
 
           <Card
             title="Expired Offers"
-            amount="12"
+            amount={offers.filter(o => o.status === 'expired').length.toString()}
             percentage={42}
             statusText="Increased by Last Month"
             icon={Tag}
@@ -171,7 +261,10 @@ const Offers = () => {
                       Edit
                     </button>
 
-                    <button className="border bg-[#FFEAFF] border-[#7E1080] px-3 py-1 rounded-lg text-sm flex items-center justify-center">
+                    <button 
+                      onClick={() => handleDelete(offer._id)}
+                      className="border bg-[#FFEAFF] border-[#7E1080] px-3 py-1 rounded-lg text-sm flex items-center justify-center"
+                    >
                       <Trash2 size={16} className="text-red-500" />
                     </button>
                   </div>
@@ -186,13 +279,19 @@ const Offers = () => {
       {isModalOpen && (
         <div
           className="fixed inset-0 bg-black/60 backdrop-blur flex items-center justify-center z-[90]"
-          onClick={() => setIsModalOpen(false)}
+          onClick={() => {
+            setIsModalOpen(false);
+            resetForm();
+          }}
         >
-          <div
+          <form
+            onSubmit={handleSubmit}
             className="bg-white w-[400px] rounded-2xl p-6 shadow-lg"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-lg font-semibold mb-4">Add offer</h2>
+            <h2 className="text-lg font-semibold mb-4">
+              {editingOffer ? "Edit Offer" : "Add Offer"}
+            </h2>
 
             <div className="space-y-4">
 
@@ -203,6 +302,8 @@ const Offers = () => {
                 </label>
                 <input
                   type="file"
+                  name="image"
+                  onChange={handleChange}
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
                 />
               </div>
@@ -214,20 +315,43 @@ const Offers = () => {
                 </label>
                 <input
                   type="text"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleChange}
+                  required
                   placeholder="e.g 20% off on dev courses"
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
                 />
               </div>
 
-              {/* Discount + Date */}
+              {/* Discount */}
+              <div>
+                <label className="block text-sm text-black mb-1">
+                  Discount (%)
+                </label>
+                <input
+                  type="number"
+                  name="discount"
+                  value={formData.discount}
+                  onChange={handleChange}
+                  required
+                  placeholder="e.g 10"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
+                />
+              </div>
+
+              {/* Start Date + Date */}
               <div className="flex gap-3">
                 <div className="w-1/2">
                   <label className="block text-sm text-black mb-1">
-                    Discount
+                    Start Date
                   </label>
                   <input
-                    type="number"
-                    placeholder="e.g 10%"
+                    type="date"
+                    name="startDate"
+                    value={formData.startDate}
+                    onChange={handleChange}
+                    required
                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
                   />
                 </div>
@@ -238,18 +362,26 @@ const Offers = () => {
                   </label>
                   <input
                     type="date"
+                    name="endDate"
+                    value={formData.endDate}
+                    onChange={handleChange}
+                    required
                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
                   />
                 </div>
               </div>
 
-              {/* Terms */}
+              {/* Description */}
               <div>
                 <label className="block text-sm text-black mb-1">
-                  Terms & Conditions
+                  Description
                 </label>
                 <textarea
-                  placeholder="Enter terms & conditions"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  required
+                  placeholder="Enter offer description"
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
                 />
               </div>
@@ -257,11 +389,19 @@ const Offers = () => {
 
             {/* Button */}
             <div className="mt-6 flex justify-center">
-              <button className="px-6 py-2 rounded-xl bg-gradient-to-b from-[#7E1080] to-[#1A031A] text-white">
-                + Add Offer
+              <button 
+                type="submit"
+                disabled={isAdding || isUpdating}
+                className="px-6 py-2 rounded-xl bg-gradient-to-b from-[#7E1080] to-[#1A031A] text-white flex items-center gap-2"
+              >
+                {(isAdding || isUpdating) ? (
+                  <PulseLoader size={8} color="#fff" />
+                ) : (
+                  editingOffer ? "Update Offer" : "+ Add Offer"
+                )}
               </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
     </Layout>
