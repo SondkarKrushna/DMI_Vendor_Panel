@@ -413,7 +413,7 @@ const Services = () => {
           <form
             onSubmit={handleSubmit}
             onClick={(e) => e.stopPropagation()}
-            className="bg-white w-[420px] rounded-2xl p-6 shadow-lg relative"
+            className="bg-white w-[420px] rounded-2xl p-6 shadow-lg relative max-h-[90vh] overflow-y-auto"
           >
 
             {/* Title */}
