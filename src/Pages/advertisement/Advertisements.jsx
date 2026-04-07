@@ -26,31 +26,37 @@ const Advertisements = () => {
   const [activeTab, setActiveTab] = useState("Classified");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAd, setEditingAd] = useState(null);
+  const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
-    type: "",
+    type: "classified", // defaults to classified
     businessVertical: "",
     title: "",
-    validTill: "",
-    image: null
+    description: "",
+    endDate: "",
+    imageUrl: null
   });
 
   const tabs = ["Classified", "Commercial"];
 
-  const { data, isLoading, isError } = useGetAdvertisementsQuery();
+  const { data, isLoading, isError } = useGetAdvertisementsQuery({ type: activeTab.toLowerCase() });
   const [addAdvertisement, { isLoading: isAdding }] = useAddAdvertisementMutation();
   const [updateAdvertisement, { isLoading: isUpdating }] = useUpdateAdvertisementMutation();
   const [deleteAdvertisement] = useDeleteAdvertisementMutation();
 
-  const ads = data?.data || [];
+  const responseData = data?.data || data || {};
+  const ads = responseData.ads || (Array.isArray(responseData) ? responseData : []);
+  const stats = responseData.stats || { totalAds: 0, activeAds: 0, expiredAds: 0 };
 
   const handleEdit = (ad) => {
+    setErrors({});
     setEditingAd(ad);
     setFormData({
-      type: ad.type || "",
+      type: ad.type || "classified",
       businessVertical: ad.businessVertical || "",
-      title: ad.title,
-      validTill: ad.validTill ? ad.validTill.split('T')[0] : "",
-      image: ad.image
+      title: ad.title || "",
+      description: ad.description || "",
+      endDate: ad.endDate ? ad.endDate.split('T')[0] : "",
+      imageUrl: ad.imageUrl || ad.image
     });
     setIsModalOpen(true);
   };
@@ -68,22 +74,39 @@ const Advertisements = () => {
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
-    if (name === "image") {
-      setFormData({ ...formData, image: files[0] });
+    if (name === "imageUrl") {
+      setFormData({ ...formData, imageUrl: files[0] });
+      setErrors({ ...errors, imageUrl: null });
     } else {
       setFormData({ ...formData, [name]: value });
+      setErrors({ ...errors, [name]: null });
     }
+  };
+
+  const validate = () => {
+    let newErrors = {};
+    if (!formData.type) newErrors.type = "Type is required";
+    if (!formData.businessVertical) newErrors.businessVertical = "Business Vertical is required";
+    if (!formData.title) newErrors.title = "Title is required";
+    if (!formData.description) newErrors.description = "Description is required";
+    if (!formData.endDate) newErrors.endDate = "End Date is required";
+    if (!editingAd && !formData.imageUrl) newErrors.imageUrl = "Image is required";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validate()) return;
     const adData = new FormData();
     adData.append("type", formData.type);
     adData.append("businessVertical", formData.businessVertical);
     adData.append("title", formData.title);
-    adData.append("validTill", formData.validTill);
-    if (formData.image instanceof File) {
-      adData.append("image", formData.image);
+    adData.append("description", formData.description);
+    adData.append("endDate", formData.endDate);
+    if (formData.imageUrl instanceof File) {
+      adData.append("imageUrl", formData.imageUrl);
     }
 
     try {
@@ -103,12 +126,14 @@ const Advertisements = () => {
 
   const resetForm = () => {
     setEditingAd(null);
+    setErrors({});
     setFormData({
-      type: "",
+      type: "classified",
       businessVertical: "",
       title: "",
-      validTill: "",
-      image: null
+      description: "",
+      endDate: "",
+      imageUrl: null
     });
   };
 
@@ -124,13 +149,13 @@ const Advertisements = () => {
           </div>
 
           <div className="flex gap-3 w-full sm:w-auto">
-            <Button 
-                text="Add Ad" 
-                className="flex-1 sm:flex-none" 
-                onClick={() => {
-                    resetForm();
-                    setIsModalOpen(true);
-                }} 
+            <Button
+              text="Add Ad"
+              className="flex-1 sm:flex-none"
+              onClick={() => {
+                resetForm();
+                setIsModalOpen(true);
+              }}
             />
             <button className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold shadow-md hover:scale-105 hover:shadow-lg active:scale-95 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2">
               <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -143,14 +168,14 @@ const Advertisements = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card
             title="Total Ads"
-            amount={ads.length.toString()}
+            amount={stats.totalAds.toString()}
             percentage={42}
             statusText="Increased by last month"
             icon={Megaphone}
           />
           <Card
             title="Active Ads"
-            amount={ads.filter(a => a.status === 'Approved').length.toString()}
+            amount={stats.activeAds.toString()}
             percentage={-30}
             statusText="Decreased by last month"
             isDecrease
@@ -158,7 +183,7 @@ const Advertisements = () => {
           />
           <Card
             title="Expired Ads"
-            amount="400"
+            amount={stats.expiredAds.toString()}
             percentage={42}
             statusText="Increased by last month"
             icon={XCircle}
@@ -171,11 +196,10 @@ const Advertisements = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
-                activeTab === tab
-                  ? "bg-yellow-400 text-black"
-                  : "bg-gray-200 text-gray-600 hover:bg-gray-300"
-              }`}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition ${activeTab === tab
+                ? "bg-yellow-400 text-black"
+                : "bg-gray-200 text-gray-600 hover:bg-gray-300"
+                }`}
             >
               {tab}
             </button>
@@ -189,7 +213,13 @@ const Advertisements = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {isLoading ? (
             <div className="col-span-full flex justify-center py-10">
-                <PulseLoader color="#7E1080" />
+              <PulseLoader color="#7E1080" />
+            </div>
+          ) : ads.length === 0 ? (
+            <div className="col-span-full flex flex-col items-center justify-center py-16 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+              <Megaphone className="w-12 h-12 text-gray-300 mb-3" />
+              <h3 className="text-lg font-semibold text-gray-800">No Advertisements Found</h3>
+              <p className="text-sm text-gray-500 mt-1">There are no {activeTab.toLowerCase()} advertisements to display right now.</p>
             </div>
           ) : ads.map((item, index) => (
             <div
@@ -199,22 +229,23 @@ const Advertisements = () => {
               {/* Image */}
               <div className="relative">
                 <img
-                  src={item.image}
+                  src={item.imageUrl || item.image || advertisementImg}
                   alt="ad"
                   className="w-full h-32 object-cover rounded-xl"
                 />
 
                 {/* Status Badge */}
                 <span
-                  className={`absolute top-2 right-2 text-xs px-3 py-1 rounded-full text-white ${
-                    item.status === 'Pending'
-                      ? "bg-yellow-400 text-black"
-                      : item.status === 'Rejected'
+                  className={`absolute top-2 right-2 text-xs px-3 py-1 rounded-full text-white ${item.status?.toLowerCase() === 'pending'
+                    ? "bg-yellow-400 text-black"
+                    : item.status?.toLowerCase() === 'rejected'
                       ? "bg-red-500"
-                      : "bg-green-500"
-                  }`}
+                      : item.status?.toLowerCase() === 'expired'
+                        ? "bg-gray-500"
+                        : "bg-green-500"
+                    }`}
                 >
-                  {item.status}
+                  {item.status || "Pending"}
                 </span>
               </div>
 
@@ -222,22 +253,23 @@ const Advertisements = () => {
               <div className="mt-3">
                 <h3 className="text-sm font-semibold">{item.title}</h3>
                 <p className="text-xs text-gray-500">{item.businessVertical}</p>
+                <p className="text-xs text-gray-400 mt-1 line-clamp-2">{item.description}</p>
                 <p className="text-xs text-gray-400 mt-1">
-                  Valid Till {new Date(item.validTill).toLocaleDateString()}
+                  Valid Till {item.endDate ? new Date(item.endDate).toLocaleDateString() : "N/A"}
                 </p>
               </div>
 
               {/* Actions */}
               <div className="flex justify-end gap-2 mt-3">
-                <button 
-                    onClick={() => handleEdit(item)}
-                    className="p-2 rounded-lg bg-purple-100 text-purple-600"
+                <button
+                  onClick={() => handleEdit(item)}
+                  className="p-2 rounded-lg bg-purple-100 text-purple-600"
                 >
                   <SquarePen size={14} />
                 </button>
-                <button 
-                    onClick={() => handleDelete(item._id)}
-                    className="p-2 rounded-lg bg-red-100 text-red-600"
+                <button
+                  onClick={() => handleDelete(item._id)}
+                  className="p-2 rounded-lg bg-red-100 text-red-600"
                 >
                   <Trash2 size={14} />
                 </button>
@@ -248,112 +280,156 @@ const Advertisements = () => {
 
       </div>
       {isModalOpen && (
-  <div
-    onClick={() => {
-        setIsModalOpen(false);
-        resetForm();
-    }}
-    className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 backdrop-blur"
-  >
+        <div
+          onClick={() => {
+            setIsModalOpen(false);
+            resetForm();
+          }}
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 backdrop-blur"
+        >
 
-    <form
-      onSubmit={handleSubmit}
-      onClick={(e) => e.stopPropagation()}
-      className="bg-white w-[400px] rounded-2xl p-6 shadow-xl relative"
-    >
-
-      <h2 className="text-lg font-semibold mb-4">
-        {editingAd ? "Edit Advertisement" : "Add Advertisement"}
-      </h2>
-
-      <div className="space-y-4">
-
-        {/* Row */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1">
-            <label className="text-sm text-black">
-              Advertisement Type
-            </label>
-            <input
-              name="type"
-              value={formData.type}
-              onChange={handleChange}
-              placeholder="Select"
-              className="px-4 py-3 rounded-xl bg-gray-100 outline-none text-sm"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-sm text-black">
-              Business Vertical
-            </label>
-            <input
-              name="businessVertical"
-              value={formData.businessVertical}
-              onChange={handleChange}
-              placeholder="Select"
-              className="px-4 py-3 rounded-xl bg-gray-100 outline-none text-sm"
-            />
-          </div>
-        </div>
-
-        {/* Title */}
-        <div className="flex flex-col gap-1">
-          <label className="text-sm text-black">Title</label>
-          <input
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-            required
-            placeholder="Enter"
-            className="w-full px-4 py-3 rounded-xl bg-gray-100 outline-none text-sm"
-          />
-        </div>
-
-        {/* Valid Till */}
-        <div className="flex flex-col gap-1">
-          <label className="text-sm text-black">Valid Till</label>
-          <input
-            type="date"
-            name="validTill"
-            value={formData.validTill}
-            onChange={handleChange}
-            required
-            placeholder="Enter"
-            className="w-full px-4 py-3 rounded-xl bg-gray-100 outline-none text-sm"
-          />
-        </div>
-
-        {/* Image */}
-        <div className="flex flex-col gap-1">
-          <label className="text-sm text-black">Image</label>
-          <input
-            type="file"
-            name="image"
-            onChange={handleChange}
-            className="w-full px-4 py-3 rounded-xl bg-gray-100 outline-none text-sm"
-          />
-        </div>
-
-        {/* Button */}
-        <div className="flex justify-center pt-4">
-          <button 
-            type="submit"
-            disabled={isAdding || isUpdating}
-            className="px-10 py-3 rounded-xl bg-gradient-to-b from-[#7E1080] to-[#1A031A] text-white font-semibold flex items-center gap-2"
+          <form
+            onSubmit={handleSubmit}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white w-[500px] rounded-2xl p-6 shadow-xl relative"
           >
-            {(isAdding || isUpdating) ? (
-                <PulseLoader size={8} color="#fff" />
-            ) : (
-                editingAd ? "Update Ad" : "+ Add Ad"
-            )}
-          </button>
-        </div>
 
-      </div>
-    </form>
-  </div>
-)}
+            <h2 className="text-lg font-semibold mb-4">
+              {editingAd ? "Edit Advertisement" : "Add Advertisement"}
+            </h2>
+
+            <div className="space-y-4">
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm text-black font-medium">
+                    Advertisement Type <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="type"
+                    value={formData.type}
+                    onChange={handleChange}
+                    className={`px-4 py-3 rounded-xl bg-gray-100 outline-none text-sm border ${errors.type ? 'border-red-500' : 'border-transparent'}`}
+                  >
+                    <option value="" disabled>Select Type</option>
+                    <option value="commercial">Commercial</option>
+                    <option value="classified">Classified</option>
+                  </select>
+                  {errors.type && <p className="text-red-500 text-xs">{errors.type}</p>}
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm text-black font-medium">
+                    Business Vertical <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="businessVertical"
+                    value={formData.businessVertical}
+                    onChange={handleChange}
+                    className={`px-4 py-3 rounded-xl bg-gray-100 outline-none text-sm border ${errors.businessVertical ? 'border-red-500' : 'border-transparent'}`}
+                  >
+                    <option value="" disabled>Select Vertical</option>
+                    <option value="Education">Education</option>
+                    <option value="Technology">Technology</option>
+                    <option value="Healthcare">Healthcare</option>
+                    <option value="Finance">Finance</option>
+                    <option value="Retail">Retail</option>
+                    <option value="Real Estate">Real Estate</option>
+                    <option value="Entertainment">Entertainment</option>
+                    <option value="Food & Beverage">Food & Beverage</option>
+                    <option value="Travel & Tourism">Travel & Tourism</option>
+                    <option value="Auto & Transport">Auto & Transport</option>
+                    <option value="Lifestyle">Lifestyle</option>
+                    <option value="Others">Others</option>
+                  </select>
+                  {errors.businessVertical && <p className="text-red-500 text-xs">{errors.businessVertical}</p>}
+                </div>
+              </div>
+
+              {/* Title */}
+              <div className="flex flex-col gap-1">
+                <label className="text-sm text-black font-medium">Title <span className="text-red-500">*</span></label>
+                <input
+                  name="title"
+                  value={formData.title}
+                  onChange={handleChange}
+                  placeholder="Summer Offer Banner"
+                  className={`w-full px-4 py-3 rounded-xl bg-gray-100 outline-none text-sm border ${errors.title ? 'border-red-500' : 'border-transparent'}`}
+                />
+                {errors.title && <p className="text-red-500 text-xs">{errors.title}</p>}
+              </div>
+
+              {/* Description */}
+              <div className="flex flex-col gap-1">
+                <label className="text-sm text-black font-medium">Description <span className="text-red-500">*</span></label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  placeholder="Enter description details..."
+                  rows={2}
+                  className={`w-full px-4 py-3 rounded-xl bg-gray-100 outline-none text-sm resize-none border ${errors.description ? 'border-red-500' : 'border-transparent'}`}
+                />
+                {errors.description && <p className="text-red-500 text-xs">{errors.description}</p>}
+              </div>
+
+              {/* Valid Till */}
+              <div className="flex flex-col gap-1">
+                <label className="text-sm text-black font-medium">Valid Till <span className="text-red-500">*</span></label>
+                <input
+                  type="date"
+                  name="endDate"
+                  value={formData.endDate}
+                  onChange={handleChange}
+                  className={`w-full px-4 py-3 rounded-xl bg-gray-100 outline-none text-sm border ${errors.endDate ? 'border-red-500' : 'border-transparent'}`}
+                />
+                {errors.endDate && <p className="text-red-500 text-xs">{errors.endDate}</p>}
+              </div>
+
+              {/* Image */}
+              <div className="flex flex-col gap-1">
+                <label className="text-sm text-black font-medium">
+                  Image {!editingAd && <span className="text-red-500">*</span>}
+                </label>
+                <input
+                  type="file"
+                  name="imageUrl"
+                  accept="image/*"
+                  onChange={handleChange}
+                  className={`w-full px-4 py-3 rounded-xl bg-gray-100 outline-none text-sm border ${errors.imageUrl ? 'border-red-500' : 'border-transparent'}`}
+                />
+                {errors.imageUrl && <p className="text-red-500 text-xs">{errors.imageUrl}</p>}
+                {formData.imageUrl && (
+                  <div className="mt-2">
+                    <p className="text-xs text-gray-500 mb-1">Preview:</p>
+                    <img 
+                       src={formData.imageUrl instanceof File ? URL.createObjectURL(formData.imageUrl) : formData.imageUrl} 
+                       alt="Preview" 
+                       className="w-24 h-24 object-cover rounded-xl border border-gray-200"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Button */}
+              <div className="flex justify-center pt-4">
+                <button
+                  type="submit"
+                  disabled={isAdding || isUpdating}
+                  className="px-10 py-3 rounded-xl bg-gradient-to-b from-[#7E1080] to-[#1A031A] text-white font-semibold flex items-center gap-2"
+                >
+                  {(isAdding || isUpdating) ? (
+                    <PulseLoader size={8} color="#fff" />
+                  ) : (
+                    editingAd ? "Update Ad" : "+ Add Ad"
+                  )}
+                </button>
+              </div>
+
+            </div>
+          </form>
+        </div>
+      )}
     </Layout>
   );
 };
