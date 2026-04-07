@@ -5,7 +5,10 @@ import { offersApi } from "./api/offersApi";
 import { advertisementsApi } from "./api/advertisementsApi";
 import { callNotesApi } from "./api/callNotesApi";
 import { servicesApi } from "./api/servicesApi";
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
 
 export const store = configureStore({
     reducer: {
