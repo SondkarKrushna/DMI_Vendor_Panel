@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, User, ArrowRight } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, User, ArrowRight, Phone } from 'lucide-react';
 import { PulseLoader } from 'react-spinners';
 import { useRegisterVendorMutation } from '../../redux/api/authapi';
 import { toast } from 'react-toastify';
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -20,15 +21,58 @@ const Register = () => {
   // ✅ RTK Mutation
   const [registerVendor, { isLoading }] = useRegisterVendorMutation();
 
+  const validate = () => {
+    const errors = {};
+    const phoneRegex = /^[0-9]{10}$/;
+
+    if (!formData.fullName) {
+      errors.fullName = "Full name is required";
+    }
+
+    if (!formData.email) {
+      errors.email = "Email is required";
+    }
+
+    if (!formData.mobile) {
+      errors.mobile = "Mobile number is required";
+    } else if (!phoneRegex.test(formData.mobile)) {
+      errors.mobile = "Please enter a valid 10-digit mobile number";
+    }
+
+    if (!formData.password) {
+      errors.password = "Password is required";
+    } else if (formData.password.length < 6) {
+      errors.password = "Password must be at least 6 characters";
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    if (name === 'mobile') {
+      const val = value.replace(/\D/g, '');
+      if (val.length <= 10) {
+        setFormData({ ...formData, mobile: val });
+      }
+      if (formErrors.mobile) {
+        setFormErrors({ ...formErrors, mobile: "" });
+      }
+    } else {
+      setFormData({ ...formData, [name]: value });
+      if (formErrors[name]) {
+        setFormErrors({ ...formErrors, [name]: "" });
+      }
+    }
   };
 
   const handleRegister = async (e) => {
     e.preventDefault();
 
-    if (formData.mobile.length !== 10) {
-      toast.warning('Mobile number must be 10 digits');
+    if (!validate()) {
+      toast.error("Please fill all the details correctly");
       return;
     }
 
@@ -97,10 +141,11 @@ const Register = () => {
                   required
                   value={formData.fullName}
                   onChange={handleChange}
-                  className="w-full pl-12 py-3.5 border rounded-2xl"
+                  className={`w-full pl-12 py-3.5 border rounded-2xl outline-none transition-all ${formErrors.fullName ? 'border-red-500 focus:ring-2 focus:ring-red-200' : 'border-gray-200 focus:ring-2 focus:ring-[#7E1080]'}`}
                   placeholder="John Doe"
                 />
               </div>
+              {formErrors.fullName && <p className="text-red-500 text-xs mt-1 ml-2">{formErrors.fullName}</p>}
             </div>
 
             {/* Email */}
@@ -114,24 +159,34 @@ const Register = () => {
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full pl-12 py-3.5 border rounded-2xl"
+                  className={`w-full pl-12 py-3.5 border rounded-2xl outline-none transition-all ${formErrors.email ? 'border-red-500 focus:ring-2 focus:ring-red-200' : 'border-gray-200 focus:ring-2 focus:ring-[#7E1080]'}`}
                   placeholder="name@company.com"
                 />
               </div>
+              {formErrors.email && <p className="text-red-500 text-xs mt-1 ml-2">{formErrors.email}</p>}
             </div>
 
             {/* Mobile */}
             <div>
               <label className="block text-sm font-semibold mb-1.5">Mobile Number</label>
-              <input
-                type="text"
-                name="mobile"
-                required
-                value={formData.mobile}
-                onChange={handleChange}
-                className="w-full px-4 py-3.5 border rounded-2xl"
-                placeholder="9876543210"
-              />
+              <div className="relative">
+                <Phone className={`absolute left-4 top-1/2 -translate-y-1/2 ${formErrors.mobile ? 'text-red-400' : 'text-gray-400'}`} size={20} />
+                <input
+                  type="text"
+                  name="mobile"
+                  required
+                  value={formData.mobile}
+                  onChange={handleChange}
+                  className={`w-full pl-12 pr-4 py-3.5 border rounded-2xl outline-none transition-all ${formErrors.mobile ? 'border-red-500 focus:ring-2 focus:ring-red-200' : 'border-gray-200 focus:ring-2 focus:ring-[#7E1080]'}`}
+                  placeholder="9876543210"
+                />
+                {formData.mobile.length === 10 && !formErrors.mobile && (
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-green-500 text-xs font-bold">
+                    ✓ Valid
+                  </span>
+                )}
+              </div>
+              {formErrors.mobile && <p className="text-red-500 text-xs mt-1 ml-2">{formErrors.mobile}</p>}
             </div>
 
             {/* Password */}
@@ -145,17 +200,18 @@ const Register = () => {
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full pl-12 pr-12 py-3.5 border rounded-2xl"
+                  className={`w-full pl-12 pr-12 py-3.5 border rounded-2xl outline-none transition-all ${formErrors.password ? 'border-red-500 focus:ring-2 focus:ring-red-200' : 'border-gray-200 focus:ring-2 focus:ring-[#7E1080]'}`}
                   placeholder="••••••••"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+              {formErrors.password && <p className="text-red-500 text-xs mt-1 ml-2">{formErrors.password}</p>}
             </div>
 
             {/* Submit Button */}

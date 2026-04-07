@@ -124,13 +124,13 @@ const Advertisements = () => {
           </div>
 
           <div className="flex gap-3 w-full sm:w-auto">
-            <Button 
-                text="Add Ad" 
-                className="flex-1 sm:flex-none" 
-                onClick={() => {
-                    resetForm();
-                    setIsModalOpen(true);
-                }} 
+            <Button
+              text="Add Ad"
+              className="flex-1 sm:flex-none"
+              onClick={() => {
+                resetForm();
+                setIsModalOpen(true);
+              }}
             />
             <button className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold shadow-md hover:scale-105 hover:shadow-lg active:scale-95 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2">
               <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -171,11 +171,10 @@ const Advertisements = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
-                activeTab === tab
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition ${activeTab === tab
                   ? "bg-yellow-400 text-black"
                   : "bg-gray-200 text-gray-600 hover:bg-gray-300"
-              }`}
+                }`}
             >
               {tab}
             </button>
@@ -189,7 +188,7 @@ const Advertisements = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {isLoading ? (
             <div className="col-span-full flex justify-center py-10">
-                <PulseLoader color="#7E1080" />
+              <PulseLoader color="#7E1080" />
             </div>
           ) : ads.map((item, index) => (
             <div
@@ -206,13 +205,12 @@ const Advertisements = () => {
 
                 {/* Status Badge */}
                 <span
-                  className={`absolute top-2 right-2 text-xs px-3 py-1 rounded-full text-white ${
-                    item.status === 'Pending'
+                  className={`absolute top-2 right-2 text-xs px-3 py-1 rounded-full text-white ${item.status === 'Pending'
                       ? "bg-yellow-400 text-black"
                       : item.status === 'Rejected'
-                      ? "bg-red-500"
-                      : "bg-green-500"
-                  }`}
+                        ? "bg-red-500"
+                        : "bg-green-500"
+                    }`}
                 >
                   {item.status}
                 </span>
@@ -229,15 +227,15 @@ const Advertisements = () => {
 
               {/* Actions */}
               <div className="flex justify-end gap-2 mt-3">
-                <button 
-                    onClick={() => handleEdit(item)}
-                    className="p-2 rounded-lg bg-purple-100 text-purple-600"
+                <button
+                  onClick={() => handleEdit(item)}
+                  className="p-2 rounded-lg bg-purple-100 text-purple-600"
                 >
                   <SquarePen size={14} />
                 </button>
-                <button 
-                    onClick={() => handleDelete(item._id)}
-                    className="p-2 rounded-lg bg-red-100 text-red-600"
+                <button
+                  onClick={() => handleDelete(item._id)}
+                  className="p-2 rounded-lg bg-red-100 text-red-600"
                 >
                   <Trash2 size={14} />
                 </button>
@@ -248,112 +246,112 @@ const Advertisements = () => {
 
       </div>
       {isModalOpen && (
-  <div
-    onClick={() => {
-        setIsModalOpen(false);
-        resetForm();
-    }}
-    className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 backdrop-blur"
-  >
+        <div
+          onClick={() => {
+            setIsModalOpen(false);
+            resetForm();
+          }}
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 backdrop-blur"
+        >
 
-    <form
-      onSubmit={handleSubmit}
-      onClick={(e) => e.stopPropagation()}
-      className="bg-white w-[400px] rounded-2xl p-6 shadow-xl relative"
-    >
-
-      <h2 className="text-lg font-semibold mb-4">
-        {editingAd ? "Edit Advertisement" : "Add Advertisement"}
-      </h2>
-
-      <div className="space-y-4">
-
-        {/* Row */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1">
-            <label className="text-sm text-black">
-              Advertisement Type
-            </label>
-            <input
-              name="type"
-              value={formData.type}
-              onChange={handleChange}
-              placeholder="Select"
-              className="px-4 py-3 rounded-xl bg-gray-100 outline-none text-sm"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-sm text-black">
-              Business Vertical
-            </label>
-            <input
-              name="businessVertical"
-              value={formData.businessVertical}
-              onChange={handleChange}
-              placeholder="Select"
-              className="px-4 py-3 rounded-xl bg-gray-100 outline-none text-sm"
-            />
-          </div>
-        </div>
-
-        {/* Title */}
-        <div className="flex flex-col gap-1">
-          <label className="text-sm text-black">Title</label>
-          <input
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-            required
-            placeholder="Enter"
-            className="w-full px-4 py-3 rounded-xl bg-gray-100 outline-none text-sm"
-          />
-        </div>
-
-        {/* Valid Till */}
-        <div className="flex flex-col gap-1">
-          <label className="text-sm text-black">Valid Till</label>
-          <input
-            type="date"
-            name="validTill"
-            value={formData.validTill}
-            onChange={handleChange}
-            required
-            placeholder="Enter"
-            className="w-full px-4 py-3 rounded-xl bg-gray-100 outline-none text-sm"
-          />
-        </div>
-
-        {/* Image */}
-        <div className="flex flex-col gap-1">
-          <label className="text-sm text-black">Image</label>
-          <input
-            type="file"
-            name="image"
-            onChange={handleChange}
-            className="w-full px-4 py-3 rounded-xl bg-gray-100 outline-none text-sm"
-          />
-        </div>
-
-        {/* Button */}
-        <div className="flex justify-center pt-4">
-          <button 
-            type="submit"
-            disabled={isAdding || isUpdating}
-            className="px-10 py-3 rounded-xl bg-gradient-to-b from-[#7E1080] to-[#1A031A] text-white font-semibold flex items-center gap-2"
+          <form
+            onSubmit={handleSubmit}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white w-[400px] rounded-2xl p-6 shadow-xl relative"
           >
-            {(isAdding || isUpdating) ? (
-                <PulseLoader size={8} color="#fff" />
-            ) : (
-                editingAd ? "Update Ad" : "+ Add Ad"
-            )}
-          </button>
-        </div>
 
-      </div>
-    </form>
-  </div>
-)}
+            <h2 className="text-lg font-semibold mb-4">
+              {editingAd ? "Edit Advertisement" : "Add Advertisement"}
+            </h2>
+
+            <div className="space-y-4">
+
+              {/* Row */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm text-black">
+                    Advertisement Type
+                  </label>
+                  <input
+                    name="type"
+                    value={formData.type}
+                    onChange={handleChange}
+                    placeholder="Select"
+                    className="px-4 py-3 rounded-xl bg-gray-100 outline-none text-sm"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm text-black">
+                    Business Vertical
+                  </label>
+                  <input
+                    name="businessVertical"
+                    value={formData.businessVertical}
+                    onChange={handleChange}
+                    placeholder="Select"
+                    className="px-4 py-3 rounded-xl bg-gray-100 outline-none text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Title */}
+              <div className="flex flex-col gap-1">
+                <label className="text-sm text-black">Title</label>
+                <input
+                  name="title"
+                  value={formData.title}
+                  onChange={handleChange}
+                  required
+                  placeholder="Enter"
+                  className="w-full px-4 py-3 rounded-xl bg-gray-100 outline-none text-sm"
+                />
+              </div>
+
+              {/* Valid Till */}
+              <div className="flex flex-col gap-1">
+                <label className="text-sm text-black">Valid Till</label>
+                <input
+                  type="date"
+                  name="validTill"
+                  value={formData.validTill}
+                  onChange={handleChange}
+                  required
+                  placeholder="Enter"
+                  className="w-full px-4 py-3 rounded-xl bg-gray-100 outline-none text-sm"
+                />
+              </div>
+
+              {/* Image */}
+              <div className="flex flex-col gap-1">
+                <label className="text-sm text-black">Image</label>
+                <input
+                  type="file"
+                  name="image"
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 rounded-xl bg-gray-100 outline-none text-sm"
+                />
+              </div>
+
+              {/* Button */}
+              <div className="flex justify-center pt-4">
+                <button
+                  type="submit"
+                  disabled={isAdding || isUpdating}
+                  className="px-10 py-3 rounded-xl bg-gradient-to-b from-[#7E1080] to-[#1A031A] text-white font-semibold flex items-center gap-2"
+                >
+                  {(isAdding || isUpdating) ? (
+                    <PulseLoader size={8} color="#fff" />
+                  ) : (
+                    editingAd ? "Update Ad" : "+ Add Ad"
+                  )}
+                </button>
+              </div>
+
+            </div>
+          </form>
+        </div>
+      )}
     </Layout>
   );
 };

@@ -49,7 +49,7 @@ const Table = ({
                 <input
                   type="checkbox"
                   className="w-5 h-5 rounded border-white/40 bg-white/20 accent-[#FAB800]"
-                  checked={data?.length > 0 && data.every(row => selectedRows.includes(row.id))}
+                  checked={data?.length > 0 && data.every(row => selectedRows.includes(row._id || row.id))}
                   onChange={(e) => onSelectAll && onSelectAll(e.target.checked)}
                 />
               </th>
@@ -71,14 +71,18 @@ const Table = ({
           {/* 🔥 BODY */}
           <tbody className="divide-y divide-gray-50">
             {isLoading ? (
-              <tr>
-                <td colSpan={columns.length + 1} className="py-20 text-center text-gray-500">
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="w-8 h-8 border-4 border-[#7E1080] border-t-transparent rounded-full animate-spin"></div>
-                    <span>Loading data...</span>
-                  </div>
-                </td>
-              </tr>
+              Array(5).fill(0).map((_, i) => (
+                <tr key={i} className="animate-pulse">
+                  <td className="px-6 py-4">
+                    <div className="w-5 h-5 bg-gray-200 rounded"></div>
+                  </td>
+                  {columns.map((_, j) => (
+                    <td key={j} className="px-4 py-4">
+                      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                    </td>
+                  ))}
+                </tr>
+              ))
             ) : sortedData.length === 0 ? (
               <tr>
                 <td colSpan={columns.length + 1} className="py-20 text-center text-gray-500">
@@ -96,8 +100,8 @@ const Table = ({
                     <input
                       type="checkbox"
                       className="w-5 h-5 rounded border-gray-300 accent-[#7E1080]"
-                      checked={selectedRows.includes(row.id)}
-                      onChange={() => onRowSelect && onRowSelect(row.id)}
+                      checked={selectedRows.includes(row._id || row.id)}
+                      onChange={() => onRowSelect && onRowSelect(row._id || row.id)}
                     />
                   </td>
 

@@ -4,9 +4,7 @@ import Card from "../../components/cards/Card";
 import Button from "../../components/buttons/Button";
 import Search from "../../components/search/Search";
 import Table from "../../components/table/Table";
-import serviceImg from "../../../public/images/service.png";
-import { toast } from "react-toastify";
-import { PulseLoader } from "react-spinners";
+import service from "../../../public/images/service.png";
 import {
   Briefcase,
   Clock,
@@ -16,104 +14,10 @@ import {
   Trash2,
   ArrowDownToLine
 } from "lucide-react";
-import {
-  useGetServicesQuery,
-  useAddServiceMutation,
-  useUpdateServiceMutation,
-  useDeleteServiceMutation
-} from "../../redux/api/servicesApi";
 
 const Services = () => {
   const [selectedRows, setSelectedRows] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [editingService, setEditingService] = useState(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    price: "",
-    cardType: "",
-    discount: "",
-    description: "",
-    image: null
-  });
-
-  const { data, isLoading, isError } = useGetServicesQuery();
-  const [addService, { isLoading: isAdding }] = useAddServiceMutation();
-  const [updateService, { isLoading: isUpdating }] = useUpdateServiceMutation();
-  const [deleteService] = useDeleteServiceMutation();
-
-  const services = data?.data || [];
-
-  const handleEdit = (service) => {
-    setEditingService(service);
-    setFormData({
-      name: service.name,
-      price: service.price,
-      cardType: service.cardType,
-      discount: service.discount,
-      description: service.description || "",
-      image: service.image
-    });
-    setShowModal(true);
-  };
-
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this service?")) {
-      try {
-        await deleteService(id).unwrap();
-        toast.success("Service deleted successfully!");
-      } catch (error) {
-        toast.error(error?.data?.message || "Failed to delete service");
-      }
-    }
-  };
-
-  const handleChange = (e) => {
-    const { name, value, files } = e.target;
-    if (name === "image") {
-      setFormData({ ...formData, image: files[0] });
-    } else {
-      setFormData({ ...formData, [name]: value });
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const serviceData = new FormData();
-    serviceData.append("name", formData.name);
-    serviceData.append("price", formData.price);
-    serviceData.append("cardType", formData.cardType);
-    serviceData.append("discount", formData.discount);
-    serviceData.append("description", formData.description);
-    if (formData.image instanceof File) {
-      serviceData.append("image", formData.image);
-    }
-
-    try {
-      if (editingService) {
-        await updateService({ id: editingService._id, data: serviceData }).unwrap();
-        toast.success("Service updated successfully!");
-      } else {
-        await addService(serviceData).unwrap();
-        toast.success("Service added successfully!");
-      }
-      setShowModal(false);
-      resetForm();
-    } catch (error) {
-      toast.error(error?.data?.message || "Operation failed");
-    }
-  };
-
-  const resetForm = () => {
-    setEditingService(null);
-    setFormData({
-      name: "",
-      price: "",
-      cardType: "",
-      discount: "",
-      description: "",
-      image: null
-    });
-  };
 
   const columns = [
     {
@@ -167,7 +71,7 @@ const Services = () => {
           Rejected: "bg-[#FFEBEB] text-[#FF5252]",
         };
         return (
-          <span className={`px-4 py-1 rounded-full text-xs font-bold ${styles[value] || "bg-gray-100"}`}>
+          <span className={`px-4 py-1 rounded-full text-xs font-bold ${styles[value]}`}>
             {value}
           </span>
         );
@@ -176,21 +80,15 @@ const Services = () => {
     {
       header: "ACTION",
       accessor: "action",
-      Cell: ({ row }) => (
+      Cell: () => (
         <div className="flex items-center gap-3">
-          <button 
-            onClick={() => handleEdit(row)}
-            className="text-purple-600 hover:text-purple-800 transition"
-          >
+          <button className="text-purple-600 hover:text-purple-800 transition">
             <Edit3 size={18} />
           </button>
           <button className="text-yellow-500 hover:text-yellow-700 transition">
             <Eye size={18} />
           </button>
-          <button 
-            onClick={() => handleDelete(row._id)}
-            className="text-red-500 hover:text-red-700 transition"
-          >
+          <button className="text-red-500 hover:text-red-700 transition">
             <Trash2 size={18} />
           </button>
         </div>
@@ -198,22 +96,75 @@ const Services = () => {
     },
   ];
 
+  const tableData = [
+    {
+      id: 1,
+      serviceId: "SER-123",
+      image: service,
+      name: "Web Developement",
+      price: "50",
+      cardType: "Premium Card",
+      discount: "10",
+      status: "Pending",
+    },
+    {
+      id: 2,
+      serviceId: "SER-123",
+      image: service,
+      name: "Web Developement",
+      price: "50",
+      cardType: "Premium Card",
+      discount: "10",
+      status: "Approved",
+    },
+    {
+      id: 3,
+      serviceId: "SER-123",
+      image: service,
+      name: "Web Developement",
+      price: "50",
+      cardType: "Premium Card",
+      discount: "10",
+      status: "Rejected",
+    },
+    {
+      id: 4,
+      serviceId: "SER-123",
+      image: service,
+      name: "Web Developement",
+      price: "50",
+      cardType: "Premium Card",
+      discount: "10",
+      status: "Pending",
+    },
+    {
+      id: 5,
+      serviceId: "SER-123",
+      image: service,
+      name: "Web Developement",
+      price: "50",
+      cardType: "Premium Card",
+      discount: "10",
+      status: "Pending",
+    },
+  ];
+
   const handleSelectAll = (checked) => {
     if (checked) {
-      const allIds = services.map((row) => row._id);
+      const allIds = tableData.map((row) => row.id);
       setSelectedRows(allIds);
     } else {
       setSelectedRows([]);
     }
   };
 
-  const handleRowSelect = (id) => {
-    setSelectedRows((prev) =>
-      prev.includes(id)
-        ? prev.filter((item) => item !== id)
-        : [...prev, id]
-    );
-  };
+const handleRowSelect = (id) => {
+  setSelectedRows((prev) =>
+    prev.includes(id)
+      ? prev.filter((item) => item !== id)
+      : [...prev, id]
+  );
+};
 
   return (
     <Layout>
@@ -230,10 +181,7 @@ const Services = () => {
             <Button
               text="Add Service"
               className="flex-1 sm:flex-none"
-              onClick={() => {
-                resetForm();
-                setShowModal(true);
-              }}
+              onClick={() => setShowModal(true)}
             />
             <button className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold shadow-md hover:scale-105 hover:shadow-lg active:scale-95 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2">
               <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -246,7 +194,7 @@ const Services = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card
             title="Total Services"
-            amount={services.length.toString()}
+            amount="2100"
             percentage={42}
             statusText="Increased By Yesterday"
             icon={Briefcase}
@@ -261,7 +209,7 @@ const Services = () => {
           />
           <Card
             title="Active Services"
-            amount={services.filter(s => s.status === 'Approved').length.toString()}
+            amount="04"
             percentage={42}
             statusText="Increased By Last Month"
             icon={CheckCircle}
@@ -275,7 +223,7 @@ const Services = () => {
 
         {/* ✅ MOBILE VIEW */}
         <div className="block md:hidden space-y-4 mb-4">
-          {services.map((item, index) => (
+          {tableData.map((item, index) => (
             <div key={index} className="bg-white rounded-2xl shadow p-4 space-y-3 border border-gray-100">
 
               <div className="flex justify-between items-start">
@@ -288,19 +236,9 @@ const Services = () => {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <button 
-                    onClick={() => handleEdit(item)}
-                    className="text-purple-600"
-                  >
-                    <Edit3 size={16} />
-                  </button>
+                  <button className="text-purple-600"><Edit3 size={16} /></button>
                   <button className="text-yellow-500"><Eye size={16} /></button>
-                  <button 
-                    onClick={() => handleDelete(item._id)}
-                    className="text-red-500"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  <button className="text-red-500"><Trash2 size={16} /></button>
                 </div>
               </div>
 
@@ -335,11 +273,10 @@ const Services = () => {
             <div className="min-w-[1000px]">
               <Table
                 columns={columns}
-                data={services}
+                data={tableData}
                 selectedRows={selectedRows}
                 onRowSelect={handleRowSelect}
                 onSelectAll={handleSelectAll}
-                isLoading={isLoading}
               />
             </div>
           </div>
@@ -349,21 +286,16 @@ const Services = () => {
       {/* Model */}
       {showModal && (
         <div
-          onClick={() => {
-            setShowModal(false);
-            resetForm();
-          }}
+          onClick={() => setShowModal(false)}
           className="fixed inset-0 bg-black/60 backdrop-blur flex items-center justify-center z-[90]">
 
-          <form 
-            onSubmit={handleSubmit}
+          <div 
             onClick={(e) => e.stopPropagation()}
-            className="bg-white w-[420px] rounded-2xl p-6 shadow-lg relative"
-          >
+            className="bg-white w-[420px] rounded-2xl p-6 shadow-lg relative">
 
             {/* Title */}
             <h2 className="text-lg font-semibold text-gray-800 mb-5">
-              {editingService ? "Edit Service" : "Add Service"}
+              Add Service
             </h2>
 
             {/* Form */}
@@ -376,10 +308,6 @@ const Services = () => {
                 </label>
                 <input
                   type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
                   placeholder="Enter"
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
@@ -392,10 +320,6 @@ const Services = () => {
                 </label>
                 <input
                   type="number"
-                  name="price"
-                  value={formData.price}
-                  onChange={handleChange}
-                  required
                   placeholder="0.00"
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                 />
@@ -409,10 +333,6 @@ const Services = () => {
                   </label>
                   <input
                     type="text"
-                    name="cardType"
-                    value={formData.cardType}
-                    onChange={handleChange}
-                    required
                     placeholder="Select"
                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
                   />
@@ -424,10 +344,6 @@ const Services = () => {
                   </label>
                   <input
                     type="number"
-                    name="discount"
-                    value={formData.discount}
-                    onChange={handleChange}
-                    required
                     placeholder="0"
                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
                   />
@@ -440,9 +356,6 @@ const Services = () => {
                   Description
                 </label>
                 <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
                   placeholder="Enter"
                   rows={2}
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm resize-none"
@@ -454,34 +367,22 @@ const Services = () => {
                 <label className="text-sm text-black mb-1 block">
                   Image
                 </label>
-                <input
-                  type="file"
-                  name="image"
-                  onChange={handleChange}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
-                />
+                <div className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-400">
+                  Upload
+                </div>
               </div>
 
             </div>
 
             {/* Button */}
             <div className="mt-6 flex justify-center">
-              <button 
-                type="submit"
-                disabled={isAdding || isUpdating}
-                className="w-full bg-[#7E1080] text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2"
-              >
-                {(isAdding || isUpdating) ? (
-                  <PulseLoader size={8} color="#fff" />
-                ) : (
-                  editingService ? "Update Service" : "Add Service"
-                )}
-              </button>
+              <Button text="Add Service" />
             </div>
-          </form>
+          </div>
         </div>
       )}
     </Layout>
   );
 };
+
 export default Services;

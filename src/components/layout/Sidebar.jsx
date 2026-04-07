@@ -31,7 +31,7 @@ const Sidebar = React.memo(({ isSidebarOpen, toggleSidebar }) => {
   };
 
   const generalLinks = [
-    { to: '/dashboardadvert', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
+    { to: '/dashboard', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
     { to: '/offers', icon: <Tag size={20} />, label: 'Offers Management' },
     { to: '/services', icon: <Settings size={20} />, label: 'Service Management' },
     { to: '/invoice', icon: <DollarSign size={20} />, label: 'Payments & Invoices' },

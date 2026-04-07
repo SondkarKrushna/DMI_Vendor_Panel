@@ -53,7 +53,8 @@ export const offersApi = createApi({
 
     // ✅ READ
     getOffers: builder.query({
-      query: () => "/api/offers/my-offers",
+      query: ({ page = 1, status = "" } = {}) => 
+        `/api/offers/my-offers?page=${page}&status=${status}`,
       providesTags: ["Offers"],
     }),
   }),
