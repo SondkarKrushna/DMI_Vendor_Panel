@@ -2,11 +2,12 @@ import React, { useState } from "react";
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/cards/Card";
 import Button from "../../components/buttons/Button";
-import Search from "../../components/search/Search";
+import SearchBar from "../../components/search/SearchBar";
 import Table from "../../components/table/Table";
 import serviceImg from "../../../public/images/service.png";
 import { toast } from "react-toastify";
 import { PulseLoader } from "react-spinners";
+import { ArrowDownToLine } from "react-icons/fi";
 import {
   Briefcase,
   Clock,
@@ -24,6 +25,8 @@ import {
 } from "../../redux/api/servicesApi";
 
 const Services = () => {
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [selectedRows, setSelectedRows] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editingService, setEditingService] = useState(null);
@@ -43,6 +46,20 @@ const Services = () => {
   const [deleteService] = useDeleteServiceMutation();
 
   const services = data?.data || [];
+
+  const filteredServices = services.filter((service) => {
+    const matchesSearch = search === "" || service.serviceName?.toLowerCase().includes(search.toLowerCase()) || service.description?.toLowerCase().includes(search.toLowerCase());
+    const matchesFilter = statusFilter === 'all' || service.status?.toLowerCase() === statusFilter;
+    return matchesSearch && matchesFilter;
+  });
+
+  const statusOptions = [
+    { label: 'All Statuses', value: 'all' },
+    ...Array.from(new Set(services.map(s => s.status).filter(Boolean))).map(val => ({
+      label: val,
+      value: val.toLowerCase()
+    }))
+  ];
 
   const handleEdit = (service) => {
     setErrors({});
@@ -289,13 +306,34 @@ const Services = () => {
         </div>
 
         {/* Search Section */}
-        <div className="mb-6">
-          <Search />
+        <div className="mb-6 mt-4">
+          <SearchBar
+            value={search}
+            onChange={setSearch}
+            placeholder="Search services..."
+            filters={[
+              {
+                value: statusFilter,
+                onChange: setStatusFilter,
+                options: statusOptions
+              }
+            ]}
+            actions={[]}
+          />
         </div>
 
         {/* ✅ MOBILE VIEW */}
         <div className="block md:hidden space-y-4 mb-4">
-          {services.map((item, index) => (
+          {isLoading ? (
+            <div className="flex justify-center py-10">
+              <PulseLoader color="#7E1080" />
+            </div>
+          ) : filteredServices.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+              <Briefcase className="w-10 h-10 text-gray-300 mb-3" />
+              <h3 className="text-base font-semibold text-gray-800">No Services Found</h3>
+            </div>
+          ) : filteredServices.map((item, index) => (
             <div key={index} className="bg-white rounded-2xl shadow p-4 space-y-3 border border-gray-100">
 
               <div className="flex justify-between items-start">
@@ -355,7 +393,7 @@ const Services = () => {
             <div className="min-w-[1000px]">
               <Table
                 columns={columns}
-                data={services}
+                data={filteredServices}
                 selectedRows={selectedRows}
                 onRowSelect={handleRowSelect}
                 onSelectAll={handleSelectAll}
@@ -494,10 +532,10 @@ const Services = () => {
                 {formData.image && (
                   <div className="mt-2">
                     <p className="text-xs text-gray-500 mb-1">Preview:</p>
-                    <img 
-                       src={formData.image instanceof File ? URL.createObjectURL(formData.image) : formData.image} 
-                       alt="Preview" 
-                       className="w-24 h-24 object-cover rounded-xl border border-gray-200"
+                    <img
+                      src={formData.image instanceof File ? URL.createObjectURL(formData.image) : formData.image}
+                      alt="Preview"
+                      className="w-24 h-24 object-cover rounded-xl border border-gray-200"
                     />
                   </div>
                 )}
