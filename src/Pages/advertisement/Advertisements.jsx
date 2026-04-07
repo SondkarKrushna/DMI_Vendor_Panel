@@ -6,7 +6,6 @@ import Button from "../../components/buttons/Button";
 import advertisementImg from "../../../public/images/advertisement.png";
 import { toast } from "react-toastify";
 import { PulseLoader } from "react-spinners";
-import { ArrowDownToLine } from "react-icons/fi";
 
 import {
   Megaphone,
@@ -60,8 +59,8 @@ const Advertisements = () => {
   const businessVerticalOptions = [
     { label: 'All Business', value: 'all' },
     ...Array.from(new Set(ads.map(a => a.businessVertical).filter(Boolean))).map(val => ({
-       label: val,
-       value: val.toLowerCase()
+      label: val,
+      value: val.toLowerCase()
     }))
   ];
 
@@ -176,7 +175,7 @@ const Advertisements = () => {
               }}
             />
             <button className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold shadow-md hover:scale-105 hover:shadow-lg active:scale-95 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2">
-              <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" />
+              {/* <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" /> */}
               Export
             </button>
           </div>
@@ -432,10 +431,10 @@ const Advertisements = () => {
                 {formData.imageUrl && (
                   <div className="mt-2">
                     <p className="text-xs text-gray-500 mb-1">Preview:</p>
-                    <img 
-                       src={formData.imageUrl instanceof File ? URL.createObjectURL(formData.imageUrl) : formData.imageUrl} 
-                       alt="Preview" 
-                       className="w-24 h-24 object-cover rounded-xl border border-gray-200"
+                    <img
+                      src={formData.imageUrl instanceof File ? URL.createObjectURL(formData.imageUrl) : formData.imageUrl}
+                      alt="Preview"
+                      className="w-24 h-24 object-cover rounded-xl border border-gray-200"
                     />
                   </div>
                 )}

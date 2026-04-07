@@ -7,7 +7,6 @@ import Table from "../../components/table/Table";
 import serviceImg from "../../../public/images/service.png";
 import { toast } from "react-toastify";
 import { PulseLoader } from "react-spinners";
-import { ArrowDownToLine } from "react-icons/fi";
 import {
   Briefcase,
   Clock,
@@ -15,7 +14,6 @@ import {
   Edit3,
   Eye,
   Trash2,
-  ArrowDownToLine
 } from "lucide-react";
 import {
   useGetServicesQuery,
@@ -273,7 +271,7 @@ const Services = () => {
               }}
             />
             <button className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold shadow-md hover:scale-105 hover:shadow-lg active:scale-95 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2">
-              <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" />
+              {/* <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" /> */}
               Export
             </button>
           </div>
