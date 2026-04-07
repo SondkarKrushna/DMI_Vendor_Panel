@@ -28,18 +28,24 @@ const SearchBar = ({
 
                 {/* Filters */}
                 {filters.map((filter, index) => (
-                    <select
-                        key={index}
-                        value={filter.value}
-                        onChange={(e) => filter.onChange(e.target.value)}
-                        className="px-3 sm:px-4 py-2 rounded-xl bg-gray-50 sm:bg-gray-100 text-sm outline-none flex-1 sm:flex-none min-w-[120px]"
-                    >
-                        {filter.options.map((opt, i) => (
-                            <option key={i} value={opt.value}>
-                                {opt.label}
-                            </option>
-                        ))}
-                    </select>
+                    filter.render ? (
+                        <div key={index} className="flex-1 sm:flex-none">
+                            {filter.render()}
+                        </div>
+                    ) : (
+                        <select
+                            key={index}
+                            value={filter.value}
+                            onChange={(e) => filter.onChange(e.target.value)}
+                            className="px-3 sm:px-4 py-2 rounded-xl bg-gray-50 sm:bg-gray-100 text-sm outline-none flex-1 sm:flex-none min-w-[120px]"
+                        >
+                            {filter.options.map((opt, i) => (
+                                <option key={i} value={opt.value}>
+                                    {opt.label}
+                                </option>
+                            ))}
+                        </select>
+                    )
                 ))}
 
                 {/* Actions (buttons) */}

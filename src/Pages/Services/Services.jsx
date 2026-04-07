@@ -51,7 +51,7 @@ const Services = () => {
   });
 
   const statusOptions = [
-    { label: 'All Statuses', value: 'all' },
+    { label: 'All Status', value: 'all' },
     ...Array.from(new Set(services.map(s => s.status).filter(Boolean))).map(val => ({
       label: val,
       value: val.toLowerCase()
