@@ -168,7 +168,7 @@ const Services = () => {
     },
     {
       header: "SERVICE",
-      accessor: "serviceName", // ✅ Changed from "name" to "serviceName"
+      accessor: "serviceName", 
       Cell: ({ row }) => (
         <div>
           {/* ✅ Changed row.name to row.serviceName */}
@@ -188,7 +188,7 @@ const Services = () => {
     },
     {
       header: "DISCOUNT",
-      accessor: "discountRate", // ✅ Changed from "discount" to "discountRate"
+      accessor: "discountRate", 
       Cell: ({ value }) => <span>{value}%</span>,
     },
     {

@@ -1,5 +1,7 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
+
+
 const baseUrl = import.meta.env.VITE_BACKEND_URL;
 
 export const advertisementsApi = createApi({
@@ -10,6 +12,8 @@ export const advertisementsApi = createApi({
     credentials: "include",
     prepareHeaders: (headers) => {
       const token = localStorage.getItem("token");
+
+
 
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);

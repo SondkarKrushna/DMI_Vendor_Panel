@@ -1,6 +1,6 @@
 import React from 'react';
 import Button from '../../components/buttons/Button';
-import { FileText, Upload, User, PenSquare, Download, CheckCircle, SquarePen, ArrowDownToLine } from 'lucide-react'
+import { FileText, Upload, User, CheckCircle, SquarePen, ArrowDownToLine } from 'lucide-react'
 import Layout from '../../components/layout/Layout'
 
 const BusinessProfile = () => {
@@ -59,22 +59,42 @@ const BusinessProfile = () => {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Business Type</label>
-                <div className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-500 text-sm">Select</div>
+                <input 
+                  type="text" 
+                  readOnly 
+                  value="Select" 
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-500 text-sm outline-none cursor-default" 
+                />
               </div>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Services</label>
-                <div className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-500 text-sm whitespace-nowrap overflow-hidden text-ellipsis">web development , App Development , digital marketing</div>
+                <input 
+                  type="text" 
+                  readOnly 
+                  value="web development , App Development , digital marketing" 
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-500 text-sm outline-none cursor-default" 
+                />
               </div>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Business Name</label>
-                <div className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-500 text-sm">Tech Spark Technologies</div>
+                <input 
+                  type="text" 
+                  readOnly 
+                  value="Tech Spark Technologies" 
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-500 text-sm outline-none cursor-default" 
+                />
               </div>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <div className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-500 text-sm">Professional IT services provider company</div>
+                <textarea 
+                  readOnly 
+                  rows={1}
+                  value="Professional IT services provider company" 
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-500 text-sm outline-none cursor-default resize-none" 
+                />
               </div>
             </div>
           </div>
@@ -86,22 +106,42 @@ const BusinessProfile = () => {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Contact No</label>
-                <div className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-500 text-sm">+91 9585 555 555</div>
+                <input 
+                  type="text" 
+                  readOnly 
+                  value="+91 9585 555 555" 
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-500 text-sm outline-none cursor-default" 
+                />
               </div>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                <div className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-500 text-sm">tech@gmail.com</div>
+                <input 
+                  type="text" 
+                  readOnly 
+                  value="tech@gmail.com" 
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-500 text-sm outline-none cursor-default" 
+                />
               </div>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                <div className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-500 text-sm">chhatrapati Sambhajinagar</div>
+                <input 
+                  type="text" 
+                  readOnly 
+                  value="chhatrapati Sambhajinagar" 
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-500 text-sm outline-none cursor-default" 
+                />
               </div>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
-                <div className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-500 text-sm">www.tech.com</div>
+                <input 
+                  type="text" 
+                  readOnly 
+                  value="www.tech.com" 
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-500 text-sm outline-none cursor-default" 
+                />
               </div>
             </div>
           </div>
@@ -161,19 +201,39 @@ const BusinessProfile = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Facebook</label>
-              <div className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-400 text-sm">https://facebook.com/yourpage</div>
+              <input 
+                type="text" 
+                readOnly 
+                value="https://facebook.com/yourpage" 
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-400 text-sm outline-none cursor-default" 
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Instagram</label>
-              <div className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-400 text-sm">https://instagram.com/yourpage</div>
+              <input 
+                type="text" 
+                readOnly 
+                value="https://instagram.com/yourpage" 
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-400 text-sm outline-none cursor-default" 
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn</label>
-              <div className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-400 text-sm">https://linkedin.com/yourpage</div>
+              <input 
+                type="text" 
+                readOnly 
+                value="https://linkedin.com/yourpage" 
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-400 text-sm outline-none cursor-default" 
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Youtube</label>
-              <div className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-400 text-sm">https://youtube.com/yourpage</div>
+              <input 
+                type="text" 
+                readOnly 
+                value="https://youtube.com/yourpage" 
+                className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-400 text-sm outline-none cursor-default" 
+              />
             </div>
           </div>
         </div>
