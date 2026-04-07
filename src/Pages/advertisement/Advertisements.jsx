@@ -320,7 +320,7 @@ const Advertisements = () => {
           <form
             onSubmit={handleSubmit}
             onClick={(e) => e.stopPropagation()}
-            className="bg-white w-[500px] rounded-2xl p-6 shadow-xl relative"
+            className="bg-white w-[500px] rounded-2xl p-6 shadow-xl relative max-h-[90vh] overflow-y-auto"
           >
 
             <h2 className="text-lg font-semibold mb-4">

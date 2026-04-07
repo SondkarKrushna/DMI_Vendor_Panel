@@ -4,7 +4,6 @@ import Card from "../../components/cards/Card";
 import Button from "../../components/buttons/Button";
 import SearchBar from "../../components/search/SearchBar";
 import Table from "../../components/table/Table";
-import serviceImg from "../../../public/images/service.png";
 import { toast } from "react-toastify";
 import { PulseLoader } from "react-spinners";
 import {
@@ -414,7 +413,7 @@ const Services = () => {
           <form
             onSubmit={handleSubmit}
             onClick={(e) => e.stopPropagation()}
-            className="bg-white w-[420px] rounded-2xl p-6 shadow-lg relative"
+            className="bg-white w-[420px] rounded-2xl p-6 shadow-lg relative max-h-[90vh] overflow-y-auto"
           >
 
             {/* Title */}
