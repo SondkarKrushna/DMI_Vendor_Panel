@@ -2,9 +2,10 @@ import React, { useState } from "react";
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/cards/Card";
 import Button from "../../components/buttons/Button";
-import Search from "../../components/search/Search";
+import SearchBar from "../../components/search/SearchBar";
 import Table from "../../components/table/Table";
-import service from "../../../public/images/service.png";
+import { toast } from "react-toastify";
+import { PulseLoader } from "react-spinners";
 import {
   Briefcase,
   Clock,
@@ -12,10 +13,7 @@ import {
   Edit3,
   Eye,
   Trash2,
-  ArrowDownToLine
 } from "lucide-react";
-import { toast } from "react-toastify";
-import { PulseLoader } from "react-spinners";
 import {
   useGetServicesQuery,
   useAddServiceMutation,
@@ -23,8 +21,9 @@ import {
   useDeleteServiceMutation
 } from "../../redux/api/servicesApi";
 
-
 const Services = () => {
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [selectedRows, setSelectedRows] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editingService, setEditingService] = useState(null);
@@ -44,6 +43,20 @@ const Services = () => {
   const [deleteService] = useDeleteServiceMutation();
 
   const services = data?.data || [];
+
+  const filteredServices = services.filter((service) => {
+    const matchesSearch = search === "" || service.serviceName?.toLowerCase().includes(search.toLowerCase()) || service.description?.toLowerCase().includes(search.toLowerCase());
+    const matchesFilter = statusFilter === 'all' || service.status?.toLowerCase() === statusFilter;
+    return matchesSearch && matchesFilter;
+  });
+
+  const statusOptions = [
+    { label: 'All Statuses', value: 'all' },
+    ...Array.from(new Set(services.map(s => s.status).filter(Boolean))).map(val => ({
+      label: val,
+      value: val.toLowerCase()
+    }))
+  ];
 
   const handleEdit = (service) => {
     setErrors({});
@@ -155,7 +168,7 @@ const Services = () => {
     },
     {
       header: "SERVICE",
-      accessor: "serviceName", // ✅ Changed from "name" to "serviceName"
+      accessor: "serviceName", 
       Cell: ({ row }) => (
         <div>
           {/* ✅ Changed row.name to row.serviceName */}
@@ -175,7 +188,7 @@ const Services = () => {
     },
     {
       header: "DISCOUNT",
-      accessor: "discountRate", // ✅ Changed from "discount" to "discountRate"
+      accessor: "discountRate", 
       Cell: ({ value }) => <span>{value}%</span>,
     },
     {
@@ -188,7 +201,7 @@ const Services = () => {
           Rejected: "bg-[#FFEBEB] text-[#FF5252]",
         };
         return (
-          <span className={`px-4 py-1 rounded-full text-xs font-bold ${styles[value]}`}>
+          <span className={`px-4 py-1 rounded-full text-xs font-bold ${styles[value] || "bg-gray-100"}`}>
             {value}
           </span>
         );
@@ -219,62 +232,9 @@ const Services = () => {
     },
   ];
 
-  const tableData = [
-    {
-      id: 1,
-      serviceId: "SER-123",
-      image: service,
-      name: "Web Developement",
-      price: "50",
-      cardType: "Premium Card",
-      discount: "10",
-      status: "Pending",
-    },
-    {
-      id: 2,
-      serviceId: "SER-123",
-      image: service,
-      name: "Web Developement",
-      price: "50",
-      cardType: "Premium Card",
-      discount: "10",
-      status: "Approved",
-    },
-    {
-      id: 3,
-      serviceId: "SER-123",
-      image: service,
-      name: "Web Developement",
-      price: "50",
-      cardType: "Premium Card",
-      discount: "10",
-      status: "Rejected",
-    },
-    {
-      id: 4,
-      serviceId: "SER-123",
-      image: service,
-      name: "Web Developement",
-      price: "50",
-      cardType: "Premium Card",
-      discount: "10",
-      status: "Pending",
-    },
-    {
-      id: 5,
-      serviceId: "SER-123",
-      image: service,
-      name: "Web Developement",
-      price: "50",
-      cardType: "Premium Card",
-      discount: "10",
-      status: "Pending",
-    },
-  ];
-
   const handleSelectAll = (checked) => {
     if (checked) {
-      const allIds = tableData.map((row) => row.id);
+      const allIds = services.map((row) => row._id);
       setSelectedRows(allIds);
     } else {
       setSelectedRows([]);
@@ -304,10 +264,13 @@ const Services = () => {
             <Button
               text="Add Service"
               className="flex-1 sm:flex-none"
-              onClick={() => setShowModal(true)}
+              onClick={() => {
+                resetForm();
+                setShowModal(true);
+              }}
             />
             <button className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold shadow-md hover:scale-105 hover:shadow-lg active:scale-95 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2">
-              <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" />
+              {/* <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" /> */}
               Export
             </button>
           </div>
@@ -317,7 +280,7 @@ const Services = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card
             title="Total Services"
-            amount="2100"
+            amount={services.length.toString()}
             percentage={42}
             statusText="Increased By Yesterday"
             icon={Briefcase}
@@ -332,7 +295,7 @@ const Services = () => {
           />
           <Card
             title="Active Services"
-            amount="04"
+            amount={services.filter(s => s.status === 'Approved').length.toString()}
             percentage={42}
             statusText="Increased By Last Month"
             icon={CheckCircle}
@@ -340,13 +303,34 @@ const Services = () => {
         </div>
 
         {/* Search Section */}
-        <div className="mb-6">
-          <Search />
+        <div className="mb-6 mt-4">
+          <SearchBar
+            value={search}
+            onChange={setSearch}
+            placeholder="Search services..."
+            filters={[
+              {
+                value: statusFilter,
+                onChange: setStatusFilter,
+                options: statusOptions
+              }
+            ]}
+            actions={[]}
+          />
         </div>
 
         {/* ✅ MOBILE VIEW */}
         <div className="block md:hidden space-y-4 mb-4">
-          {tableData.map((item, index) => (
+          {isLoading ? (
+            <div className="flex justify-center py-10">
+              <PulseLoader color="#7E1080" />
+            </div>
+          ) : filteredServices.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+              <Briefcase className="w-10 h-10 text-gray-300 mb-3" />
+              <h3 className="text-base font-semibold text-gray-800">No Services Found</h3>
+            </div>
+          ) : filteredServices.map((item, index) => (
             <div key={index} className="bg-white rounded-2xl shadow p-4 space-y-3 border border-gray-100">
 
               <div className="flex justify-between items-start">
@@ -406,10 +390,11 @@ const Services = () => {
             <div className="min-w-[1000px]">
               <Table
                 columns={columns}
-                data={tableData}
+                data={filteredServices}
                 selectedRows={selectedRows}
                 onRowSelect={handleRowSelect}
                 onSelectAll={handleSelectAll}
+                isLoading={isLoading}
               />
             </div>
           </div>
@@ -419,17 +404,21 @@ const Services = () => {
       {/* Model */}
       {showModal && (
         <div
-          onClick={() => setShowModal(false)}
+          onClick={() => {
+            setShowModal(false);
+            resetForm();
+          }}
           className="fixed inset-0 bg-black/60 backdrop-blur flex items-center justify-center z-[90]">
 
           <form
             onSubmit={handleSubmit}
             onClick={(e) => e.stopPropagation()}
-            className="bg-white w-[420px] rounded-2xl p-6 shadow-lg relative">
+            className="bg-white w-[420px] rounded-2xl p-6 shadow-lg relative"
+          >
 
             {/* Title */}
             <h2 className="text-lg font-semibold text-gray-800 mb-5">
-              Add Service
+              {editingService ? "Edit Service" : "Add Service"}
             </h2>
 
             {/* Form */}
@@ -571,5 +560,4 @@ const Services = () => {
     </Layout>
   );
 };
-
 export default Services;

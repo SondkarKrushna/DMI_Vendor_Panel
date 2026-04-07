@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/cards/Card";
-import Search from "../../components/search/Search";
+import SearchBar from "../../components/search/SearchBar";
 import Button from "../../components/buttons/Button";
 import advertisementImg from "../../../public/images/advertisement.png";
 import { toast } from "react-toastify";
 import { PulseLoader } from "react-spinners";
+
 import {
   Megaphone,
   CheckCircle,
@@ -13,8 +14,8 @@ import {
   Clock,
   SquarePen,
   Trash2,
-  ArrowDownToLine,
 } from "lucide-react";
+import { MdArrowForward } from "react-icons/md";
 import {
   useGetAdvertisementsQuery,
   useAddAdvertisementMutation,
@@ -23,6 +24,8 @@ import {
 } from "../../redux/api/advertisementsApi";
 
 const Advertisements = () => {
+  const [search, setSearch] = useState("");
+  const [businessFilter, setBusinessFilter] = useState("all");
   const [activeTab, setActiveTab] = useState("Classified");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAd, setEditingAd] = useState(null);
@@ -46,6 +49,20 @@ const Advertisements = () => {
   const responseData = data?.data || data || {};
   const ads = responseData.ads || (Array.isArray(responseData) ? responseData : []);
   const stats = responseData.stats || { totalAds: 0, activeAds: 0, expiredAds: 0 };
+
+  const filteredAds = ads.filter((ad) => {
+    const matchesSearch = search === "" || ad.title?.toLowerCase().includes(search.toLowerCase()) || ad.description?.toLowerCase().includes(search.toLowerCase());
+    const matchesFilter = businessFilter === 'all' || ad.businessVertical?.toLowerCase() === businessFilter;
+    return matchesSearch && matchesFilter;
+  });
+
+  const businessVerticalOptions = [
+    { label: 'All Business', value: 'all' },
+    ...Array.from(new Set(ads.map(a => a.businessVertical).filter(Boolean))).map(val => ({
+      label: val,
+      value: val.toLowerCase()
+    }))
+  ];
 
   const handleEdit = (ad) => {
     setErrors({});
@@ -158,7 +175,7 @@ const Advertisements = () => {
               }}
             />
             <button className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold shadow-md hover:scale-105 hover:shadow-lg active:scale-95 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2">
-              <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" />
+              {/* <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" /> */}
               Export
             </button>
           </div>
@@ -207,7 +224,19 @@ const Advertisements = () => {
         </div>
 
         {/* Search */}
-        <Search />
+        <SearchBar
+          value={search}
+          onChange={setSearch}
+          placeholder="Search advertisements..."
+          filters={[
+            {
+              value: businessFilter,
+              onChange: setBusinessFilter,
+              options: businessVerticalOptions
+            }
+          ]}
+          actions={[]}
+        />
 
         {/* Advertisement Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -215,13 +244,13 @@ const Advertisements = () => {
             <div className="col-span-full flex justify-center py-10">
               <PulseLoader color="#7E1080" />
             </div>
-          ) : ads.length === 0 ? (
+          ) : filteredAds.length === 0 ? (
             <div className="col-span-full flex flex-col items-center justify-center py-16 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200">
               <Megaphone className="w-12 h-12 text-gray-300 mb-3" />
               <h3 className="text-lg font-semibold text-gray-800">No Advertisements Found</h3>
-              <p className="text-sm text-gray-500 mt-1">There are no {activeTab.toLowerCase()} advertisements to display right now.</p>
+              <p className="text-sm text-gray-500 mt-1">There are no {activeTab.toLowerCase()} advertisements matching your search/filters right now.</p>
             </div>
-          ) : ads.map((item, index) => (
+          ) : filteredAds.map((item, index) => (
             <div
               key={item._id}
               className="bg-white rounded-2xl shadow-md p-3"
