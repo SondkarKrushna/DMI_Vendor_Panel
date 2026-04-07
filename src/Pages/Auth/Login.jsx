@@ -5,6 +5,8 @@ import { PulseLoader } from 'react-spinners';
 import { useLoginVendorMutation } from '../../redux/api/authapi';
 import { toast } from 'react-toastify';
 
+
+
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [identifier, setIdentifier] = useState('');
@@ -61,6 +63,8 @@ const Login = () => {
 
       toast.success(res.message || "Login successful!"); // Display API success message
       navigate('/dashboard');
+
+
 
     } catch (err) {
       // 4. API Error Handling

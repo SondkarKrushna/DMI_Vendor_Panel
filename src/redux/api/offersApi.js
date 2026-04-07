@@ -1,5 +1,7 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
+
+
 const baseUrl = import.meta.env.VITE_BACKEND_URL;
 
 export const offersApi = createApi({
@@ -10,6 +12,8 @@ export const offersApi = createApi({
     credentials: "include",
     prepareHeaders: (headers) => {
       const token = localStorage.getItem("token");
+
+
 
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
@@ -53,7 +57,7 @@ export const offersApi = createApi({
 
     // ✅ READ
     getOffers: builder.query({
-      query: ({ page = 1, status = "" } = {}) => 
+      query: ({ page = 1, status = "" } = {}) =>
         `/api/offers/my-offers?page=${page}&status=${status}`,
       providesTags: ["Offers"],
     }),

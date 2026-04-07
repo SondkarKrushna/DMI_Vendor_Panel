@@ -50,8 +50,20 @@ const Invoice = () => {
       ),
     },
     { header: "PAYMENT METHOD", accessor: "payment" },
-    { header: "DATE", accessor: "date" },
     {
+      header: "DATE",
+      accessor: "date",
+      Cell: ({ value }) => (
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 flex items-center justify-center rounded-md bg-[#7E1080]">
+            <Calendar size={14} className="text-[#FFB800]" />
+          </div>
+          <span>{value}</span>
+        </div>
+      )
+    },
+    {
+
       header: "ACTION",
       accessor: "action",
       Cell: () => (
@@ -161,10 +173,16 @@ const Invoice = () => {
                 <span>{item.payment}</span>
               </div>
 
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-sm items-center">
                 <span className="text-gray-500">Date</span>
-                <span>{item.date}</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 flex items-center justify-center rounded-md bg-[#7E1080]">
+                    <Calendar size={14} className="text-[#FFB800]" />
+                  </div>
+                  <span>{item.date}</span>
+                </div>
               </div>
+
 
               <div className="flex justify-end gap-3 pt-2">
                 <Eye className="text-yellow-500" size={18} />

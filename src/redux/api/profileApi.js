@@ -1,5 +1,7 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
+
+
 const baseUrl = import.meta.env.VITE_BACKEND_URL;
 
 export const profileApi = createApi({
@@ -9,14 +11,16 @@ export const profileApi = createApi({
     baseUrl,
     credentials: "include",
     prepareHeaders: (headers) => {
-  const token = localStorage.getItem("token"); // ✅ FIX
+      const token = localStorage.getItem("token"); // ✅ FIX
 
-  if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
-  }
 
-  return headers;
-}
+
+      if (token) {
+        headers.set("Authorization", `Bearer ${token}`);
+      }
+
+      return headers;
+    }
   }),
 
   tagTypes: ["Profile"],

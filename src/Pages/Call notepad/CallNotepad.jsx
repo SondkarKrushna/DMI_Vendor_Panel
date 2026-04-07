@@ -4,7 +4,8 @@ import Card from "../../components/cards/Card";
 import Button from "../../components/buttons/Button";
 import Table from "../../components/table/Table";
 import Search from "../../components/search/Search";
-import { Phone, Clock, CheckCircle, Eye, ArrowDownToLine } from "lucide-react";
+import { Phone, Clock, CheckCircle, Eye, ArrowDownToLine, Calendar } from "lucide-react";
+
 import { toast } from "react-toastify";
 import { PulseLoader } from "react-spinners";
 import {
@@ -113,12 +114,22 @@ const CallNotepad = () => {
     {
       header: "DATE",
       accessor: "date",
-      Cell: ({ value }) => new Date(value).toLocaleDateString('en-GB', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric'
-      })
+      Cell: ({ value }) => (
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 flex items-center justify-center rounded-md bg-[#7E1080]">
+            <Calendar size={14} className="text-[#FFB800]" />
+          </div>
+          <span>
+            {new Date(value).toLocaleDateString('en-GB', {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric'
+            })}
+          </span>
+        </div>
+      )
     },
+
     {
       header: "STATUS",
       accessor: "status",
@@ -269,11 +280,16 @@ const CallNotepad = () => {
               <p className="text-sm text-gray-600">{item.note}</p>
 
               <div className="flex justify-between items-center text-sm">
-                <span>{new Date(item.date).toLocaleDateString('en-GB', {
-                  day: 'numeric',
-                  month: 'short',
-                  year: 'numeric'
-                })}</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 flex items-center justify-center rounded-md bg-[#7E1080]">
+                    <Calendar size={14} className="text-[#FFB800]" />
+                  </div>
+                  <span>{new Date(item.date).toLocaleDateString('en-GB', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric'
+                  })}</span>
+                </div>
                 <span
                   className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${item.status === "pending"
                     ? "bg-yellow-100 text-yellow-600"

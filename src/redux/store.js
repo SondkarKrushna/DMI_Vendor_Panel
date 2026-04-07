@@ -4,6 +4,7 @@ import { profileApi } from "./api/profileApi";
 import { offersApi } from "./api/offersApi";
 import { advertisementsApi } from "./api/advertisementsApi";
 import { callNotesApi } from "./api/callNotesApi";
+import { servicesApi } from "./api/servicesApi";
 
 
 export const store = configureStore({
@@ -13,6 +14,7 @@ export const store = configureStore({
         [offersApi.reducerPath]: offersApi.reducer,
         [advertisementsApi.reducerPath]: advertisementsApi.reducer,
         [callNotesApi.reducerPath]: callNotesApi.reducer,
+        [servicesApi.reducerPath]: servicesApi.reducer,
     },
 
     middleware: (getDefaultMiddleware) =>
@@ -22,5 +24,6 @@ export const store = configureStore({
             offersApi.middleware,
             advertisementsApi.middleware,
             callNotesApi.middleware,
+            servicesApi.middleware,
         ),
 });

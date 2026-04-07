@@ -1,5 +1,7 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
+
+
 const baseUrl = import.meta.env.VITE_BACKEND_URL;
 
 export const callNotesApi = createApi({
@@ -9,6 +11,8 @@ export const callNotesApi = createApi({
     credentials: "include",
     prepareHeaders: (headers) => {
       const token = localStorage.getItem("token");
+
+
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
       }
@@ -19,7 +23,7 @@ export const callNotesApi = createApi({
   endpoints: (builder) => ({
     // ✅ GET CALL NOTES
     getCallNotes: builder.query({
-      query: ({ status = "pending", type = "follow-up" } = {}) => 
+      query: ({ status = "pending", type = "follow-up" } = {}) =>
         `/api/vendor/get/call-notes?status=${status}&type=${type}`,
       providesTags: ["CallNotes"],
     }),

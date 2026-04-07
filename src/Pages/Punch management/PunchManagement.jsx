@@ -46,7 +46,19 @@ const PunchManagement = () => {
       ),
     },
     { header: "SERVICE", accessor: "service" },
-    { header: "DATE", accessor: "date" },
+    {
+      header: "DATE",
+      accessor: "date",
+      Cell: ({ value }) => (
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 flex items-center justify-center rounded-md bg-[#7E1080]">
+            <Calendar size={14} className="text-[#FFB800]" />
+          </div>
+          <span>{value}</span>
+        </div>
+      )
+    },
+
     {
       header: "AMOUNT",
       accessor: "amount",
@@ -173,10 +185,16 @@ const PunchManagement = () => {
                 </span>
               </div>
 
-              <div className="flex justify-between text-sm">
-                <span>{item.date}</span>
+              <div className="flex justify-between text-sm items-center">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 flex items-center justify-center rounded-md bg-[#7E1080]">
+                    <Calendar size={14} className="text-[#FFB800]" />
+                  </div>
+                  <span>{item.date}</span>
+                </div>
                 <span>{item.discount}</span>
               </div>
+
 
             </div>
           ))}
