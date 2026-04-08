@@ -7,6 +7,7 @@ import { advertisementsApi } from "./api/advertisementsApi";
 import { enrollmentApi } from "./api/enrollmentApi";
 import { callNotesApi } from "./api/callNotesApi";
 import { punchApi } from "./api/punchApi";
+import { invoiceApi } from "./api/invoiceApi";
 
 export const store = configureStore({
     reducer: {
@@ -18,6 +19,7 @@ export const store = configureStore({
         [enrollmentApi.reducerPath]: enrollmentApi.reducer,
         [callNotesApi.reducerPath]: callNotesApi.reducer,
         [punchApi.reducerPath]: punchApi.reducer,
+        [invoiceApi.reducerPath]: invoiceApi.reducer,
     },
 
     middleware: (getDefaultMiddleware) =>
@@ -29,6 +31,7 @@ export const store = configureStore({
             advertisementsApi.middleware,
             enrollmentApi.middleware,
             callNotesApi.middleware,
-            punchApi.middleware
+            punchApi.middleware,
+            invoiceApi.middleware,
         ),
 });

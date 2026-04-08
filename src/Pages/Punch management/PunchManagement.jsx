@@ -48,7 +48,10 @@ const PunchManagement = () => {
       : { dateFilter: activeFilter }),
   };
 
-  const { data: punchesResponse, isFetching: isLoadingPunches, refetch } = useGetPunchesQuery(queryParams);
+  const { data: punchesResponse, isFetching: isLoadingPunches, refetch } = useGetPunchesQuery({
+    ...queryParams,
+    search: searchTerm
+  });
 
   const punches = punchesResponse?.data || punchesResponse?.punches || [];
   const stats = punchesResponse?.stats || { totalPunches: 0, totalRevenue: 0, thisMonthPunches: 0 };
@@ -164,7 +167,7 @@ const PunchManagement = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeFilter, dateRange.startDate, dateRange.endDate]);
+  }, [activeFilter, dateRange.startDate, dateRange.endDate, searchTerm]);
 
   const handleRowSelect = (id) => {
     setSelectedRows((prev) => prev.includes(id) ? prev.filter((row) => row !== id) : [...prev, id]);

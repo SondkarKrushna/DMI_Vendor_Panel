@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/cards/Card";
 import Button from "../../components/buttons/Button";
@@ -17,10 +17,11 @@ import {
 const CallNotepad = () => {
   const [selectedRows, setSelectedRows] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [activeTab, setActiveTab] = useState("Follow Ups"); 
+  const [activeTab, setActiveTab] = useState("Follow Ups");
   const [selectedStatus, setSelectedStatus] = useState("All status");
   const [searchValue, setSearchValue] = useState("");
   const [confirmModal, setConfirmModal] = useState({ show: false, id: null });
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -30,6 +31,7 @@ const CallNotepad = () => {
     date: "",
     type: "follow-up",
   });
+  const [errors, setErrors] = useState({});
 
   const typeParam = activeTab === "Follow Ups" ? "follow-up" : "enquiry";
   const statusParam = selectedStatus === "All status" ? "" : selectedStatus.toLowerCase();
@@ -37,25 +39,27 @@ const CallNotepad = () => {
   const { data, isLoading } = useGetCallNotesQuery({
     status: statusParam,
     type: typeParam,
+    page: currentPage,
+    search: searchValue,
   });
+
+  const pagination = data?.pagination || {
+    total: 0,
+    page: 1,
+    pages: 1,
+    has_next_page: false,
+    has_prev_page: false
+  };
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, selectedStatus, searchValue]);
 
   const [addCallNote, { isLoading: isAdding }] = useAddCallNoteMutation();
   const [updateStatus, { isLoading: isUpdating }] = useUpdateCallNoteStatusMutation();
 
   const notes = data?.callNotes || [];
   const stats = data?.stats || { totalCalls: 0, pendingFollowUps: 0, totalCompleted: 0, totalEnquiries: 0 };
-
-  // ✅ Search Filtering (Local)
-  const filteredNotes = notes.filter(note => {
-    const searchLower = searchValue.toLowerCase();
-    return (
-      note.name?.toLowerCase().includes(searchLower) ||
-      note.mobile?.includes(searchValue) ||
-      note.email?.toLowerCase().includes(searchLower) ||
-      note.note?.toLowerCase().includes(searchLower) ||
-      note.callId?.toLowerCase().includes(searchLower)
-    );
-  });
 
   const handleMarkComplete = async () => {
     if (!confirmModal.id) return;
@@ -70,16 +74,46 @@ const CallNotepad = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === "mobile") {
+      const numericValue = value.replace(/\D/g, "");
+      if (numericValue.length <= 10) {
+        setFormData((prev) => ({ ...prev, [name]: numericValue }));
+      }
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+  };
+
+  const validate = () => {
+    let newErrors = {};
+    if (!formData.name.trim()) newErrors.name = "Full Name is required";
+    if (!formData.mobile.trim()) {
+      newErrors.mobile = "Mobile Number is required";
+    } else if (!/^\d{10}$/.test(formData.mobile.trim())) {
+      newErrors.mobile = "Invalid mobile number (10 digits required)";
+    }
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Invalid email format";
+    }
+    if (!formData.note.trim()) newErrors.note = "Call Note is required";
+    if (!formData.date) newErrors.date = "Date is required";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validate()) return;
     try {
-      // Ensure type matches the active tab or is follow-up by default as per request
       const submissionData = {
         ...formData,
-        type: typeParam, 
+        type: typeParam,
       };
       await addCallNote(submissionData).unwrap();
       toast.success("Call note added successfully");
@@ -92,12 +126,12 @@ const CallNotepad = () => {
         date: "",
         type: "follow-up",
       });
+      setErrors({});
     } catch (error) {
       toast.error(error?.data?.message || "Failed to add call note");
     }
   };
 
-  // ✅ Columns
   const columns = [
     { header: "CALL ID", accessor: "callId" },
     { header: "NAME", accessor: "name" },
@@ -120,16 +154,15 @@ const CallNotepad = () => {
             <Calendar size={14} className="text-[#FFB800]" />
           </div>
           <span>
-            {new Date(value).toLocaleDateString('en-GB', {
-              day: 'numeric',
-              month: 'short',
-              year: 'numeric'
+            {new Date(value).toLocaleDateString("en-GB", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
             })}
           </span>
         </div>
-      )
+      ),
     },
-
     {
       header: "STATUS",
       accessor: "status",
@@ -152,7 +185,7 @@ const CallNotepad = () => {
           return <span className="text-gray-400">--</span>;
         }
         return (
-          <span 
+          <span
             onClick={() => setConfirmModal({ show: true, id: row._id })}
             className="text-green-600 text-sm cursor-pointer hover:underline"
           >
@@ -163,7 +196,6 @@ const CallNotepad = () => {
     },
   ];
 
-  // ✅ Selection Logic
   const handleRowSelect = (id) => {
     setSelectedRows((prev) =>
       prev.includes(id)
@@ -174,7 +206,7 @@ const CallNotepad = () => {
 
   const handleSelectAll = (checked) => {
     if (checked) {
-      setSelectedRows(filteredNotes.map((row) => row._id));
+      setSelectedRows(notes.map((row) => row._id));
     } else {
       setSelectedRows([]);
     }
@@ -261,7 +293,7 @@ const CallNotepad = () => {
                 </div>
               </div>
             ))
-          ) : filteredNotes.map((item) => (
+          ) : notes.map((item) => (
             <div key={item._id} className="bg-white rounded-2xl shadow p-4 space-y-3 border border-gray-100">
 
               <div className="flex justify-between">
@@ -284,10 +316,10 @@ const CallNotepad = () => {
                   <div className="w-7 h-7 flex items-center justify-center rounded-md bg-[#7E1080]">
                     <Calendar size={14} className="text-[#FFB800]" />
                   </div>
-                  <span>{new Date(item.date).toLocaleDateString('en-GB', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric'
+                  <span>{new Date(item.date).toLocaleDateString("en-GB", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric"
                   })}</span>
                 </div>
                 <span
@@ -318,12 +350,45 @@ const CallNotepad = () => {
             <div className="min-w-[1000px]">
               <Table
                 columns={columns}
-                data={filteredNotes}
+                data={notes}
                 selectedRows={selectedRows}
                 onRowSelect={handleRowSelect}
                 onSelectAll={handleSelectAll}
                 isLoading={isLoading}
               />
+
+              {/* Pagination UI */}
+              {(pagination.pages > 1 || pagination.total > 10) && (
+                <div className="flex justify-center items-center gap-4 mt-10 mb-6">
+                  <button
+                    disabled={!pagination.has_prev_page && pagination.page === 1}
+                    onClick={() => setCurrentPage((prev) => prev - 1)}
+                    className={`px-4 py-2 rounded-lg border transition
+                      ${(!pagination.has_prev_page && pagination.page === 1)
+                        ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50 active:scale-95"
+                      }`}
+                  >
+                    Previous
+                  </button>
+
+                  <span className="text-sm font-medium text-gray-600">
+                    Page {pagination.page} of {pagination.pages}
+                  </span>
+
+                  <button
+                    disabled={!pagination.has_next_page && pagination.page === pagination.pages}
+                    onClick={() => setCurrentPage((prev) => prev + 1)}
+                    className={`px-4 py-2 rounded-lg border transition
+                      ${(!pagination.has_next_page && pagination.page === pagination.pages)
+                        ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50 active:scale-95"
+                      }`}
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -348,96 +413,80 @@ const CallNotepad = () => {
 
               {/* Full Name */}
               <div>
-                <label className="block text-sm text-black mb-1">
-                  Full Name
+                <label className="block text-sm text-black mb-1 font-medium">
+                  Full Name <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  required
                   placeholder="Full Name"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
+                  className={`w-full bg-gray-50 border ${errors.name ? "border-red-500" : "border-gray-200"} rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all`}
                 />
+                {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
               </div>
 
               {/* Mobile Number */}
               <div>
-                <label className="block text-sm text-black mb-1">
-                  Mobile Number
+                <label className="block text-sm text-black mb-1 font-medium">
+                  Mobile Number <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   name="mobile"
                   value={formData.mobile}
                   onChange={handleInputChange}
-                  required
                   placeholder="Mobile Number"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
+                  className={`w-full bg-gray-50 border ${errors.mobile ? "border-red-500" : "border-gray-200"} rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all`}
                 />
+                {errors.mobile && <p className="text-red-500 text-xs mt-1">{errors.mobile}</p>}
               </div>
 
               {/* Email */}
               <div>
-                <label className="block text-sm text-black mb-1">
-                  Email
+                <label className="block text-sm text-black mb-1 font-medium">
+                  Email <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="email"
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  required
                   placeholder="Email"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
+                  className={`w-full bg-gray-50 border ${errors.email ? "border-red-500" : "border-gray-200"} rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all`}
                 />
+                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
               </div>
 
               {/* Call Note */}
               <div>
-                <label className="block text-sm text-black mb-1">
-                  Call Note
+                <label className="block text-sm text-black mb-1 font-medium">
+                  Call Note <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   name="note"
                   value={formData.note}
                   onChange={handleInputChange}
-                  required
                   placeholder="Call Note"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
+                  className={`w-full bg-gray-50 border ${errors.note ? "border-red-500" : "border-gray-200"} rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all resize-none`}
                 />
+                {errors.note && <p className="text-red-500 text-xs mt-1">{errors.note}</p>}
               </div>
 
               {/* Date */}
               <div>
-                <label className="block text-sm text-black mb-1">
-                  Date
+                <label className="block text-sm text-black mb-1 font-medium">
+                  Date <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="date"
                   name="date"
                   value={formData.date}
                   onChange={handleInputChange}
-                  required
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
+                  className={`w-full bg-gray-50 border ${errors.date ? "border-red-500" : "border-gray-200"} rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all`}
                 />
-              </div>
-              {/* Type Selector */}
-              <div>
-                <label className="block text-sm text-black mb-1">
-                  Type
-                </label>
-                <select
-                  name="type"
-                  value={formData.type}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none"
-                >
-                  <option value="follow-up">Follow-up</option>
-                  <option value="enquiry">Enquiry</option>
-                </select>
+                {errors.date && <p className="text-red-500 text-xs mt-1">{errors.date}</p>}
               </div>
 
             </div>

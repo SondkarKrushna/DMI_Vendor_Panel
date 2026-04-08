@@ -27,10 +27,18 @@ export const profileApi = createApi({
 
   endpoints: (builder) => ({
     getProfile: builder.query({
-      query: () => "/api/auth/profile",
+      query: () => "/api/vendor/profile/get",
       providesTags: ["Profile"],
+    }),
+    editProfile: builder.mutation({
+      query: (data) => ({
+        url: "/api/vendor/profile",
+        method: "PUT",
+        body: data,
+      }),
+      invalidatesTags: ["Profile"],
     }),
   }),
 });
 
-export const { useGetProfileQuery } = profileApi;
+export const { useGetProfileQuery, useEditProfileMutation } = profileApi;

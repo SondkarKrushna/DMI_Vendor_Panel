@@ -1,45 +1,85 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Layout from "../../components/layout/Layout";
 import Table from "../../components/table/Table";
 import Card from "../../components/cards/Card";
 import Search from "../../components/search/Search";
-import { DollarSign, Calendar, CreditCard, TrendingUp, Eye, Printer, Download, ArrowDownToLine, } from "lucide-react";
+import { 
+  DollarSign, 
+  Calendar, 
+  Eye, 
+  Printer, 
+  Download, 
+  ArrowDownToLine, 
+} from "lucide-react";
+import { useGetInvoicesQuery, useGetActiveServicesQuery } from "../../redux/api/invoiceApi";
 
 const Invoice = () => {
-
   const [selectedRows, setSelectedRows] = useState([]);
+  const [selectedService, setSelectedService] = useState("All services");
+  const [selectedServiceId, setSelectedServiceId] = useState("");
+  const [searchValue, setSearchValue] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
-  // ✅ Table Data
-  const tableData = [
-    {
-      id: "USER-123456",
-      name: "John Doe",
-      service: "Web Development",
-      amount: "₹3.2L",
-      payment: "Visa Card ****5050",
-      date: "2 Feb 2026",
-    },
-    {
-      id: "USER-123457",
-      name: "John Doe",
-      service: "Web Development",
-      amount: "₹3.2L",
-      payment: "Visa Card ****5050",
-      date: "2 Feb 2026",
-    },
-    {
-      id: "USER-123458",
-      name: "John Doe",
-      service: "Web Development",
-      amount: "₹3.2L",
-      payment: "Visa Card ****5050",
-      date: "2 Feb 2026",
-    },
+  const { data: servicesData } = useGetActiveServicesQuery();
+  const { data: invoicesResponse, isLoading } = useGetInvoicesQuery({
+    serviceId: selectedServiceId || undefined,
+    page: currentPage,
+    search: searchValue,
+  });
+
+  const activeServices = servicesData?.data || [];
+  const invoices = invoicesResponse?.data || [];
+  const stats = invoicesResponse?.stats || {};
+
+  const serviceOptions = [
+    { label: "All services", value: "" },
+    ...activeServices.map((s) => ({
+      label: s.serviceName,
+      value: s._id,
+    })),
   ];
+
+  const pagination = invoicesResponse?.pagination || {
+  page: 1,
+  total_pages: 1,
+  has_next_page: false,
+  has_prev_page: false,
+  total: 0
+};
+
+  const handleServiceChange = (label) => {
+    setSelectedService(label);
+    const service = serviceOptions.find((opt) => opt.label === label);
+    setSelectedServiceId(service ? service.value : "");
+  };
+
+  const tableData = invoices.map((inv) => ({
+    id: inv.invoiceNumber,
+    name: inv.userId?.fullName || "N/A",
+    service: inv.items?.[0]?.name || "N/A",
+    amount: `₹${inv.amount.toLocaleString()}`,
+    payment: inv.paymentMethod || "N/A",
+    date: new Date(inv.invoiceDate).toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }),
+    _id: inv._id,
+  }));
+
+  const filteredData = tableData.filter((item) =>
+    item.name.toLowerCase().includes(searchValue.toLowerCase()) ||
+    item.id.toLowerCase().includes(searchValue.toLowerCase()) ||
+    item.service.toLowerCase().includes(searchValue.toLowerCase())
+  );
+
+  useEffect(() => {
+  setCurrentPage(1);
+}, [selectedServiceId, searchValue]);
 
   // ✅ Columns
   const columns = [
-    { header: "USER", accessor: "id" },
+    { header: "INVOICE", accessor: "id" },
     { header: "NAME", accessor: "name" },
     { header: "SERVICE", accessor: "service" },
     {
@@ -86,7 +126,7 @@ const Invoice = () => {
 
   const handleSelectAll = (checked) => {
     if (checked) {
-      setSelectedRows(tableData.map((row) => row.id));
+      setSelectedRows(filteredData.map((row) => row.id));
     } else {
       setSelectedRows([]);
     }
@@ -117,7 +157,7 @@ const Invoice = () => {
 
             <Card
               title="Total Revenue"
-              amount="₹24.5L"
+              amount={`₹${(stats.totalRevenue || 0).toLocaleString()}`}
               percentage={42}
               statusText="Increased by Last Month"
               icon={DollarSign}
@@ -125,7 +165,7 @@ const Invoice = () => {
 
             <Card
               title="This Month"
-              amount="₹3.2L"
+              amount={`₹${(stats.thisMonthRevenue || 0).toLocaleString()}`}
               percentage={-30}
               statusText="Decreased by Last Month"
               isDecrease
@@ -141,57 +181,72 @@ const Invoice = () => {
 
         {/* 🔥 Search */}
         <div className="mb-4">
-          <Search />
+          <Search
+            label="All services"
+            options={serviceOptions}
+            status={selectedService}
+            onStatusChange={handleServiceChange}
+            searchValue={searchValue}
+            onSearchChange={setSearchValue}
+          />
         </div>
 
         {/* ✅ MOBILE VIEW */}
         <div className="block md:hidden space-y-4">
-          {tableData.map((item, index) => (
-            <div key={index} className="bg-white rounded-2xl shadow p-4 space-y-3">
-
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-semibold text-gray-500">
-                  {item.id}
-                </span>
-                <Eye className="text-yellow-500" size={18} />
-              </div>
-
-              <div>
-                <p className="font-semibold text-gray-800">{item.name}</p>
-                <p className="text-sm text-gray-500">{item.service}</p>
-              </div>
-
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Amount</span>
-                <span className="text-green-600 font-semibold">
-                  {item.amount}
-                </span>
-              </div>
-
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Payment</span>
-                <span>{item.payment}</span>
-              </div>
-
-              <div className="flex justify-between text-sm items-center">
-                <span className="text-gray-500">Date</span>
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 flex items-center justify-center rounded-md bg-[#7E1080]">
-                    <Calendar size={14} className="text-[#FFB800]" />
-                  </div>
-                  <span>{item.date}</span>
-                </div>
-              </div>
-
-
-              <div className="flex justify-end gap-3 pt-2">
-                <Eye className="text-yellow-500" size={18} />
-                <Printer className="text-purple-600" size={18} />
-                <Download className="text-orange-500" size={18} />
-              </div>
-
+          {isLoading ? (
+            <div className="flex justify-center py-10">
+              <div className="w-8 h-8 border-4 border-[#7E1080] border-t-transparent rounded-full animate-spin"></div>
             </div>
-          ))}
+          ) : filteredData.length === 0 ? (
+            <div className="text-center py-10 text-gray-500">No invoices found.</div>
+          ) : (
+            filteredData.map((item, index) => (
+              <div key={index} className="bg-white rounded-2xl shadow p-4 space-y-3">
+
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-semibold text-gray-500">
+                    {item.id}
+                  </span>
+                  <Eye className="text-yellow-500" size={18} />
+                </div>
+
+                <div>
+                  <p className="font-semibold text-gray-800">{item.name}</p>
+                  <p className="text-sm text-gray-500">{item.service}</p>
+                </div>
+
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Amount</span>
+                  <span className="text-green-600 font-semibold">
+                    {item.amount}
+                  </span>
+                </div>
+
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Payment</span>
+                  <span className="capitalize">{item.payment}</span>
+                </div>
+
+                <div className="flex justify-between text-sm items-center">
+                  <span className="text-gray-500">Date</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 flex items-center justify-center rounded-md bg-[#7E1080]">
+                      <Calendar size={14} className="text-[#FFB800]" />
+                    </div>
+                    <span>{item.date}</span>
+                  </div>
+                </div>
+
+
+                <div className="flex justify-end gap-3 pt-2">
+                  <Eye className="text-yellow-500" size={18} />
+                  <Printer className="text-purple-600" size={18} />
+                  <Download className="text-orange-500" size={18} />
+                </div>
+
+              </div>
+            ))
+          )}
         </div>
 
         {/* ✅ TABLE VIEW */}
@@ -200,11 +255,51 @@ const Invoice = () => {
             <div className="min-w-[900px]">
               <Table
                 columns={columns}
-                data={tableData}
+                data={filteredData}
                 selectedRows={selectedRows}
                 onRowSelect={handleRowSelect}
                 onSelectAll={handleSelectAll}
+                isLoading={isLoading}
               />
+
+              {/* Pagination UI */}
+
+              {pagination.total > 10 && (
+  <div className="flex justify-center items-center gap-4 mt-10 mb-6">
+
+    {/* Previous */}
+    <button
+      disabled={!pagination.has_prev_page}
+      onClick={() => setCurrentPage(prev => prev - 1)}
+      className={`px-4 py-2 rounded-lg border flex items-center gap-2 transition
+        ${!pagination.has_prev_page
+          ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 active:scale-95'
+        }`}
+    >
+      Previous
+    </button>
+
+    {/* Page Info */}
+    <span className="text-sm font-medium text-gray-600">
+      Page {pagination.page} of {pagination.total_pages}
+    </span>
+
+    {/* Next */}
+    <button
+      disabled={!pagination.has_next_page}
+      onClick={() => setCurrentPage(prev => prev + 1)}
+      className={`px-4 py-2 rounded-lg border flex items-center gap-2 transition
+        ${!pagination.has_next_page
+          ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 active:scale-95'
+        }`}
+    >
+      Next
+    </button>
+
+  </div>
+)}
             </div>
           </div>
         </div>

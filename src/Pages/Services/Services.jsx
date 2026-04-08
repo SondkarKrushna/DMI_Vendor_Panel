@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/cards/Card";
 import Button from "../../components/buttons/Button";
@@ -40,7 +40,12 @@ const Services = () => {
   });
   const [errors, setErrors] = useState({});
 
-  const { data, isLoading, isError } = useGetServicesQuery({ page: currentPage, per_page: 10 });
+  const { data, isLoading, isError } = useGetServicesQuery({ 
+    page: currentPage, 
+    per_page: 10,
+    search: search,
+    status: statusFilter === "all" ? undefined : statusFilter
+  });
   const [addService, { isLoading: isAdding }] = useAddServiceMutation();
   const [updateService, { isLoading: isUpdating }] = useUpdateServiceMutation();
   const [deleteService] = useDeleteServiceMutation();
@@ -49,11 +54,11 @@ const Services = () => {
   const stats = data?.stats || { total: 0, pending: 0, active: 0, inactive: 0 };
   const pagination = data?.pagination || { total: 0, page: currentPage, per_page: 10, total_pages: 1, has_next_page: false, has_prev_page: false };
 
-  const filteredServices = services.filter((service) => {
-    const matchesSearch = search === "" || service.serviceName?.toLowerCase().includes(search.toLowerCase()) || service.description?.toLowerCase().includes(search.toLowerCase());
-    const matchesFilter = statusFilter === 'all' || service.status?.toLowerCase() === statusFilter;
-    return matchesSearch && matchesFilter;
-  });
+  const filteredServices = services;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
 
   const statusOptions = [
     { label: 'All Status', value: 'all' },
@@ -343,8 +348,9 @@ const Services = () => {
         {/* ✅ MOBILE VIEW */}
         <div className="block md:hidden space-y-4 mb-4">
           {isLoading ? (
-            <div className="flex justify-center py-10">
-              <PulseLoader color="#7E1080" />
+            <div className="flex flex-col items-center justify-center py-20 gap-4">
+              <div className="w-10 h-10 border-4 border-gray-100 border-t-[#7E1080] rounded-full animate-spin"></div>
+              <p className="text-sm text-gray-400 animate-pulse font-medium">Loading Services...</p>
             </div>
           ) : filteredServices.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200">
@@ -551,7 +557,7 @@ const Services = () => {
                   value={formData.description}
                   onChange={handleChange}
                   placeholder="Enter description"
-                  rows={2}
+                  rows={1}
                   className={`w-full bg-gray-50 border ${errors.description ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-purple-500`}
                 />
                 {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}

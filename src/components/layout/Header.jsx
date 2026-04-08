@@ -16,7 +16,8 @@ const Header = ({ toggleSidebar }) => {
 
   const { data, isLoading: profileLoading } = useGetProfileQuery();
 
-  const user = data?.user;
+  const profile = data?.profile;
+
 
   // console.log("PROFILE DATA:", data);
 
@@ -89,19 +90,25 @@ const Header = ({ toggleSidebar }) => {
           }}
         >
           {/* Avatar */}
-          <div className="w-8 h-8 flex items-center justify-center rounded-full bg-yellow-400 text-black font-bold">
-            {user?.fullName?.charAt(0)?.toUpperCase() || "U"}
+          <div className="w-8 h-8 flex items-center justify-center rounded-full bg-yellow-400 text-black font-bold overflow-hidden">
+            {profile?.avatar ? (
+              <img src={profile.avatar} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              profile?.fullName?.charAt(0)?.toUpperCase() || "U"
+            )}
           </div>
+
 
           {/* User Info */}
           <div className="hidden sm:flex flex-col leading-tight">
             <span className="text-sm font-semibold">
-              {profileLoading ? "Loading..." : user?.fullName}
+              {profileLoading ? "Loading..." : profile?.fullName}
             </span>
-            <span className="text-xs opacity-80">
-              {user?.role}
+            <span className="text-xs opacity-80 capitalize">
+              {profile?.role}
             </span>
           </div>
+
 
           {/* Dropdown Icon */}
           <ChevronDown className="hidden lg:block" size={18} />
@@ -118,35 +125,42 @@ const Header = ({ toggleSidebar }) => {
                 style={{ background: "linear-gradient(to right, #7E1080, #1A031A)" }}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-white text-[#7E1080] shadow-sm text-lg font-bold">
-                    {user?.fullName?.charAt(0)?.toUpperCase() || "U"}
+                  <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-white text-[#7E1080] shadow-sm text-lg font-bold overflow-hidden">
+                    {profile?.avatar ? (
+                      <img src={profile.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      profile?.fullName?.charAt(0)?.toUpperCase() || "U"
+                    )}
                   </div>
                   <div>
                     <h2 className="text-sm font-bold">
-                      {user?.fullName}
+                      {profile?.fullName}
                     </h2>
                     <p className="text-xs opacity-80 truncate w-40">
-                      {user?.email}
+                      {profile?.email}
                     </p>
                   </div>
                 </div>
+
               </div>
 
               {/* Actions */}
               <div className="p-2 flex flex-col gap-1">
 
                 {/* My Profile */}
-                <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl 
-    bg-white text-gray-700 
-    hover:bg-purple-50 active:bg-purple-50
-    hover:text-[#7E1080] active:text-[#7E1080]
-    transition-all duration-200 group">
+                <button
+                  onClick={() => navigate("/business-profile")}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl 
+                  bg-white text-gray-700 
+                  hover:bg-purple-50 active:bg-purple-50
+                  hover:text-[#7E1080] active:text-[#7E1080]
+                  transition-all duration-200 group">
 
                   <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 
-      group-hover:bg-[#7E1080] group-active:bg-[#7E1080]
-      group-hover:text-white group-active:text-white
-      transition-all duration-200 shadow-sm">
-                    <User size={18} />
+                  group-hover:bg-[#7E1080] group-active:bg-[#7E1080]
+                  group-hover:text-white group-active:text-white
+                  transition-all duration-200 shadow-sm">
+                    <User size={18} />            
                   </div>
 
                   <span className="text-sm font-semibold">My Profile</span>
@@ -154,7 +168,7 @@ const Header = ({ toggleSidebar }) => {
 
 
                 {/* Account Settings */}
-                <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl 
+                {/* <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl 
     bg-white text-gray-700 
     hover:bg-blue-50 active:bg-blue-50
     hover:text-blue-600 active:text-blue-600
@@ -168,11 +182,11 @@ const Header = ({ toggleSidebar }) => {
                   </div>
 
                   <span className="text-sm font-semibold">Account Settings</span>
-                </button>
+                </button> */}
 
 
                 {/* Notifications */}
-                <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl 
+                {/* <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl 
     bg-white text-gray-700 
     hover:bg-orange-50 active:bg-orange-50
     hover:text-orange-600 active:text-orange-600
@@ -186,7 +200,7 @@ const Header = ({ toggleSidebar }) => {
                   </div>
 
                   <span className="text-sm font-semibold">Notifications</span>
-                </button>
+                </button> */}
 
                 <div className="my-2 border-t border-gray-100"></div>
 
@@ -218,11 +232,12 @@ const Header = ({ toggleSidebar }) => {
               {/* Footer */}
               <div className="bg-gray-50 px-5 py-3 border-t border-gray-100 flex items-center justify-between">
                 <span className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Account Status</span>
-                <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-bold">
+                <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-bold capitalize">
                   <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
-                  {user?.status}
+                  {profile?.status}
                 </span>
               </div>
+
             </div>
           )}
         </div>

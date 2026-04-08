@@ -79,9 +79,11 @@ const Modal = ({
 ──────────────────────────────────────────── */
 
 /** Generic field wrapper with label */
-export const FormField = ({ label, children, className = '' }) => (
+export const FormField = ({ label, children, className = '', required = false }) => (
     <div className={`flex flex-col gap-1.5 ${className}`}>
-        <label className="text-sm font-semibold text-gray-700">{label}</label>
+        <label className="text-sm font-semibold text-gray-700">
+            {label} {required && <span className="text-red-500">*</span>}
+        </label>
         {children}
     </div>
 );
@@ -117,16 +119,25 @@ export const FormTextarea = ({ placeholder = 'Enter', rows = 4, ...rest }) => (
 );
 
 /** Image upload box */
-export const FormImageUpload = ({ label = 'Image' }) => (
+export const FormImageUpload = ({ label = 'Image', onChange, name, error, previewUrl, required = false }) => (
     <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-semibold text-gray-700">{label}</label>
-        <label className="flex flex-col items-center justify-center gap-2 w-full h-28 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 cursor-pointer hover:border-[#7E1080] hover:bg-purple-50/30 transition-all group">
-            <svg className="w-7 h-7 text-gray-300 group-hover:text-[#7E1080] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <span className="text-xs text-gray-400 group-hover:text-[#7E1080] transition-colors font-medium">Click to Upload</span>
-            <input type="file" accept="image/*" className="hidden" />
+        <label className="text-sm font-semibold text-gray-700">
+            {label} {required && <span className="text-red-500">*</span>}
         </label>
+        <label className={`flex flex-col items-center justify-center gap-2 w-full ${previewUrl ? 'h-40' : 'h-28'} rounded-xl border-2 border-dashed ${error ? 'border-red-500' : 'border-gray-200'} bg-gray-50 cursor-pointer hover:border-[#7E1080] hover:bg-purple-50/30 transition-all group overflow-hidden`}>
+            {previewUrl ? (
+                <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+            ) : (
+                <>
+                    <svg className="w-7 h-7 text-gray-300 group-hover:text-[#7E1080] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span className="text-xs text-gray-400 group-hover:text-[#7E1080] transition-colors font-medium">Click to Upload</span>
+                </>
+            )}
+            <input type="file" name={name} accept="image/*" className="hidden" onChange={onChange} />
+        </label>
+        {error && <p className="text-red-500 text-xs mt-0.5">{error}</p>}
     </div>
 );
 

@@ -1,10 +1,16 @@
 import React, { useState } from "react";
 import { Search as SearchIcon, ChevronDown } from "lucide-react";
 
-const Search = ({ showDate = false, status, onStatusChange, searchValue, onSearchChange }) => {
+const Search = ({ 
+  showDate = false, 
+  status, 
+  onStatusChange, 
+  searchValue, 
+  onSearchChange,
+  options = ["All status", "Pending", "Completed"],
+  label = "All status"
+}) => {
   const [isOpen, setIsOpen] = useState(false);
-
-  const statuses = ["All status", "Pending", "Completed"];
 
   return (
     <div className="w-full px-4 py-3 bg-[#F3F4F6] flex items-center rounded-full justify-between gap-3 relative">
@@ -38,27 +44,34 @@ const Search = ({ showDate = false, status, onStatusChange, searchValue, onSearc
             text-gray-600 hover:bg-gray-200 transition whitespace-nowrap flex items-center gap-2"
             style={{ backgroundColor: "#0000000D" }}
           >
-            {status || "All status"}
+            {status || label}
             <ChevronDown size={14} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
           </button>
 
           {isOpen && (
-            <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-100 rounded-xl shadow-lg z-50 py-1 overflow-hidden">
-              {statuses.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => {
-                    onStatusChange(s);
-                    setIsOpen(false);
-                  }}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 flex items-center justify-between"
-                >
-                  {s}
-                  {(status === s || (!status && s === "All status")) && (
-                    <div className="w-1.5 h-1.5 rounded-full bg-purple-500"></div>
-                  )}
-                </button>
-              ))}
+            <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-lg z-50 py-1 max-h-60 overflow-y-auto">
+              {options.map((opt) => {
+                const isObject = typeof opt === 'object';
+                const optLabel = isObject ? opt.label : opt;
+                const optValue = isObject ? opt.value : opt;
+                const isSelected = status === optLabel || (!status && optLabel === label);
+
+                return (
+                  <button
+                    key={optValue}
+                    onClick={() => {
+                      onStatusChange(optLabel);
+                      setIsOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 flex items-center justify-between"
+                  >
+                    {optLabel}
+                    {isSelected && (
+                      <div className="w-1.5 h-1.5 rounded-full bg-purple-500"></div>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>

@@ -23,8 +23,8 @@ export const callNotesApi = createApi({
   endpoints: (builder) => ({
     // ✅ GET CALL NOTES
     getCallNotes: builder.query({
-      query: ({ status = "pending", type = "follow-up" } = {}) =>
-        `/api/vendor/get/call-notes?status=${status}&type=${type}`,
+      query: ({ status = "pending", type = "follow-up", page = 1, search = "" } = {}) =>
+        `/api/vendor/get/call-notes?status=${status}&type=${type}&page=${page}&search=${search}`,
       providesTags: ["CallNotes"],
     }),
 

@@ -2,23 +2,31 @@ import React, { useState, useEffect } from "react";
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/cards/Card";
 import Button from "../../components/buttons/Button";
-import { Tag, SquarePen, Trash2, ArrowDownToLine } from "lucide-react";
+import { Tag, SquarePen, Trash2, ArrowDownToLine, FileSpreadsheet, FileText } from "lucide-react";
 import offerImg from "../../../public/images/offer.png";
 import { PulseLoader } from "react-spinners";
 import { toast } from "react-toastify";
+import * as XLSX from "xlsx-js-style";
+import { saveAs } from "file-saver";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import {
   useGetOffersQuery,
   useAddOfferMutation,
   useUpdateOfferMutation,
   useDeleteOfferMutation
 } from "../../redux/api/offersApi";
+import { FormImageUpload } from "../../components/Model";
 
 const Offers = () => {
-  const [activeTab, setActiveTab] = useState("Active");
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem("offersTab") || "Active";
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingOffer, setEditingOffer] = useState(null);
   const [confirmModal, setConfirmModal] = useState({ show: false, id: null });
+  const [showExportOptions, setShowExportOptions] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     discount: "",
@@ -44,6 +52,7 @@ const Offers = () => {
 
   // Sync tab changes to page 1
   useEffect(() => {
+    localStorage.setItem("offersTab", activeTab);
     setCurrentPage(1);
   }, [activeTab]);
 
@@ -137,6 +146,205 @@ const Offers = () => {
       description: "",
       image: null
     });
+    setErrors({});
+  };
+
+  const OfferSkeleton = () => (
+    Array.from({ length: 6 }).map((_, i) => (
+      <div
+        key={i}
+        className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden animate-pulse"
+      >
+        <div className="h-40 w-full bg-gray-200"></div>
+        <div className="p-4 space-y-3">
+          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+          <div className="space-y-2">
+            <div className="h-3 bg-gray-200 rounded w-full"></div>
+            <div className="h-3 bg-gray-200 rounded w-5/6"></div>
+            <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+          </div>
+          <div className="flex gap-2 mt-4">
+            <div className="h-8 bg-gray-200 rounded w-full"></div>
+            <div className="h-8 bg-gray-200 rounded w-10"></div>
+          </div>
+        </div>
+      </div>
+    ))
+  );
+
+  const exportToExcel = () => {
+    if (!offers.length) {
+      toast.error("No data to export");
+      return;
+    }
+
+    const header = [
+      ["Sr No", "Offer Title", "Discount (%)", "Start Date", "End Date", "Description"]
+    ];
+
+    const data = offers.map((offer, index) => ([
+      index + 1,
+      offer.title,
+      offer.discount,
+      new Date(offer.startDate).toLocaleDateString(),
+      new Date(offer.endDate).toLocaleDateString(),
+      offer.description
+    ]));
+
+    const ws = XLSX.utils.aoa_to_sheet([...header, ...data]);
+
+    // ✅ Header Styling
+    const range = XLSX.utils.decode_range(ws['!ref']);
+
+    for (let col = range.s.c; col <= range.e.c; col++) {
+      const cell = ws[XLSX.utils.encode_cell({ r: 0, c: col })];
+      if (cell) {
+        cell.s = {
+          font: { bold: true, color: { rgb: "FFFFFF" } },
+          fill: { fgColor: { rgb: "7E1080" } }, // Purple header
+          alignment: { horizontal: "center" }
+        };
+      }
+    }
+
+    // ✅ Column width
+    ws["!cols"] = [
+      { wch: 8 },
+      { wch: 25 },
+      { wch: 15 },
+      { wch: 18 },
+      { wch: 18 },
+      { wch: 40 },
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Offers");
+
+    XLSX.writeFile(wb, "Offers_Report.xlsx");
+  };
+
+  const exportToPDF = () => {
+    if (!offers.length) {
+      toast.error("No data to export");
+      return;
+    }
+
+    const doc = new jsPDF();
+
+    const tableColumn = ["Title", "Discount", "Start Date", "End Date", "Description"];
+    const tableRows = [];
+
+    offers.forEach((offer) => {
+      tableRows.push([
+        offer.title,
+        `${offer.discount}%`,
+        new Date(offer.startDate).toLocaleDateString(),
+        new Date(offer.endDate).toLocaleDateString(),
+        offer.description,
+      ]);
+    });
+
+    doc.text("Offers List", 14, 10);
+
+    // ✅ FIXED
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 20,
+    });
+
+    doc.save("offers.pdf");
+  };
+
+  const OfferListSection = ({ status, onEdit, onDelete }) => {
+    const { data, isLoading } = useGetOffersQuery({
+      page: currentPage,
+      status: status.toLowerCase()
+    });
+
+    const offers = data?.data || [];
+
+    if (isLoading) {
+      return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <OfferSkeleton />
+        </div>
+      );
+    }
+
+    if (offers.length === 0) {
+      return (
+        <div className="col-span-full flex flex-col justify-center items-center py-12 text-center bg-white rounded-2xl border border-dashed border-gray-200">
+          <Tag className="w-10 h-10 text-gray-300 mb-3" />
+          <p className="text-gray-500 text-base font-medium">
+            No {status.toLowerCase()} offers available right now
+          </p>
+        </div>
+      );
+    }
+
+
+
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {offers.map((offer) => (
+          <div
+            key={offer._id}
+            className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition"
+          >
+            <div className="h-40 w-full overflow-hidden">
+              <img
+                src={offer.image}
+                alt={offer.title}
+                className="w-full h-full object-cover"
+              />
+            </div>
+
+            <div className="p-4">
+              <h3 className="font-semibold text-md">
+                {offer.title}
+              </h3>
+
+              <div className="mt-3 text-sm text-gray-600 space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Discount</span>
+                  <span className="font-medium">{offer.discount}%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Valid Till</span>
+                  <span className="font-medium">
+                    {new Date(offer.endDate).toLocaleDateString()}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Terms</span>
+                  <span className="font-medium text-right max-w-[60%]">
+                    {offer.description}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2 justify-between mt-4">
+                <button
+                  onClick={() => onEdit(offer)}
+                  className="border bg-[#FFEAFF] border-[#7E1080] text-[#7E1080] px-3 py-1 rounded-lg text-sm flex items-center justify-center gap-2 transition-colors hover:bg-[#7E1080] hover:text-white"
+                >
+                  <SquarePen size={16} />
+                  | Edit Offer Details
+                </button>
+
+                <button
+                  onClick={() => onDelete(offer._id)}
+                  className="border bg-[#FFEAFF] border-[#7E1080] px-3 py-1 rounded-lg text-sm flex items-center justify-center transition-colors hover:bg-red-50"
+                >
+                  <Trash2 size={16} className="text-red-500" />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -159,10 +367,41 @@ const Offers = () => {
                 setIsModalOpen(true);
               }}
             />
-            <button className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold shadow-md hover:scale-105 hover:shadow-lg active:scale-95 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2">
-              <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" />
-              Export
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowExportOptions(prev => !prev)}
+                className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold flex items-center gap-2"
+              >
+                <ArrowDownToLine className="w-4 h-4" />
+                Export
+              </button>
+
+              {showExportOptions && (
+                <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                  <button
+                    onClick={() => {
+                      exportToExcel();
+                      setShowExportOptions(false);
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm flex items-center gap-2"
+                  >
+                    <FileSpreadsheet size={16} className="text-green-600" />
+                    Export as Excel
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      exportToPDF();
+                      setShowExportOptions(false);
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm flex items-center gap-2"
+                  >
+                    <FileText size={16} className="text-red-500" />
+                    Export as PDF
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -223,101 +462,15 @@ const Offers = () => {
 
         {/* Offer Cards */}
         <div className="mt-6 bg-gray-100 p-4 rounded-2xl">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-
-            {isLoading ? (
-              // ✅ LOADING
-              Array(6).fill(0).map((_, i) => (
-                <div
-                  key={i}
-                  className="bg-white rounded-xl shadow overflow-hidden animate-pulse"
-                >
-                  <div className="h-40 w-full bg-gray-300" />
-
-                  <div className="p-4 space-y-3">
-                    <div className="h-4 bg-gray-300 rounded w-3/4" />
-                    <div className="h-3 bg-gray-200 rounded w-1/2" />
-                    <div className="h-3 bg-gray-200 rounded w-2/3" />
-
-                    <div className="flex gap-2 mt-4">
-                      <div className="h-8 bg-gray-300 rounded w-full" />
-                      <div className="h-8 bg-gray-300 rounded w-10" />
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : offers.length === 0 ? (
-              // ✅ EMPTY STATE
-              <div className="col-span-full flex justify-center items-center py-10">
-                <p className="text-gray-500 text-lg font-medium">
-                  No {activeTab.toLowerCase()} offers available right now
-                </p>
-              </div>
-            ) : (
-              // ✅ OFFERS LIST
-              offers.map((offer) => (
-                <div
-                  key={offer._id}
-                  className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition"
-                >
-                  <div className="h-40 w-full overflow-hidden">
-                    <img
-                      src={offer.image}
-                      alt={offer.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-
-                  <div className="p-4">
-                    <h3 className="font-semibold text-md">
-                      {offer.title}
-                    </h3>
-
-                    <div className="mt-3 text-sm text-gray-600 space-y-2">
-
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Discount</span>
-                        <span className="font-medium">{offer.discount}%</span>
-                      </div>
-
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Valid Till</span>
-                        <span className="font-medium">
-                          {new Date(offer.endDate).toLocaleDateString()}
-                        </span>
-                      </div>
-
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Terms</span>
-                        <span className="font-medium text-right max-w-[60%]">
-                          {offer.description}
-                        </span>
-                      </div>
-
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row gap-2 justify-between mt-4">
-                      <button
-                        onClick={() => handleEdit(offer)}
-                        className="border bg-[#FFEAFF] border-[#7E1080] text-[#7E1080] px-3 py-1 rounded-lg text-sm flex items-center justify-center gap-2 transition-colors hover:bg-[#7E1080] hover:text-white"
-                      >
-                        <SquarePen size={16} />
-                        | Edit Offer Details
-                      </button>
-
-                      <button
-                        onClick={() => setConfirmModal({ show: true, id: offer._id })}
-                        className="border bg-[#FFEAFF] border-[#7E1080] px-3 py-1 rounded-lg text-sm flex items-center justify-center transition-colors hover:bg-red-50"
-                      >
-                        <Trash2 size={16} className="text-red-500" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-
-          </div>
+          {["Active", "Pending", "Expired"].map((tabStatus) => (
+            <div key={tabStatus} className={activeTab === tabStatus ? "block" : "hidden"}>
+              <OfferListSection
+                status={tabStatus}
+                onEdit={handleEdit}
+                onDelete={(id) => setConfirmModal({ show: true, id })}
+              />
+            </div>
+          ))}
         </div>
 
         {/* Pagination UI */}
@@ -374,29 +527,14 @@ const Offers = () => {
             <div className="space-y-4">
 
               {/* Image Upload */}
-              <div>
-                <label className="block text-sm text-black mb-1 font-medium">
-                  Upload Image {!editingOffer && <span className="text-red-500">*</span>}
-                </label>
-                <input
-                  type="file"
-                  name="image"
-                  accept="image/*"
-                  onChange={handleChange}
-                  className={`w-full bg-gray-50 border ${errors.image ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500`}
-                />
-                {errors.image && <p className="text-red-500 text-xs mt-1">{errors.image}</p>}
-                {formData.image && (
-                  <div className="mt-2">
-                    <p className="text-xs text-gray-500 mb-1">Preview:</p>
-                    <img
-                      src={formData.image instanceof File ? URL.createObjectURL(formData.image) : formData.image}
-                      alt="Preview"
-                      className="w-24 h-24 object-cover rounded-xl border border-gray-200"
-                    />
-                  </div>
-                )}
-              </div>
+              <FormImageUpload
+                label="Upload Image"
+                name="image"
+                required={!editingOffer}
+                onChange={handleChange}
+                error={errors.image}
+                previewUrl={formData.image ? (formData.image instanceof File ? URL.createObjectURL(formData.image) : formData.image) : null}
+              />
 
               {/* Title */}
               <div>
@@ -473,7 +611,7 @@ const Offers = () => {
                   value={formData.description}
                   onChange={handleChange}
                   placeholder="Enter offer description"
-                  rows={3}
+                  rows={1}
                   className={`w-full bg-gray-50 border ${errors.description ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-purple-500`}
                 />
                 {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
