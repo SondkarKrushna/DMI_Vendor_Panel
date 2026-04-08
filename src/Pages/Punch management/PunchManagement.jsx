@@ -342,7 +342,7 @@ const PunchManagement = () => {
       </Modal>
 
       {/* Cardholder Details Modal */}
-      <CardholderDetailsModal isOpen={!!viewedCardholder} onClose={() => setViewedCardholder(null)} cardholder={viewedCardholder} />
+      <CardholderDetailsModal isOpen={!!viewedCardholder} onClose={() => setViewedCardholder(null)} data={viewedCardholder} />
     </Layout>
   );
 };

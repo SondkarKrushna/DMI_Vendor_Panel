@@ -178,7 +178,7 @@ const Services = () => {
     },
     {
       header: "SERVICE",
-      accessor: "serviceName", 
+      accessor: "serviceName",
       Cell: ({ row }) => (
         <div>
           {/* ✅ Changed row.name to row.serviceName */}
@@ -198,7 +198,7 @@ const Services = () => {
     },
     {
       header: "DISCOUNT",
-      accessor: "discountRate", 
+      accessor: "discountRate",
       Cell: ({ value }) => <span>{value}%</span>,
     },
     {
@@ -229,15 +229,11 @@ const Services = () => {
           >
             <Edit3 size={18} />
           </button>
-          <button onClick={() => setViewedCardholder({
-            serviceName: row.serviceName,
-            cardType: row.cardType,
-            price: row.price,
-            discount: row.discountRate,
-            serviceId: row.serviceId || row._id,
-            status: row.status,
-            viewType: 'service',
-          })} className="text-yellow-500 hover:text-yellow-700 transition">
+
+          <button
+            onClick={() => setViewedCardholder({ ...row, viewType: 'service' })}
+            className="text-yellow-500 hover:text-yellow-700 transition"
+          >
             <Eye size={18} />
           </button>
           <button
@@ -375,6 +371,12 @@ const Services = () => {
                     className="text-purple-600"
                   >
                     <Edit3 size={16} />
+                  </button>
+                  <button
+                    onClick={() => setViewedCardholder({ ...item, viewType: 'service' })}
+                    className="text-yellow-500"
+                  >
+                    <Eye size={16} />
                   </button>
                   <button className="text-yellow-500"><Eye size={16} /></button>
                   <button
@@ -607,9 +609,11 @@ const Services = () => {
           </form>
         </div>
       )}
-
-      {/* Cardholder Details Modal - Reusable */}
-      <CardholderDetailsModal isOpen={!!viewedCardholder} onClose={() => setViewedCardholder(null)} cardholder={viewedCardholder} />
+      <CardholderDetailsModal
+        isOpen={!!viewedCardholder}
+        onClose={() => setViewedCardholder(null)}
+        data={viewedCardholder}
+      />
     </Layout>
   );
 };

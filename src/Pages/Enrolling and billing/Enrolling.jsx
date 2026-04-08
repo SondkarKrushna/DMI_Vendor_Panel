@@ -167,7 +167,7 @@ const Enrolling = () => {
       header: "ACTION",
       accessor: "action",
       Cell: ({ row }) => (
-        <Eye size={16} className="text-yellow-500 cursor-pointer hover:scale-110 transition-transform" onClick={() => setViewTarget(row)} />
+        <Eye size={16} className="text-yellow-500 cursor-pointer hover:scale-110 transition-transform" onClick={() => setViewTarget({ ...row, viewType: 'enrollment' })} />
       ),
     },
   ];
@@ -248,7 +248,7 @@ const Enrolling = () => {
             ) : (
               tableData.map((item, index) => (
                 <div key={index} className="bg-white rounded-2xl shadow p-4 space-y-3 border border-gray-100">
-                  <div className="flex justify-between items-center"><span className="text-sm font-semibold text-gray-400">{item.id}</span><Eye className="text-yellow-500 cursor-pointer" size={18} onClick={() => setViewTarget(item)} /></div>
+                  <div className="flex justify-between items-center"><span className="text-sm font-semibold text-gray-400">{item.id}</span><Eye className="text-yellow-500 cursor-pointer" size={18} onClick={() => setViewTarget({ ...item, viewType: 'enrollment' })} /></div>
                   <div><p className="font-bold text-gray-800">{item.name}</p><p className="text-sm text-gray-500 whitespace-pre-line">{item.contact}</p></div>
                   <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-gray-50">
                     <div className="flex flex-col"> <span className="text-gray-400 uppercase text-[10px]">Type</span> <span className="font-semibold">{item.cardType}</span> </div>
@@ -322,7 +322,7 @@ const Enrolling = () => {
         )}
       </Layout>
 
-      <CardholderDetailsModal isOpen={!!viewTarget} onClose={() => setViewTarget(null)} cardholder={viewTarget} />
+      <CardholderDetailsModal isOpen={!!viewTarget} onClose={() => setViewTarget(null)} data={viewTarget} />
     </>
   );
 };
