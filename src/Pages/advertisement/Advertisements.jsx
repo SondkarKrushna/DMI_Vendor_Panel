@@ -48,7 +48,13 @@ const Advertisements = () => {
 
   const responseData = data?.data || data || {};
   const ads = responseData.ads || (Array.isArray(responseData) ? responseData : []);
-  const stats = responseData.stats || { totalAds: 0, activeAds: 0, expiredAds: 0 };
+  const apiStats = data?.stats || responseData.stats || {};
+  
+  const stats = {
+    totalAds: apiStats.totalAds || apiStats.total || ads.length || 0,
+    activeAds: apiStats.activeAds || apiStats.active || ads.filter(a => a.status?.toLowerCase() === 'active').length || 0,
+    expiredAds: apiStats.expiredAds || apiStats.expired || ads.filter(a => a.status?.toLowerCase() === 'expired').length || 0,
+  };
 
   const filteredAds = ads.filter((ad) => {
     const matchesSearch = search === "" || ad.title?.toLowerCase().includes(search.toLowerCase()) || ad.description?.toLowerCase().includes(search.toLowerCase());

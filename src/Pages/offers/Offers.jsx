@@ -16,7 +16,7 @@ import {
   useUpdateOfferMutation,
   useDeleteOfferMutation
 } from "../../redux/api/offersApi";
-import { FormImageUpload } from "../../components/Model";
+import Modal, { FormField, FormInput, FormTextarea, ModalSubmitBtn, FormImageUpload } from "../../components/Model";
 
 const Offers = () => {
   const [activeTab, setActiveTab] = useState(() => {
@@ -46,8 +46,16 @@ const Offers = () => {
   const [updateOffer, { isLoading: isUpdating }] = useUpdateOfferMutation();
   const [deleteOffer, { isLoading: isDeleting }] = useDeleteOfferMutation();
 
-  const offers = data?.data || [];
-  const stats = data?.stats || { total: 0, pending: 0, active: 0, expired: 0, rejected: 0 };
+  const offers = data?.data || (Array.isArray(data) ? data : []);
+  const apiStats = data?.stats || {};
+  
+  const stats = {
+    total: apiStats.total || offers.length || 0,
+    pending: apiStats.pending || offers.filter(o => o.status?.toLowerCase() === 'pending').length || 0,
+    active: apiStats.active || offers.filter(o => o.status?.toLowerCase() === 'active').length || 0,
+    expired: apiStats.expired || offers.filter(o => o.status?.toLowerCase() === 'expired').length || 0,
+    rejected: apiStats.rejected || offers.filter(o => o.status?.toLowerCase() === 'rejected').length || 0,
+  };
   const pagination = data?.pagination || { total: 0, has_next_page: false, has_prev_page: false };
 
   // Sync tab changes to page 1
@@ -507,135 +515,93 @@ const Offers = () => {
       </div>
 
       {/* Model */}
-      {isModalOpen && (
-        <div
-          className="fixed inset-0 bg-black/60 backdrop-blur flex items-center justify-center z-[90]"
-          onClick={() => {
-            setIsModalOpen(false);
-            resetForm();
-          }}
-        >
-          <form
-            onSubmit={handleSubmit}
-            className="bg-white w-[400px] rounded-2xl p-6 shadow-lg"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="text-lg font-semibold mb-4">
-              {editingOffer ? "Edit Offer" : "Add Offer"}
-            </h2>
+      <Modal 
+        isOpen={isModalOpen} 
+        onClose={() => { setIsModalOpen(false); resetForm(); }}
+        title={editingOffer ? "Edit Offer" : "Add Offer"}
+      >
+        <div className="flex flex-col gap-4">
+          {/* Image Upload */}
+          <FormImageUpload
+            label="Upload Image"
+            name="image"
+            required={!editingOffer}
+            onChange={handleChange}
+            error={errors.image}
+            previewUrl={formData.image ? (formData.image instanceof File ? URL.createObjectURL(formData.image) : formData.image) : null}
+          />
 
-            <div className="space-y-4">
+          {/* Title */}
+          <FormField label="Offer Title" error={errors.title} required>
+            <FormInput
+              type="text"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              placeholder="e.g 20% off on dev courses"
+              className={errors.title ? 'border-red-500' : ''}
+            />
+            {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title}</p>}
+          </FormField>
 
-              {/* Image Upload */}
-              <FormImageUpload
-                label="Upload Image"
-                name="image"
-                required={!editingOffer}
+          {/* Discount */}
+          <FormField label="Discount (%)" error={errors.discount} required>
+            <FormInput
+              type="number"
+              name="discount"
+              value={formData.discount}
+              onChange={handleChange}
+              placeholder="e.g 10"
+              min="0"
+              max="100"
+              className={errors.discount ? 'border-red-500' : ''}
+            />
+            {errors.discount && <p className="text-red-500 text-xs mt-1">{errors.discount}</p>}
+          </FormField>
+
+          {/* Dates */}
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="Start Date" error={errors.startDate} required>
+              <FormInput
+                type="date"
+                name="startDate"
+                value={formData.startDate}
                 onChange={handleChange}
-                error={errors.image}
-                previewUrl={formData.image ? (formData.image instanceof File ? URL.createObjectURL(formData.image) : formData.image) : null}
+                className={errors.startDate ? 'border-red-500' : ''}
               />
+              {errors.startDate && <p className="text-red-500 text-xs mt-1">{errors.startDate}</p>}
+            </FormField>
 
-              {/* Title */}
-              <div>
-                <label className="block text-sm text-black mb-1 font-medium">
-                  Offer Title <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleChange}
-                  placeholder="e.g 20% off on dev courses"
-                  className={`w-full bg-gray-50 border ${errors.title ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500`}
-                />
-                {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title}</p>}
-              </div>
+            <FormField label="Expiry Date" error={errors.endDate} required>
+              <FormInput
+                type="date"
+                name="endDate"
+                value={formData.endDate}
+                onChange={handleChange}
+                className={errors.endDate ? 'border-red-500' : ''}
+              />
+              {errors.endDate && <p className="text-red-500 text-xs mt-1">{errors.endDate}</p>}
+            </FormField>
+          </div>
 
-              {/* Discount */}
-              <div>
-                <label className="block text-sm text-black mb-1 font-medium">
-                  Discount (%) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  name="discount"
-                  value={formData.discount}
-                  onChange={handleChange}
-                  placeholder="e.g 10"
-                  min="0"
-                  max="100"
-                  className={`w-full bg-gray-50 border ${errors.discount ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500`}
-                />
-                {errors.discount && <p className="text-red-500 text-xs mt-1">{errors.discount}</p>}
-              </div>
+          {/* Description */}
+          <FormField label="Description" error={errors.description} required>
+            <FormTextarea
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              placeholder="Enter offer description"
+              rows={2}
+              className={errors.description ? 'border-red-500' : ''}
+            />
+            {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
+          </FormField>
 
-              {/* Start Date + Date */}
-              <div className="flex gap-3">
-                <div className="w-1/2">
-                  <label className="block text-sm text-black mb-1 font-medium">
-                    Start Date <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    name="startDate"
-                    value={formData.startDate}
-                    onChange={handleChange}
-                    className={`w-full bg-gray-50 border ${errors.startDate ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500`}
-                  />
-                  {errors.startDate && <p className="text-red-500 text-xs mt-1">{errors.startDate}</p>}
-                </div>
-
-                <div className="w-1/2">
-                  <label className="block text-sm text-black mb-1 font-medium">
-                    Expiry Date <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    name="endDate"
-                    value={formData.endDate}
-                    onChange={handleChange}
-                    className={`w-full bg-gray-50 border ${errors.endDate ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500`}
-                  />
-                  {errors.endDate && <p className="text-red-500 text-xs mt-1">{errors.endDate}</p>}
-                </div>
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="block text-sm text-black mb-1 font-medium">
-                  Description <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  placeholder="Enter offer description"
-                  rows={1}
-                  className={`w-full bg-gray-50 border ${errors.description ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-purple-500`}
-                />
-                {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
-              </div>
-
-            </div>
-
-            {/* Button */}
-            <div className="mt-6 flex justify-center">
-              <button
-                type="submit"
-                disabled={isAdding || isUpdating}
-                className="px-6 py-2 rounded-xl bg-gradient-to-b from-[#7E1080] to-[#1A031A] text-white flex items-center gap-2"
-              >
-                {(isAdding || isUpdating) ? (
-                  <PulseLoader size={8} color="#fff" />
-                ) : (
-                  editingOffer ? "Update Offer" : "+ Add Offer"
-                )}
-              </button>
-            </div>
-          </form>
+          <ModalSubmitBtn onClick={handleSubmit} disabled={isAdding || isUpdating}>
+            {(isAdding || isUpdating) ? "Processing..." : (editingOffer ? "Update Offer" : "Add Offer")}
+          </ModalSubmitBtn>
         </div>
-      )}
+      </Modal>
 
       {/* Delete model */}
       {confirmModal.show && (

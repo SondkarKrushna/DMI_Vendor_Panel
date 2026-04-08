@@ -8,7 +8,7 @@ import CardholderDetailsModal from "../../components/CardholderDetailsModal";
 import { Users, Calendar, Eye, ArrowDownToLine, Upload, X } from "lucide-react";
 import { toast } from "react-toastify";
 import { useCreateEnrollmentMutation, useGetEnrollmentsQuery } from "../../redux/api/enrollmentApi";
-import Modal from "../../components/Model";
+import Modal, { FormField, FormInput, FormSelect, ModalSubmitBtn, FormImageUpload } from "../../components/Model";
 
 const Enrolling = () => {
   const [selectedRows, setSelectedRows] = useState([]);
@@ -49,8 +49,14 @@ const Enrolling = () => {
     refetch,
   } = useGetEnrollmentsQuery(queryParams);
 
-  const enrollments = enrollmentsResponse?.data || enrollmentsResponse?.enrollments || [];
-  const stats = enrollmentsResponse?.stats || {};
+  //const enrollmentsResponse = data?.data || data || {};
+  const enrollments = enrollmentsResponse.enrollments || (Array.isArray(enrollmentsResponse) ? enrollmentsResponse : []);
+  const apiStats = data?.stats || enrollmentsResponse.stats || {};
+  
+  const stats = {
+    totalEnrollments: apiStats.totalEnrollments || apiStats.total || enrollments.length || 0,
+    thisMonthEnrollments: apiStats.thisMonthEnrollments || enrollments.length || 0,
+  };
 
   // ✅ Filter options
   const filterOptions = [
@@ -267,59 +273,85 @@ const Enrolling = () => {
           </div>
         </div>
 
-        {showModal && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4" onClick={closeModal}>
-            <div className="bg-white w-full max-w-[440px] rounded-3xl p-7 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
-              <button onClick={closeModal} className="absolute top-5 right-5 text-gray-400 hover:text-gray-600"><X size={20} /></button>
-              <h2 className="text-xl font-bold text-gray-900 mb-6">Enroll New Cardholder</h2>
-              <div className="space-y-4">
-                <div className="flex gap-4">
-                  <div className="w-1/2">
-                    <label className="text-[10px] font-bold text-gray-700 uppercase">Card Type</label>
-                    <select value={formData.cardType} onChange={(e) => handleChange("cardType", e.target.value)} className={`w-full bg-gray-50 border rounded-xl px-4 py-3 text-sm outline-none ${errors.cardType ? "border-red-400" : "border-gray-200 focus:border-[#7E1080]"}`}>
-                      <option value="">Select</option> {cardTypes.map((type) => <option key={type} value={type}>{type}</option>)}
-                    </select>
-                  </div>
-                  <div className="w-1/2">
-                    <label className="text-[10px] font-bold text-gray-700 uppercase">CHF Number</label>
-                    <input type="text" placeholder="CHF-1234" value={formData.chfNumber} onChange={(e) => handleChange("chfNumber", e.target.value)} className={`w-full bg-gray-50 border rounded-xl px-4 py-3 text-sm outline-none ${errors.chfNumber ? "border-red-400" : "border-gray-200 focus:border-[#7E1080]"}`} />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold text-gray-700 uppercase">Full Name</label>
-                  <input type="text" placeholder="Enter name" value={formData.fullName} onChange={(e) => handleChange("fullName", e.target.value)} className={`w-full bg-gray-50 border rounded-xl px-4 py-3 text-sm outline-none ${errors.fullName ? "border-red-400" : "border-gray-200 focus:border-[#7E1080]"}`} />
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold text-gray-700 uppercase">Mobile</label>
-                  <input type="text" maxLength={10} value={formData.mobile} onChange={(e) => handleChange("mobile", e.target.value.replace(/\D/g, ""))} className={`w-full bg-gray-50 border rounded-xl px-4 py-3 text-sm outline-none ${errors.mobile ? "border-red-400" : "border-gray-200 focus:border-[#7E1080]"}`} />
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold text-gray-700 uppercase">Email</label>
-                  <input type="email" value={formData.email} onChange={(e) => handleChange("email", e.target.value)} className={`w-full bg-gray-50 border rounded-xl px-4 py-3 text-sm outline-none ${errors.email ? "border-red-400" : "border-gray-200 focus:border-[#7E1080]"}`} />
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold text-gray-700 uppercase">Image</label>
-                  <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageChange} className="hidden" />
-                  {imagePreview ? (
-                    <div className="flex items-center gap-4 border p-3 rounded-xl bg-purple-50/20">
-                      <img src={imagePreview} className="w-14 h-14 rounded-lg object-cover" />
-                      <div className="flex-1 overflow-hidden font-medium text-xs"> <p className="truncate">{formData.image?.name}</p> <p className="text-[#7E1080]">{(formData.image?.size / 1024).toFixed(1)} KB</p> </div>
-                      <button onClick={removeImage} className="text-red-500"><X size={16} /></button>
-                    </div>
-                  ) : (
-                    <div onClick={() => fileInputRef.current?.click()} className="border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer hover:bg-purple-50 group transition-all">
-                      <Upload size={24} className="mx-auto text-gray-300 group-hover:text-[#7E1080] mb-2" />
-                      <p className="text-xs font-bold text-gray-500">Upload Image</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-              <button onClick={handleSubmit} disabled={isCreating} className="w-full mt-6 py-4 bg-gradient-to-b from-[#7E1080] to-[#1A031A] text-white font-bold rounded-2xl shadow-xl hover:scale-[1.02] active:scale-95 transition-all text-sm">
-                {isCreating ? "Processing..." : "Enroll Cardholder"}
-              </button>
+        <Modal
+          isOpen={showModal}
+          onClose={closeModal}
+          title="Enroll New Cardholder"
+        >
+          <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-2 gap-4">
+              <FormField label="Card Type" error={errors.cardType} required>
+                <FormSelect
+                  value={formData.cardType}
+                  onChange={(e) => handleChange("cardType", e.target.value)}
+                  className={errors.cardType ? 'border-red-400' : ''}
+                >
+                  <option value="">Select</option>
+                  {cardTypes.map((type) => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
+                </FormSelect>
+                {errors.cardType && <p className="text-red-500 text-xs mt-1">{errors.cardType}</p>}
+              </FormField>
+
+              <FormField label="CHF Number" error={errors.chfNumber} required>
+                <FormInput
+                  type="text"
+                  placeholder="CHF-1234"
+                  value={formData.chfNumber}
+                  onChange={(e) => handleChange("chfNumber", e.target.value)}
+                  className={errors.chfNumber ? 'border-red-400' : ''}
+                />
+                {errors.chfNumber && <p className="text-red-500 text-xs mt-1">{errors.chfNumber}</p>}
+              </FormField>
             </div>
+
+            <FormField label="Full Name" error={errors.fullName} required>
+              <FormInput
+                type="text"
+                placeholder="Enter name"
+                value={formData.fullName}
+                onChange={(e) => handleChange("fullName", e.target.value)}
+                className={errors.fullName ? 'border-red-400' : ''}
+              />
+              {errors.fullName && <p className="text-red-500 text-xs mt-1">{errors.fullName}</p>}
+            </FormField>
+
+            <FormField label="Mobile" error={errors.mobile} required>
+              <FormInput
+                type="text"
+                maxLength={10}
+                value={formData.mobile}
+                onChange={(e) => handleChange("mobile", e.target.value.replace(/\D/g, ""))}
+                className={errors.mobile ? 'border-red-400' : ''}
+              />
+              {errors.mobile && <p className="text-red-500 text-xs mt-1">{errors.mobile}</p>}
+            </FormField>
+
+            <FormField label="Email" error={errors.email} required>
+              <FormInput
+                type="email"
+                value={formData.email}
+                onChange={(e) => handleChange("email", e.target.value)}
+                className={errors.email ? 'border-red-400' : ''}
+              />
+              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+            </FormField>
+
+            <FormImageUpload
+              label="Image"
+              name="image"
+              onChange={handleImageChange}
+              error={errors.image}
+              required
+              previewUrl={imagePreview}
+            />
+
+            <ModalSubmitBtn onClick={handleSubmit} disabled={isCreating}>
+              {isCreating ? "Processing..." : "Enroll Cardholder"}
+            </ModalSubmitBtn>
           </div>
-        )}
+        </Modal>
       </Layout>
 
       <CardholderDetailsModal isOpen={!!viewTarget} onClose={() => setViewTarget(null)} data={viewTarget} />

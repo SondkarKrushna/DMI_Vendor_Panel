@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Layout from "../../components/layout/Layout";
 import Table from "../../components/table/Table";
 import Card from "../../components/cards/Card";
-import Search from "../../components/search/Search";
+import SearchBar from "../../components/search/SearchBar";
 import { 
   DollarSign, 
   Calendar, 
@@ -28,8 +28,14 @@ const Invoice = () => {
   });
 
   const activeServices = servicesData?.data || [];
-  const invoices = invoicesResponse?.data || [];
-  const stats = invoicesResponse?.stats || {};
+  const invoices = invoicesResponse?.data || (Array.isArray(invoicesResponse) ? invoicesResponse : []);
+  const apiStats = invoicesResponse?.stats || {};
+  const totalRev = invoices.reduce((sum, inv) => sum + (inv.amount || 0), 0);
+  
+  const stats = {
+    totalRevenue: apiStats.totalRevenue || totalRev,
+    thisMonthRevenue: apiStats.thisMonthRevenue || totalRev,
+  };
 
   const serviceOptions = [
     { label: "All services", value: "" },
@@ -181,13 +187,21 @@ const Invoice = () => {
 
         {/* 🔥 Search */}
         <div className="mb-4">
-          <Search
-            label="All services"
-            options={serviceOptions}
-            status={selectedService}
-            onStatusChange={handleServiceChange}
-            searchValue={searchValue}
-            onSearchChange={setSearchValue}
+          <SearchBar
+            value={searchValue}
+            onChange={setSearchValue}
+            placeholder="Search by ID, Name or Service..."
+            filters={[
+              {
+                value: selectedServiceId,
+                onChange: (val) => {
+                  setSelectedServiceId(val);
+                  const s = serviceOptions.find(o => o.value === val);
+                  if (s) setSelectedService(s.label);
+                },
+                options: serviceOptions
+              }
+            ]}
           />
         </div>
 

@@ -3,7 +3,7 @@ import Layout from "../../components/layout/Layout";
 import Card from "../../components/cards/Card";
 import Button from "../../components/buttons/Button";
 import Table from "../../components/table/Table";
-import Search from "../../components/search/Search";
+import SearchBar from "../../components/search/SearchBar";
 import { Phone, Clock, CheckCircle, Eye, ArrowDownToLine, Calendar } from "lucide-react";
 
 import { toast } from "react-toastify";
@@ -58,8 +58,14 @@ const CallNotepad = () => {
   const [addCallNote, { isLoading: isAdding }] = useAddCallNoteMutation();
   const [updateStatus, { isLoading: isUpdating }] = useUpdateCallNoteStatusMutation();
 
-  const notes = data?.callNotes || [];
-  const stats = data?.stats || { totalCalls: 0, pendingFollowUps: 0, totalCompleted: 0, totalEnquiries: 0 };
+  const notes = data?.callNotes || data?.data || (Array.isArray(data) ? data : []);
+  const apiStats = data?.stats || {};
+  const stats = {
+    totalCalls: apiStats.totalCalls || notes.length || 0,
+    pendingFollowUps: apiStats.pendingFollowUps || notes.filter(n => n.type === 'follow-up' && n.status !== 'completed').length || 0,
+    totalCompleted: apiStats.totalCompleted || notes.filter(n => n.status === 'completed').length || 0,
+    totalEnquiries: apiStats.totalEnquiries || notes.filter(n => n.type === 'enquiry').length || 0,
+  };
 
   const handleMarkComplete = async () => {
     if (!confirmModal.id) return;
@@ -265,11 +271,21 @@ const CallNotepad = () => {
 
         {/* 🔥 Search & Status Filter */}
         <div className="mb-4">
-          <Search
-            status={selectedStatus}
-            onStatusChange={setSelectedStatus}
-            searchValue={searchValue}
-            onSearchChange={setSearchValue}
+          <SearchBar
+            value={searchValue}
+            onChange={setSearchValue}
+            placeholder="Search by Call ID, Name or Contact..."
+            filters={[
+              {
+                value: selectedStatus,
+                onChange: setSelectedStatus,
+                options: [
+                  { label: "All status", value: "All status" },
+                  { label: "Pending", value: "Pending" },
+                  { label: "Completed", value: "Completed" }
+                ]
+              }
+            ]}
           />
         </div>
 

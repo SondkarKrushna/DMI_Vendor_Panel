@@ -53,9 +53,15 @@ const PunchManagement = () => {
     search: searchTerm
   });
 
-  const punches = punchesResponse?.data || punchesResponse?.punches || [];
-  const stats = punchesResponse?.stats || { totalPunches: 0, totalRevenue: 0, thisMonthPunches: 0 };
-  const pagination = punchesResponse?.pagination || { total: 0, page: currentPage, per_page: 10, total_pages: 1, has_next_page: false, has_prev_page: false };
+  const punches = punchesResponse?.data || punchesResponse?.punches || (Array.isArray(punchesResponse) ? punchesResponse : []);
+  const apiStats = punchesResponse?.stats || {};
+  
+  const stats = {
+    totalPunches: apiStats.totalPunches || punches.length || 0,
+    totalRevenue: apiStats.totalRevenue || punches.reduce((sum, p) => sum + (p.revenue || p.amount || p.serviceId?.price || 0), 0),
+    thisMonthPunches: apiStats.thisMonthPunches || punches.length || 0,
+  };
+  const pagination = punchesResponse?.pagination || { total: punches.length || 0, page: currentPage, per_page: 10, total_pages: 1, has_next_page: false, has_prev_page: false };
 
   // Handlers
   const handleSearchCard = async () => {
@@ -342,7 +348,7 @@ const PunchManagement = () => {
       </Modal>
 
       {/* Cardholder Details Modal */}
-      <CardholderDetailsModal isOpen={!!viewedCardholder} onClose={() => setViewedCardholder(null)} data={viewedCardholder} />
+      <CardholderDetailsModal isOpen={!!viewedCardholder} onClose={() => setViewedCardholder(null)} cardholder={viewedCardholder} />
     </Layout>
   );
 };

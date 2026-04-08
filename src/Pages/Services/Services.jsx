@@ -5,6 +5,7 @@ import Button from "../../components/buttons/Button";
 import SearchBar from "../../components/search/SearchBar";
 import Table from "../../components/table/Table";
 import CardholderDetailsModal from "../../components/CardholderDetailsModal";
+import Modal, { FormField, FormInput, FormSelect, FormTextarea, ModalSubmitBtn, FormImageUpload } from "../../components/Model";
 import { toast } from "react-toastify";
 import { PulseLoader } from "react-spinners";
 import {
@@ -50,8 +51,16 @@ const Services = () => {
   const [updateService, { isLoading: isUpdating }] = useUpdateServiceMutation();
   const [deleteService] = useDeleteServiceMutation();
 
-  const services = data?.data || [];
-  const stats = data?.stats || { total: 0, pending: 0, active: 0, inactive: 0 };
+  const services = data?.data || (Array.isArray(data) ? data : []);
+  const apiStats = data?.stats || {};
+  
+  const stats = {
+    total: apiStats.total || services.length || 0,
+    pending: apiStats.pending || services.filter(s => s.status?.toLowerCase() === 'pending').length || 0,
+    active: apiStats.active || services.filter(s => s.status?.toLowerCase() === 'active').length || 0,
+    inactive: apiStats.inactive || services.filter(s => s.status?.toLowerCase() === 'inactive').length || 0,
+  };
+
   const pagination = data?.pagination || { total: 0, page: currentPage, per_page: 10, total_pages: 1, has_next_page: false, has_prev_page: false };
 
   const filteredServices = services;
@@ -454,161 +463,100 @@ const Services = () => {
 
       </div>
       {/* Model */}
-      {showModal && (
-        <div
-          onClick={() => {
-            setShowModal(false);
-            resetForm();
-          }}
-          className="fixed inset-0 bg-black/60 backdrop-blur flex items-center justify-center z-[90]">
+      <Modal 
+        isOpen={showModal} 
+        onClose={() => { setShowModal(false); resetForm(); }}
+        title={editingService ? "Edit Service" : "Add Service"}
+      >
+        <div className="flex flex-col gap-4">
+          {/* Service Name */}
+          <FormField label="Service Name" error={errors.name} required>
+            <FormInput
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              placeholder="Enter service name"
+              className={errors.name ? 'border-red-500' : ''}
+            />
+            {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+          </FormField>
 
-          <form
-            onSubmit={handleSubmit}
-            onClick={(e) => e.stopPropagation()}
-            className="bg-white w-[420px] rounded-2xl p-6 shadow-lg relative max-h-[90vh] overflow-y-auto"
-          >
+          {/* Price */}
+          <FormField label="Price" error={errors.price} required>
+            <FormInput
+              type="number"
+              name="price"
+              value={formData.price}
+              onChange={handleChange}
+              placeholder="0.00"
+              min="0"
+              className={errors.price ? 'border-red-500' : ''}
+            />
+            {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price}</p>}
+          </FormField>
 
-            {/* Title */}
-            <h2 className="text-lg font-semibold text-gray-800 mb-5">
-              {editingService ? "Edit Service" : "Add Service"}
-            </h2>
-
-            {/* Form */}
-            <div className="space-y-4">
-
-              {/* Service Name */}
-              <div>
-                <label className="text-sm text-black mb-1 block font-medium">
-                  Service Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  placeholder="Enter service name"
-                  className={`w-full bg-gray-50 border ${errors.name ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500`}
-                />
-                {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
-              </div>
-
-              {/* Price */}
-              <div>
-                <label className="text-sm text-black mb-1 block font-medium">
-                  Price <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  name="price"
-                  value={formData.price}
-                  onChange={handleChange}
-                  placeholder="0.00"
-                  min="0"
-                  className={`w-full bg-gray-50 border ${errors.price ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500`}
-                />
-                {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price}</p>}
-              </div>
-
-              {/* Card Type + Discount */}
-              <div className="flex gap-3">
-                <div className="w-1/2">
-                  <label className="text-sm text-black mb-1 block font-medium">
-                    Card Type <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    name="cardType"
-                    value={formData.cardType}
-                    onChange={handleChange}
-                    className={`w-full bg-gray-50 border ${errors.cardType ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500`}
-                  >
-                    <option value="" disabled>Select Card Type</option>
-                    <option value="Silver">Silver</option>
-                    <option value="Gold">Gold</option>
-                    <option value="Platinum">Platinum</option>
-                    <option value="Diamond">Diamond</option>
-                    <option value="Vip">Vip</option>
-                  </select>
-                  {errors.cardType && <p className="text-red-500 text-xs mt-1">{errors.cardType}</p>}
-                </div>
-
-                <div className="w-1/2">
-                  <label className="text-sm text-black mb-1 block font-medium">
-                    Discount (%) <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    name="discount"
-                    value={formData.discount}
-                    onChange={handleChange}
-                    placeholder="0"
-                    min="0"
-                    max="100"
-                    className={`w-full bg-gray-50 border ${errors.discount ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500`}
-                  />
-                  {errors.discount && <p className="text-red-500 text-xs mt-1">{errors.discount}</p>}
-                </div>
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="text-sm text-black mb-1 block font-medium">
-                  Description <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  placeholder="Enter description"
-                  rows={1}
-                  className={`w-full bg-gray-50 border ${errors.description ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-purple-500`}
-                />
-                {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
-              </div>
-
-              {/* Image Upload */}
-              <div>
-                <label className="text-sm text-black mb-1 block font-medium">
-                  Image {!editingService && <span className="text-red-500">*</span>}
-                </label>
-                <input
-                  type="file"
-                  name="image"
-                  accept="image/*"
-                  onChange={handleChange}
-                  className={`w-full bg-gray-50 border ${errors.image ? 'border-red-500' : 'border-gray-200'} rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500`}
-                />
-                {errors.image && <p className="text-red-500 text-xs mt-1">{errors.image}</p>}
-                {formData.image && (
-                  <div className="mt-2">
-                    <p className="text-xs text-gray-500 mb-1">Preview:</p>
-                    <img
-                      src={formData.image instanceof File ? URL.createObjectURL(formData.image) : formData.image}
-                      alt="Preview"
-                      className="w-24 h-24 object-cover rounded-xl border border-gray-200"
-                    />
-                  </div>
-                )}
-              </div>
-
-            </div>
-
-            {/* Button */}
-            <div className="mt-6 flex justify-center">
-              <button
-                type="submit"
-                disabled={isAdding || isUpdating}
-                className="w-full bg-[#7E1080] text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2"
+          {/* Card Type + Discount */}
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="Card Type" error={errors.cardType} required>
+              <FormSelect
+                name="cardType"
+                value={formData.cardType}
+                onChange={handleChange}
+                className={errors.cardType ? 'border-red-500' : ''}
               >
-                {(isAdding || isUpdating) ? (
-                  <PulseLoader size={8} color="#fff" />
-                ) : (
-                  editingService ? "Update Service" : "Add Service"
-                )}
-              </button>
-            </div>
-          </form>
+                <option value="" disabled>Select Card Type</option>
+                <option value="Silver">Silver</option>
+                <option value="Gold">Gold</option>
+                <option value="Platinum">Platinum</option>
+                <option value="Diamond">Diamond</option>
+                <option value="Vip">Vip</option>
+              </FormSelect>
+              {errors.cardType && <p className="text-red-500 text-xs mt-1">{errors.cardType}</p>}
+            </FormField>
+
+            <FormField label="Discount (%)" error={errors.discount} required>
+              <FormInput
+                type="number"
+                name="discount"
+                value={formData.discount}
+                onChange={handleChange}
+                placeholder="0"
+                min="0"
+                max="100"
+                className={errors.discount ? 'border-red-500' : ''}
+              />
+              {errors.discount && <p className="text-red-500 text-xs mt-1">{errors.discount}</p>}
+            </FormField>
+          </div>
+
+          {/* Description */}
+          <FormField label="Description" error={errors.description} required>
+            <FormTextarea
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              placeholder="Enter description"
+              rows={2}
+              className={errors.description ? 'border-red-500' : ''}
+            />
+            {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
+          </FormField>
+
+          {/* Image Upload */}
+          <FormImageUpload
+            label="Image"
+            name="image"
+            onChange={handleChange}
+            error={errors.image}
+            required={!editingService}
+            previewUrl={formData.image instanceof File ? URL.createObjectURL(formData.image) : formData.image}
+          />
+
+          <ModalSubmitBtn onClick={handleSubmit} disabled={isAdding || isUpdating}>
+            {(isAdding || isUpdating) ? "Processing..." : (editingService ? "Update Service" : "Add Service")}
+          </ModalSubmitBtn>
         </div>
-      )}
+      </Modal>
       <CardholderDetailsModal
         isOpen={!!viewedCardholder}
         onClose={() => setViewedCardholder(null)}
