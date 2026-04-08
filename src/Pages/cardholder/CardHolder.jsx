@@ -6,7 +6,7 @@ import logo from "../../../public/logo.png";
 import { ArrowDownToLine, Search as SearchIcon, Loader2 } from "lucide-react";
 import DMIPremiumCard from '../../components/DMIPremiumCard';
 import { useLazySearchCardHolderQuery, useCreatePunchMutation } from "../../redux/api/punchApi";
-import { useGetServicesQuery } from "../../redux/api/servicesApi";
+import { useGetActiveServicesQuery } from "../../redux/api/servicesApi";
 import { toast } from "react-toastify";
 
 const CardHolder = () => {
@@ -25,7 +25,7 @@ const CardHolder = () => {
   // API Hooks
   const [searchCard, { isFetching: isSearching }] = useLazySearchCardHolderQuery();
   const [createPunch, { isLoading: isPunching }] = useCreatePunchMutation();
-  const { data: servicesResponse } = useGetServicesQuery();
+  const { data: servicesResponse } = useGetActiveServicesQuery();
 
   const services = servicesResponse?.data || [];
 

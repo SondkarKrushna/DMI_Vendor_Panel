@@ -239,69 +239,80 @@ const Advertisements = () => {
         />
 
         {/* Advertisement Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4 bg-[#F3F4F6] rounded-3xl">
           {isLoading ? (
             <div className="col-span-full flex justify-center py-10">
               <PulseLoader color="#7E1080" />
             </div>
           ) : filteredAds.length === 0 ? (
-            <div className="col-span-full flex flex-col items-center justify-center py-16 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+            <div className="col-span-full flex flex-col items-center justify-center py-16 text-center bg-white rounded-2xl border border-dashed border-gray-200">
               <Megaphone className="w-12 h-12 text-gray-300 mb-3" />
               <h3 className="text-lg font-semibold text-gray-800">No Advertisements Found</h3>
-              <p className="text-sm text-gray-500 mt-1">There are no {activeTab.toLowerCase()} advertisements matching your search/filters right now.</p>
             </div>
-          ) : filteredAds.map((item, index) => (
+          ) : filteredAds.map((item) => (
             <div
               key={item._id}
-              className="bg-white rounded-2xl shadow-md p-3"
+              className="bg-white rounded-[24px] shadow-sm p-4 flex flex-col border border-gray-100"
             >
-              {/* Image */}
-              <div className="relative">
+              {/* Image Container */}
+              <div className="relative mb-4">
                 <img
                   src={item.imageUrl || item.image || advertisementImg}
                   alt="ad"
-                  className="w-full h-32 object-cover rounded-xl"
+                  className="w-full h-44 object-cover rounded-[18px]"
                 />
 
-                {/* Status Badge */}
-                <span
-                  className={`absolute top-2 right-2 text-xs px-3 py-1 rounded-full text-white ${item.status?.toLowerCase() === 'pending'
-                    ? "bg-yellow-400 text-black"
-                    : item.status?.toLowerCase() === 'rejected'
-                      ? "bg-red-500"
-                      : item.status?.toLowerCase() === 'expired'
-                        ? "bg-gray-500"
-                        : "bg-green-500"
-                    }`}
-                >
-                  {item.status || "Pending"}
-                </span>
+                {/* Status Badge Overlay */}
+                <div className="absolute top-3 right-3">
+                  <span
+                    className={`text-[11px] font-bold px-4 py-1.5 rounded-full shadow-sm min-w-[85px] text-center inline-block ${item.status?.toLowerCase() === 'pending'
+                      ? "bg-[#FAB800] text-black"
+                      : item.status?.toLowerCase() === 'rejected'
+                        ? "bg-[#FF0000] text-white"
+                        : "bg-[#00B01D] text-white"
+                      }`}
+                  >
+                    {item.status || "Pending"}
+                  </span>
+                </div>
               </div>
 
-              {/* Content */}
-              <div className="mt-3">
-                <h3 className="text-sm font-semibold">{item.title}</h3>
-                <p className="text-xs text-gray-500">{item.businessVertical}</p>
-                <p className="text-xs text-gray-400 mt-1 line-clamp-2">{item.description}</p>
-                <p className="text-xs text-gray-400 mt-1">
-                  Valid Till {item.endDate ? new Date(item.endDate).toLocaleDateString() : "N/A"}
+              {/* Content Section */}
+              <div className="flex-1 px-1">
+                <h3 className="text-[17px] font-bold text-black leading-tight">
+                  {item.title || "Free IT Courses"}
+                </h3>
+                <p className="text-[14px] text-gray-500 font-medium mt-0.5">
+                  {item.businessVertical || "IT Company"}
                 </p>
-              </div>
 
-              {/* Actions */}
-              <div className="flex justify-end gap-2 mt-3">
-                <button
-                  onClick={() => handleEdit(item)}
-                  className="p-2 rounded-lg bg-purple-100 text-purple-600"
-                >
-                  <SquarePen size={14} />
-                </button>
-                <button
-                  onClick={() => handleDelete(item._id)}
-                  className="p-2 rounded-lg bg-red-100 text-red-600"
-                >
-                  <Trash2 size={14} />
-                </button>
+                {/* Footer: Date and Buttons */}
+                <div className="flex justify-between items-center mt-6">
+                  <p className="text-[13px] font-semibold text-gray-800">
+                    Valid Till {item.endDate ? new Date(item.endDate).toLocaleDateString('en-GB', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric'
+                    }) : "20 Feb 2026"}
+                  </p>
+
+                  <div className="flex gap-2">
+                    {/* Edit Button */}
+                    <button
+                      onClick={() => handleEdit(item)}
+                      className="w-10 h-10 flex items-center justify-center rounded-xl bg-[#FBE8FF] border border-[#E9D5FF] transition-transform active:scale-95"
+                    >
+                      <SquarePen size={18} className="text-[#7E1080]" />
+                    </button>
+                    {/* Delete Button */}
+                    <button
+                      onClick={() => handleDelete(item._id)}
+                      className="w-10 h-10 flex items-center justify-center rounded-xl bg-[#FBE8FF] border border-[#E9D5FF] transition-transform active:scale-95"
+                    >
+                      <Trash2 size={18} className="text-[#FF0000]" />
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           ))}
@@ -420,24 +431,32 @@ const Advertisements = () => {
                 <label className="text-sm text-black font-medium">
                   Image {!editingAd && <span className="text-red-500">*</span>}
                 </label>
-                <input
-                  type="file"
-                  name="imageUrl"
-                  accept="image/*"
-                  onChange={handleChange}
-                  className={`w-full px-4 py-3 rounded-xl bg-gray-100 outline-none text-sm border ${errors.imageUrl ? 'border-red-500' : 'border-transparent'}`}
-                />
-                {errors.imageUrl && <p className="text-red-500 text-xs">{errors.imageUrl}</p>}
-                {formData.imageUrl && (
-                  <div className="mt-2">
-                    <p className="text-xs text-gray-500 mb-1">Preview:</p>
-                    <img
-                      src={formData.imageUrl instanceof File ? URL.createObjectURL(formData.imageUrl) : formData.imageUrl}
-                      alt="Preview"
-                      className="w-24 h-24 object-cover rounded-xl border border-gray-200"
+
+                <div className="flex items-center gap-4">
+                  {/* Input Container */}
+                  <div className="flex-1">
+                    <input
+                      type="file"
+                      name="imageUrl"
+                      accept="image/*"
+                      onChange={handleChange}
+                      className={`w-full px-4 py-3 rounded-xl bg-gray-100 outline-none text-sm border ${errors.imageUrl ? 'border-red-500' : 'border-transparent'
+                        }`}
                     />
+                    {errors.imageUrl && <p className="text-red-500 text-xs mt-1">{errors.imageUrl}</p>}
                   </div>
-                )}
+
+                  {/* Preview Container - Displays on the right */}
+                  {formData.imageUrl && (
+                    <div className="shrink-0">
+                      <img
+                        src={formData.imageUrl instanceof File ? URL.createObjectURL(formData.imageUrl) : formData.imageUrl}
+                        alt="Preview"
+                        className="w-16 h-16 object-cover rounded-xl border border-gray-200 shadow-sm"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Button */}

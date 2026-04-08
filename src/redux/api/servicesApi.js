@@ -54,7 +54,14 @@ export const servicesApi = createApi({
     // ✅ READ
     getServices: builder.query({
       query: (params) => ({
-        url: "/api/services/my-services",
+        url: "/api/vendor/my-services",
+        params, // dynamically passes ?page=1&limit=10, etc.
+      }),
+      providesTags: ["Services"],
+    }),
+    getActiveServices: builder.query({
+      query: (params) => ({
+        url: "/api/vendor/my-active-services",
         params, // dynamically passes ?page=1&limit=10, etc.
       }),
       providesTags: ["Services"],
@@ -67,4 +74,5 @@ export const {
   useUpdateServiceMutation,
   useDeleteServiceMutation,
   useGetServicesQuery,
+  useGetActiveServicesQuery,
 } = servicesApi;

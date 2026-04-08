@@ -4,6 +4,7 @@ import Card from "../../components/cards/Card";
 import Button from "../../components/buttons/Button";
 import SearchBar from "../../components/search/SearchBar";
 import Table from "../../components/table/Table";
+import CardholderDetailsModal from "../../components/CardholderDetailsModal";
 import { toast } from "react-toastify";
 import { PulseLoader } from "react-spinners";
 import {
@@ -24,8 +25,10 @@ import {
 const Services = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
   const [selectedRows, setSelectedRows] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [viewedCardholder, setViewedCardholder] = useState(null);
   const [editingService, setEditingService] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
@@ -37,12 +40,14 @@ const Services = () => {
   });
   const [errors, setErrors] = useState({});
 
-  const { data, isLoading, isError } = useGetServicesQuery();
+  const { data, isLoading, isError } = useGetServicesQuery({ page: currentPage, per_page: 10 });
   const [addService, { isLoading: isAdding }] = useAddServiceMutation();
   const [updateService, { isLoading: isUpdating }] = useUpdateServiceMutation();
   const [deleteService] = useDeleteServiceMutation();
 
   const services = data?.data || [];
+  const stats = data?.stats || { total: 0, pending: 0, active: 0, inactive: 0 };
+  const pagination = data?.pagination || { total: 0, page: currentPage, per_page: 10, total_pages: 1, has_next_page: false, has_prev_page: false };
 
   const filteredServices = services.filter((service) => {
     const matchesSearch = search === "" || service.serviceName?.toLowerCase().includes(search.toLowerCase()) || service.description?.toLowerCase().includes(search.toLowerCase());
@@ -195,13 +200,14 @@ const Services = () => {
       header: "STATUS",
       accessor: "status",
       Cell: ({ value }) => {
+        const status = value?.toLowerCase();
         const styles = {
-          Pending: "bg-[#FFF8E7] text-[#FAB800]",
-          Approved: "bg-[#E6F9F0] text-[#00C853]",
-          Rejected: "bg-[#FFEBEB] text-[#FF5252]",
+          pending: "bg-[#FFF8E7] text-[#FAB800]",
+          active: "bg-[#E6F9F0] text-[#00C853]",
+          inactive: "bg-[#FFEBEB] text-[#FF5252]",
         };
         return (
-          <span className={`px-4 py-1 rounded-full text-xs font-bold ${styles[value] || "bg-gray-100"}`}>
+          <span className={`px-4 py-1 rounded-full text-xs font-bold ${styles[status] || "bg-gray-100 text-gray-700"}`}>
             {value}
           </span>
         );
@@ -218,7 +224,15 @@ const Services = () => {
           >
             <Edit3 size={18} />
           </button>
-          <button className="text-yellow-500 hover:text-yellow-700 transition">
+          <button onClick={() => setViewedCardholder({
+            serviceName: row.serviceName,
+            cardType: row.cardType,
+            price: row.price,
+            discount: row.discountRate,
+            serviceId: row.serviceId || row._id,
+            status: row.status,
+            viewType: 'service',
+          })} className="text-yellow-500 hover:text-yellow-700 transition">
             <Eye size={18} />
           </button>
           <button
@@ -234,7 +248,7 @@ const Services = () => {
 
   const handleSelectAll = (checked) => {
     if (checked) {
-      const allIds = services.map((row) => row._id);
+      const allIds = filteredServices.map((row) => row._id);
       setSelectedRows(allIds);
     } else {
       setSelectedRows([]);
@@ -280,14 +294,14 @@ const Services = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card
             title="Total Services"
-            amount={services.length.toString()}
+            amount={stats.total.toString()}
             percentage={42}
             statusText="Increased By Yesterday"
             icon={Briefcase}
           />
           <Card
             title="Pending Services"
-            amount={services.filter(s => s.status === 'Pending').length.toString()}
+            amount={stats.pending.toString()}
             percentage={-30}
             statusText="Decreased By Yesterday"
             isDecrease
@@ -295,10 +309,17 @@ const Services = () => {
           />
           <Card
             title="Active Services"
-            amount={services.filter(s => s.status === 'Approved').length.toString()}
+            amount={stats.active.toString()}
             percentage={42}
             statusText="Increased By Last Month"
             icon={CheckCircle}
+          />
+          <Card
+            title="Inactive Services"
+            amount={stats.inactive.toString()}
+            percentage={0}
+            statusText="Current count"
+            icon={Clock}
           />
         </div>
 
@@ -374,8 +395,8 @@ const Services = () => {
                 </div>
                 <div className="flex justify-between items-center text-sm py-1">
                   <span className="text-gray-500">Status</span>
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${item.status === 'Pending' ? 'bg-[#FFF8E7] text-[#FAB800]' :
-                    item.status === 'Approved' ? 'bg-[#E6F9F0] text-[#00C853]' :
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${item.status?.toLowerCase() === 'pending' ? 'bg-[#FFF8E7] text-[#FAB800]' :
+                    item.status?.toLowerCase() === 'active' ? 'bg-[#E6F9F0] text-[#00C853]' :
                       'bg-[#FFEBEB] text-[#FF5252]'
                     }`}>{item.status}</span>
                 </div>
@@ -383,6 +404,29 @@ const Services = () => {
             </div>
           ))}
         </div>
+
+        {/* Pagination Controls */}
+        {pagination.total > pagination.per_page && (
+          <div className="flex flex-col gap-3 mt-6 items-center justify-between sm:flex-row">
+            <div className="text-sm text-gray-600">
+              Showing page {pagination.page} of {pagination.total_pages} — {pagination.total} records
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={!pagination.has_prev_page}
+                className={`px-4 py-2 rounded-lg border transition ${pagination.has_prev_page ? 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50' : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'}`}>
+                Previous
+              </button>
+              <button
+                onClick={() => setCurrentPage((prev) => Math.min(pagination.total_pages, prev + 1))}
+                disabled={!pagination.has_next_page}
+                className={`px-4 py-2 rounded-lg border transition ${pagination.has_next_page ? 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50' : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'}`}>
+                Next
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* ✅ TABLE VIEW */}
         <div className="hidden md:block">
@@ -557,6 +601,9 @@ const Services = () => {
           </form>
         </div>
       )}
+
+      {/* Cardholder Details Modal - Reusable */}
+      <CardholderDetailsModal isOpen={!!viewedCardholder} onClose={() => setViewedCardholder(null)} cardholder={viewedCardholder} />
     </Layout>
   );
 };

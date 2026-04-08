@@ -3,6 +3,7 @@ import Layout from "../../components/layout/Layout";
 import Card from "../../components/cards/Card";
 import Table from "../../components/table/Table";
 import SearchBar from "../../components/search/SearchBar";
+import CardholderDetailsModal from "../../components/CardholderDetailsModal";
 import Modal, { FormField, FormInput, FormSelect, ModalSubmitBtn } from "../../components/Model";
 import { Users, DollarSign, Calendar, Eye, Printer, ArrowDownToLine, Search as SearchIcon, Plus } from "lucide-react";
 import { toast } from "react-toastify";
@@ -16,8 +17,10 @@ import { useGetServicesQuery } from "../../redux/api/servicesApi";
 const PunchManagement = () => {
   const [selectedRows, setSelectedRows] = useState([]);
   const [showPunchModal, setShowPunchModal] = useState(false);
+  const [viewedCardholder, setViewedCardholder] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState("monthly");
+  const [currentPage, setCurrentPage] = useState(1);
   const [dateRange, setDateRange] = useState({ startDate: "", endDate: "" });
   const [showRangePicker, setShowRangePicker] = useState(false);
 
@@ -37,14 +40,19 @@ const PunchManagement = () => {
   const [createPunch, { isLoading: isPunching }] = useCreatePunchMutation();
   const { data: servicesData } = useGetServicesQuery();
   
-  const queryParams = activeFilter === "custom" && dateRange.startDate && dateRange.endDate
-    ? { dateFilter: "custom", startDate: dateRange.startDate, endDate: dateRange.endDate }
-    : { dateFilter: activeFilter };
+  const queryParams = {
+    page: currentPage,
+    per_page: 10,
+    ...(activeFilter === "custom" && dateRange.startDate && dateRange.endDate
+      ? { dateFilter: "custom", startDate: dateRange.startDate, endDate: dateRange.endDate }
+      : { dateFilter: activeFilter }),
+  };
 
   const { data: punchesResponse, isFetching: isLoadingPunches, refetch } = useGetPunchesQuery(queryParams);
 
   const punches = punchesResponse?.data || punchesResponse?.punches || [];
-  const stats = punchesResponse?.stats || {};
+  const stats = punchesResponse?.stats || { totalPunches: 0, totalRevenue: 0, thisMonthPunches: 0 };
+  const pagination = punchesResponse?.pagination || { total: 0, page: currentPage, per_page: 10, total_pages: 1, has_next_page: false, has_prev_page: false };
 
   // Handlers
   const handleSearchCard = async () => {
@@ -105,15 +113,25 @@ const PunchManagement = () => {
           </div>
           <span className="text-sm font-medium">{value}</span>
         </div>
-      )
+      ),
     },
     {
-      header: "ACTION",
+      header: "AMOUNT",
+      accessor: "amount",
+      Cell: ({ value }) => <span className="text-sm font-semibold text-emerald-600">{value}</span>,
+    },
+    {
+      header: "DISCOUNT",
+      accessor: "discount",
+      Cell: ({ value }) => <span className="text-sm text-gray-700">{value}</span>,
+    },
+    {
+      header: "INVOICE",
       accessor: "id",
       Cell: ({ row }) => (
         <div className="flex items-center gap-3">
           <Printer size={18} className="text-purple-600 cursor-pointer hover:scale-110 transition-transform" onClick={() => toast.info("Printing invoice...")} />
-          <div className="w-8 h-8 flex items-center justify-center rounded-xl bg-amber-50 hover:bg-amber-100 transition-all cursor-pointer shadow-sm border border-amber-100" onClick={() => toast.info("Viewing details...")}>
+          <div className="w-8 h-8 flex items-center justify-center rounded-xl bg-amber-50 hover:bg-amber-100 transition-all cursor-pointer shadow-sm border border-amber-100" onClick={() => setViewedCardholder({ ...row, viewType: 'cardholder' })}>
             <Eye size={16} className="text-amber-500" />
           </div>
         </div>
@@ -121,13 +139,19 @@ const PunchManagement = () => {
     },
   ];
 
-  const tableData = punches.map(p => ({
+  const tableData = punches.map((p) => ({
     id: p._id,
-    name: p.fullName || "—",
-    chf: p.chfNo || "—",
-    contact: `${p.mobile || "—"}\n${p.email || "—"}`,
+    name: p.fullName || p.userId?.fullName || "—",
+    chf: p?.cardId?.chfNo || "—",
+    contact: `${p.mobile || p.userId?.mobile || "—"}\n${p.email || p.userId?.email || "—"}`,
     service: p.serviceId?.serviceName || p.serviceName || "—",
-    date: p.createdAt ? new Date(p.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—",
+    date: p.punchDate
+      ? new Date(p.punchDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+      : p.createdAt
+        ? new Date(p.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+        : "—",
+    amount: p.amount != null ? `₹${p.amount.toLocaleString('en-IN')}` : "—",
+    discount: p.discount != null ? `₹${p.discount}` : "—",
   }));
 
   const filterOptions = [
@@ -137,6 +161,10 @@ const PunchManagement = () => {
     { label: "Yearly", value: "yearly" },
     { label: "Custom Range", value: "custom" },
   ];
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeFilter, dateRange.startDate, dateRange.endDate]);
 
   const handleRowSelect = (id) => {
     setSelectedRows((prev) => prev.includes(id) ? prev.filter((row) => row !== id) : [...prev, id]);
@@ -158,7 +186,7 @@ const PunchManagement = () => {
           <div className="flex gap-3 w-full sm:w-auto">
             <button 
               onClick={() => setShowPunchModal(true)}
-              className="flex-1 sm:flex-none px-6 py-3 rounded-2xl bg-gradient-to-r from-[#7E1080] to-[#450846] text-white font-bold shadow-lg shadow-purple-100 hover:shadow-purple-200 transition-all active:scale-95 flex items-center justify-center gap-2 text-sm"
+              className="flex-1 sm:flex-none px-6 py-3 rounded-2xl bg-linear-to-r from-[#7E1080] to-[#450846] text-white font-bold shadow-lg shadow-purple-100 hover:shadow-purple-200 transition-all active:scale-95 flex items-center justify-center gap-2 text-sm"
             >
               <Plus className="w-5 h-5" /> Punch Card
             </button>
@@ -170,10 +198,10 @@ const PunchManagement = () => {
 
         {/* ✅ Dynamic Stats */}
         <div className="mb-8 flex justify-center">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-7xl">
-            <Card title="Total Punches" amount={stats?.totalPunches ?? punches.length ?? "0"} percentage={stats?.punchesGrowth ?? 12} icon={Users} />
-            <Card title="Today's Activity" amount={stats?.todayPunches ?? "0"} percentage={stats?.todayGrowth ?? 5} icon={Calendar} statusText="Updated Live" />
-            <div className="hidden lg:block"></div><div className="hidden lg:block"></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-7xl">
+            <Card title="Total Punches" amount={stats.totalPunches?.toString() ?? "0"} percentage={0} statusText="Total recorded" icon={Users} />
+            <Card title="Total Revenue" amount={stats.totalRevenue ? `₹${stats.totalRevenue.toLocaleString('en-IN')}` : "₹0"} percentage={0} statusText="Revenue from punches" icon={DollarSign} />
+            <Card title="This Month" amount={stats.thisMonthPunches?.toString() ?? "0"} percentage={0} statusText="Current month usage" icon={Calendar} />
           </div>
         </div>
 
@@ -207,6 +235,27 @@ const PunchManagement = () => {
         {/* ✅ Dynamic History Table */}
         <div className="hidden md:block">
           <Table columns={columns} data={tableData} selectedRows={selectedRows} onRowSelect={handleRowSelect} onSelectAll={handleSelectAll} isLoading={isLoadingPunches} />
+          {pagination.total > pagination.per_page && (
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-sm text-gray-600">
+              <div>Showing {tableData.length} of {pagination.total} records</div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  disabled={!pagination.has_prev_page}
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  className={`px-4 py-2 rounded-xl border ${pagination.has_prev_page ? 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50' : 'border-gray-200 text-gray-400 bg-gray-100 cursor-not-allowed'}`}>
+                  Prev
+                </button>
+                <button
+                  type="button"
+                  disabled={!pagination.has_next_page}
+                  onClick={() => setCurrentPage((prev) => Math.min(pagination.total_pages, prev + 1))}
+                  className={`px-4 py-2 rounded-xl border ${pagination.has_next_page ? 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50' : 'border-gray-200 text-gray-400 bg-gray-100 cursor-not-allowed'}`}>
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ✅ Mobile Responsive View */}
@@ -228,6 +277,8 @@ const PunchManagement = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div> <p className="text-[10px] text-gray-400 font-bold uppercase">Service</p> <p className="text-xs font-bold text-[#7E1080] truncate">{item.service}</p> </div>
                   <div> <p className="text-[10px] text-gray-400 font-bold uppercase">Date</p> <p className="text-xs font-bold text-gray-700">{item.date}</p> </div>
+                  <div> <p className="text-[10px] text-gray-400 font-bold uppercase">Amount</p> <p className="text-xs font-bold text-emerald-600">{item.amount}</p> </div>
+                  <div> <p className="text-[10px] text-gray-400 font-bold uppercase">Discount</p> <p className="text-xs font-bold text-gray-700">{item.discount}</p> </div>
                 </div>
               </div>
             ))
@@ -255,7 +306,7 @@ const PunchManagement = () => {
               <button 
                 onClick={handleSearchCard}
                 disabled={isSearching}
-                className="px-4 bg-[#7E1080] text-white rounded-xl font-bold text-xs hover:opacity-90 active:scale-95 transition-all shadow-md flex items-center justify-center min-w-[80px]"
+                className="px-4 bg-[#7E1080] text-white rounded-xl font-bold text-xs hover:opacity-90 active:scale-95 transition-all shadow-md flex items-center justify-center min-w-20"
               >
                 {isSearching ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : "Search"}
               </button>
@@ -286,6 +337,9 @@ const PunchManagement = () => {
           </ModalSubmitBtn>
         </div>
       </Modal>
+
+      {/* Cardholder Details Modal */}
+      <CardholderDetailsModal isOpen={!!viewedCardholder} onClose={() => setViewedCardholder(null)} cardholder={viewedCardholder} />
     </Layout>
   );
 };

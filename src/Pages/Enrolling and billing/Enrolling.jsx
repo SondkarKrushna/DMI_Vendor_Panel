@@ -4,11 +4,11 @@ import Card from "../../components/cards/Card";
 import Button from "../../components/buttons/Button";
 import Table from "../../components/table/Table";
 import SearchBar from "../../components/search/SearchBar";
+import CardholderDetailsModal from "../../components/CardholderDetailsModal";
 import { Users, Calendar, Eye, ArrowDownToLine, Upload, X } from "lucide-react";
 import { toast } from "react-toastify";
 import { useCreateEnrollmentMutation, useGetEnrollmentsQuery } from "../../redux/api/enrollmentApi";
 import Modal from "../../components/Model";
-import { MdRemoveRedEye } from "react-icons/md";
 
 const Enrolling = () => {
   const [selectedRows, setSelectedRows] = useState([]);
@@ -322,38 +322,7 @@ const Enrolling = () => {
         )}
       </Layout>
 
-      <Modal isOpen={!!viewTarget} onClose={() => setViewTarget(null)} title="Cardholder Details" className="max-w-xl w-full">
-        {viewTarget && (
-          <div className="flex flex-col gap-6 p-2">
-            <div className="flex items-center gap-4 border-b pb-5">
-              <div className="w-16 h-16 rounded-2xl bg-purple-50 text-[#7E1080] flex items-center justify-center font-bold text-xl uppercase border border-purple-100">{viewTarget.name?.substring(0, 2)}</div>
-              <div>
-                <h3 className="text-xl font-bold text-gray-900">{viewTarget.name}</h3>
-                <div className="flex gap-2"> <span className="bg-purple-100 text-[#7E1080] text-[10px] font-bold px-2 py-0.5 rounded-full">{viewTarget.cardType}</span> <span className="text-xs text-gray-400">ID: {viewTarget.id}</span> </div>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="bg-gray-50 p-4 rounded-2xl"> <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">Mobile</p> <p className="font-bold text-gray-800">{viewTarget.contact.split('\n')[0]}</p> </div>
-              <div className="bg-gray-50 p-4 rounded-2xl"> <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">CHF #</p> <p className="font-bold text-gray-800">{viewTarget.cardNumber}</p> </div>
-              <div className="bg-gray-50 p-4 rounded-2xl"> <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">Email</p> <p className="font-bold text-gray-800 truncate">{viewTarget.contact.split('\n')[1]}</p> </div>
-              <div className="bg-gray-50 p-4 rounded-2xl"> <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">Status</p> <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-green-500"></div><p className="font-bold text-gray-800 capitalize">{viewTarget.status}</p></div> </div>
-            </div>
-            <div>
-              <h4 className="text-[10px] font-bold text-gray-400 uppercase mb-4">KYC Documents</h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="border rounded-2xl p-4 flex flex-col items-center gap-2 hover:border-[#7E1080] transition-all bg-white group cursor-pointer shadow-sm">
-                  <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center group-hover:scale-110 transition-transform"><MdRemoveRedEye size={20} /></div>
-                  <span className="text-xs font-bold text-gray-700 group-hover:text-[#7E1080]">Aadhar Card</span>
-                </div>
-                <div className="border rounded-2xl p-4 flex flex-col items-center gap-2 hover:border-[#7E1080] transition-all bg-white group cursor-pointer shadow-sm">
-                  <div className="w-12 h-12 rounded-full bg-green-50 text-green-500 flex items-center justify-center group-hover:scale-110 transition-transform"><MdRemoveRedEye size={20} /></div>
-                  <span className="text-xs font-bold text-gray-700 group-hover:text-[#7E1080]">PAN Card</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </Modal>
+      <CardholderDetailsModal isOpen={!!viewTarget} onClose={() => setViewTarget(null)} cardholder={viewTarget} />
     </>
   );
 };
