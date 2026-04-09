@@ -5,7 +5,7 @@ import Table from "../../components/table/Table";
 import SearchBar from "../../components/search/SearchBar";
 import CardholderDetailsModal from "../../components/CardholderDetailsModal";
 import Modal, { FormField, FormInput, FormSelect, ModalSubmitBtn } from "../../components/Model";
-import { Users, DollarSign, Calendar, Eye, Printer, ArrowDownToLine, Search as SearchIcon, Plus } from "lucide-react";
+import { Users, DollarSign, Calendar, Eye, Printer, ArrowDownToLine, Search as SearchIcon, Plus, FileSpreadsheet, FileText } from "lucide-react";
 import { toast } from "react-toastify";
 import { 
   useLazySearchCardHolderQuery, 
@@ -13,11 +13,12 @@ import {
   useGetPunchesQuery 
 } from "../../redux/api/punchApi";
 import { useGetServicesQuery } from "../../redux/api/servicesApi";
-import { exportToCSV, getExportData } from "../../utils/exportUtils";
+import * as XLSX from "xlsx-js-style";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const PunchManagement = () => {
   const [selectedRows, setSelectedRows] = useState([]);
-  const [showPunchModal, setShowPunchModal] = useState(false);
   const [viewedCardholder, setViewedCardholder] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState("monthly");
@@ -36,19 +37,34 @@ const PunchManagement = () => {
   };
   const [punchForm, setPunchForm] = useState(initialFormState);
 
-  const exportHeaders = [
-    { key: 'name', label: 'Cardholder Name' },
-    { key: 'chf', label: 'CHF No' },
-    { key: 'contact', label: 'Contact' },
-    { key: 'service', label: 'Service' },
-    { key: 'date', label: 'Date' },
-    { key: 'amount', label: 'Amount' },
-    { key: 'discount', label: 'Discount' },
-  ];
+  const [showExportOptions, setShowExportOptions] = useState(false);
 
-  const handleExport = () => {
-    const dataToExport = getExportData(data?.data || [], selectedRows, '_id');
-    exportToCSV(dataToExport, exportHeaders, 'punches');
+  const exportToExcel = () => {
+    if (!tableData.length) { toast.error("No data to export"); return; }
+    const header = [["Cardholder Name", "CHF No", "Contact", "Service", "Date", "Amount", "Discount"]];
+    const rows = tableData.map((item) => [item.name, item.chf, item.contact, item.service, item.date, item.amount, item.discount]);
+    const ws = XLSX.utils.aoa_to_sheet([...header, ...rows]);
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let col = range.s.c; col <= range.e.c; col++) {
+      const cell = ws[XLSX.utils.encode_cell({ r: 0, c: col })];
+      if (cell) cell.s = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "7E1080" } }, alignment: { horizontal: "center" } };
+    }
+    ws["!cols"] = [{ wch: 22 }, { wch: 16 }, { wch: 26 }, { wch: 20 }, { wch: 14 }, { wch: 12 }, { wch: 12 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Punches");
+    XLSX.writeFile(wb, "PunchManagement_Report.xlsx");
+  };
+
+  const exportToPDF = () => {
+    if (!tableData.length) { toast.error("No data to export"); return; }
+    const doc = new jsPDF();
+    doc.text("Punch Management", 14, 10);
+    autoTable(doc, {
+      head: [["Cardholder", "CHF No", "Service", "Date", "Amount", "Discount"]],
+      body: tableData.map((item) => [item.name, item.chf, item.service, item.date, item.amount, item.discount]),
+      startY: 20,
+    });
+    doc.save("punches.pdf");
   };
 
   // API Hooks
@@ -111,7 +127,6 @@ const PunchManagement = () => {
     try {
       await createPunch(punchForm).unwrap();
       toast.success("Punch recorded successfully!");
-      setShowPunchModal(false);
       setPunchForm(initialFormState);
       setSearchTerm("");
     } catch (err) {
@@ -208,20 +223,35 @@ const PunchManagement = () => {
             <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Punch Management</h1>
             <p className="text-sm text-gray-500 font-medium tracking-wide italic mt-0.5">Track and record service utilization logs</p>
           </div>
-          <div className="flex gap-3 w-full sm:w-auto">
-            <button 
-              onClick={() => setShowPunchModal(true)}
-              className="flex-1 sm:flex-none px-6 py-3 rounded-2xl bg-linear-to-r from-[#7E1080] to-[#450846] text-white font-bold shadow-lg shadow-purple-100 hover:shadow-purple-200 transition-all active:scale-95 flex items-center justify-center gap-2 text-sm"
-            >
-              <Plus className="w-5 h-5" /> Punch Card
-            </button>
-            <button 
-              className="flex-1 sm:flex-none px-5 py-3 rounded-2xl bg-white border border-gray-100 text-gray-700 font-bold shadow-sm hover:bg-gray-50 transition-all flex items-center justify-center gap-2 text-sm"
-              onClick={handleExport}
-            >
-              <ArrowDownToLine className="w-4 h-4" /> Export
-            </button>
-          </div>
+            <div className="flex gap-3 w-full sm:w-auto">
+             
+              <div className="relative">
+                <button
+                  onClick={() => setShowExportOptions(prev => !prev)}
+                  className="flex-1 sm:flex-none px-5 py-3 rounded-2xl bg-white border border-gray-100 text-gray-700 font-bold shadow-sm hover:bg-gray-50 transition-all flex items-center justify-center gap-2 text-sm"
+                >
+                  <ArrowDownToLine className="w-4 h-4" /> Export
+                </button>
+                {showExportOptions && (
+                  <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                    <button
+                      onClick={() => { exportToExcel(); setShowExportOptions(false); }}
+                className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold flex items-center gap-2"
+                    >
+                      <FileSpreadsheet size={16} className="text-green-600" />
+                      Export as Excel
+                    </button>
+                    <button
+                      onClick={() => { exportToPDF(); setShowExportOptions(false); }}
+                      className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm flex items-center gap-2"
+                    >
+                      <FileText size={16} className="text-red-500" />
+                      Export as PDF
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
         </div>
 
         {/* ✅ Dynamic Stats */}
@@ -314,57 +344,6 @@ const PunchManagement = () => {
         </div>
       </div>
 
-      {/* 🔮 Punch Service Modal */}
-      <Modal isOpen={showPunchModal} onClose={() => setShowPunchModal(false)} title="Record New Punch" className="max-w-md">
-        <div className="flex flex-col gap-5">
-          {/* 🔍 Cardholder Search Section */}
-          <div className="flex flex-col gap-2 p-4 bg-purple-50/30 rounded-2xl border border-purple-100">
-            <label className="text-[10px] font-bold text-[#7E1080] uppercase tracking-[1px]">Search Cardholder</label>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <SearchIcon size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input 
-                  type="text" 
-                  placeholder="CHF Number or Mobile" 
-                  value={searchTerm} 
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-white rounded-xl border border-gray-200 outline-none text-sm focus:border-[#7E1080] transition-all"
-                />
-              </div>
-              <button 
-                onClick={handleSearchCard}
-                disabled={isSearching}
-                className="px-4 bg-[#7E1080] text-white rounded-xl font-bold text-xs hover:opacity-90 active:scale-95 transition-all shadow-md flex items-center justify-center min-w-20"
-              >
-                {isSearching ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : "Search"}
-              </button>
-            </div>
-          </div>
-
-          {/* 📋 Details & Form */}
-          <div className="space-y-4 px-1">
-            <div className="grid grid-cols-2 gap-4">
-              <FormField label="Full Name"> <FormInput value={punchForm.fullName} readOnly className="opacity-70 bg-gray-50 cursor-not-allowed" /> </FormField>
-              <FormField label="Card Type"> <FormInput value={punchForm.cardType} readOnly className="opacity-70 bg-gray-50 cursor-not-allowed" /> </FormField>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <FormField label="CHF Number"> <FormInput value={punchForm.chfNo} readOnly className="opacity-70 bg-gray-50 cursor-not-allowed" /> </FormField>
-              <FormField label="Mobile"> <FormInput value={punchForm.mobile} readOnly className="opacity-70 bg-gray-50 cursor-not-allowed" /> </FormField>
-            </div>
-            
-            <FormField label="Select Service">
-              <FormSelect value={punchForm.serviceId} onChange={(e) => setPunchForm(prev => ({ ...prev, serviceId: e.target.value }))}>
-                <option value="">Select a service</option>
-                {servicesData?.data?.map(s => <option key={s._id} value={s._id}>{s.serviceName}</option>)}
-              </FormSelect>
-            </FormField>
-          </div>
-
-          <ModalSubmitBtn onClick={handlePunchSubmit} disabled={isPunching}>
-            {isPunching ? "Processing..." : "Process Punch"}
-          </ModalSubmitBtn>
-        </div>
-      </Modal>
 
       {/* Cardholder Details Modal */}
       <CardholderDetailsModal isOpen={!!viewedCardholder} onClose={() => setViewedCardholder(null)} cardholder={viewedCardholder} />

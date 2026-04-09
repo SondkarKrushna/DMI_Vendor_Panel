@@ -1,13 +1,15 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/cards/Card";
 import Button from "../../components/buttons/Button";
 import Table from "../../components/table/Table";
 import SearchBar from "../../components/search/SearchBar";
-import { Phone, Clock, CheckCircle, Eye, ArrowDownToLine, Calendar } from "lucide-react";
-
+import { Phone, Clock, CheckCircle, Eye, ArrowDownToLine, Calendar, FileSpreadsheet, FileText } from "lucide-react";
 import { toast } from "react-toastify";
 import { PulseLoader } from "react-spinners";
+import * as XLSX from "xlsx-js-style";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import {
   useGetCallNotesQuery,
   useAddCallNoteMutation,
@@ -22,6 +24,7 @@ const CallNotepad = () => {
   const [searchValue, setSearchValue] = useState("");
   const [confirmModal, setConfirmModal] = useState({ show: false, id: null });
   const [currentPage, setCurrentPage] = useState(1);
+  const [showExportOptions, setShowExportOptions] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -47,9 +50,41 @@ const CallNotepad = () => {
     total: 0,
     page: 1,
     pages: 1,
-    has_next_page: false,
-    has_prev_page: false
+    limit: 10
   };
+
+  // ✅ Extract notes from callNotes array
+  const notes = data?.callNotes || data?.data || (Array.isArray(data) ? data : []);
+  
+  // ✅ Dynamic Stats Cards Mapping with Fallback
+  const statsCards = useMemo(() => {
+    // If backend provides statsCards array
+    if (data?.statsCards && Array.isArray(data.statsCards)) {
+      return data.statsCards.map(stat => {
+        // Map icons based on title
+        let Icon = Phone;
+        if (stat.title.toLowerCase().includes('pending')) Icon = Clock;
+        if (stat.title.toLowerCase().includes('completed')) Icon = CheckCircle;
+        if (stat.title.toLowerCase().includes('enquir')) Icon = Phone;
+
+        return {
+          ...stat,
+          icon: Icon,
+          // Convert "+0%" or "-100.0%" to number
+          percentValue: parseFloat(stat.percent?.replace(/[+%]/g, '')) || 0
+        };
+      });
+    }
+
+    // Fallback to manual mapping if stats object exists
+    const s = data?.stats || {};
+    return [
+      { title: "Total Calls", value: s.totalCalls || notes.length || 0, percentValue: 0, trend: "neutral", icon: Phone },
+      { title: "Pending Follow Ups", value: s.pendingFollowUps || 0, percentValue: 0, trend: "neutral", icon: Clock },
+      { title: "Completed", value: s.totalCompleted || 0, percentValue: 0, trend: "neutral", icon: CheckCircle },
+      { title: "Total Enquiries", value: s.totalEnquiries || 0, percentValue: 0, trend: "neutral", icon: Phone }
+    ];
+  }, [data, notes]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -58,13 +93,41 @@ const CallNotepad = () => {
   const [addCallNote, { isLoading: isAdding }] = useAddCallNoteMutation();
   const [updateStatus, { isLoading: isUpdating }] = useUpdateCallNoteStatusMutation();
 
-  const notes = data?.callNotes || data?.data || (Array.isArray(data) ? data : []);
-  const apiStats = data?.stats || {};
-  const stats = {
-    totalCalls: apiStats.totalCalls || notes.length || 0,
-    pendingFollowUps: apiStats.pendingFollowUps || notes.filter(n => n.type === 'follow-up' && n.status !== 'completed').length || 0,
-    totalCompleted: apiStats.totalCompleted || notes.filter(n => n.status === 'completed').length || 0,
-    totalEnquiries: apiStats.totalEnquiries || notes.filter(n => n.type === 'enquiry').length || 0,
+
+  const exportToExcel = () => {
+    if (!notes.length) { toast.error("No data to export"); return; }
+    const header = [["Call ID", "Name", "Mobile", "Email", "Call Note", "Date", "Status"]];
+    const rows = notes.map((n) => [
+      n.callId, n.name, n.mobile, n.email, n.note,
+      n.date ? new Date(n.date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—",
+      n.status
+    ]);
+    const ws = XLSX.utils.aoa_to_sheet([...header, ...rows]);
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let col = range.s.c; col <= range.e.c; col++) {
+      const cell = ws[XLSX.utils.encode_cell({ r: 0, c: col })];
+      if (cell) cell.s = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "7E1080" } }, alignment: { horizontal: "center" } };
+    }
+    ws["!cols"] = [{ wch: 14 }, { wch: 22 }, { wch: 14 }, { wch: 26 }, { wch: 30 }, { wch: 16 }, { wch: 12 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "CallNotes");
+    XLSX.writeFile(wb, "CallNotepad_Report.xlsx");
+  };
+
+  const exportToPDF = () => {
+    if (!notes.length) { toast.error("No data to export"); return; }
+    const doc = new jsPDF();
+    doc.text("CNP - Call Note Pad", 14, 10);
+    autoTable(doc, {
+      head: [["Call ID", "Name", "Mobile", "Email", "Note", "Date", "Status"]],
+      body: notes.map((n) => [
+        n.callId, n.name, n.mobile, n.email, n.note,
+        n.date ? new Date(n.date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—",
+        n.status
+      ]),
+      startY: 20,
+    });
+    doc.save("call_notepad.pdf");
   };
 
   const handleMarkComplete = async () => {
@@ -231,19 +294,49 @@ const CallNotepad = () => {
 
           <div className="flex gap-3 w-full sm:w-auto">
             <Button text="Add Call Note" className="flex-1 sm:flex-none" onClick={() => setShowModal(true)} />
-            <button className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold shadow-md hover:scale-105 hover:shadow-lg active:scale-95 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2">
-              <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" />
-              Export
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowExportOptions(prev => !prev)}
+                className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold flex items-center gap-2"
+              >
+                <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" />
+                Export
+              </button>
+              {showExportOptions && (
+                <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                  <button
+                    onClick={() => { exportToExcel(); setShowExportOptions(false); }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm flex items-center gap-2"
+                  >
+                    <FileSpreadsheet size={16} className="text-green-600" />
+                    Export as Excel
+                  </button>
+                  <button
+                    onClick={() => { exportToPDF(); setShowExportOptions(false); }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm flex items-center gap-2"
+                  >
+                    <FileText size={16} className="text-red-500" />
+                    Export as PDF
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         {/* ✅ Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
-          <Card title="Total Calls" amount={stats.totalCalls.toString()} percentage={42} icon={Phone} />
-          <Card title="Pending Follow Ups" amount={stats.pendingFollowUps.toString()} percentage={-30} isDecrease icon={Clock} />
-          <Card title="Completed" amount={stats.totalCompleted.toString()} percentage={42} icon={CheckCircle} />
-          <Card title="Total Enquiries" amount={stats.totalEnquiries.toString()} percentage={42} icon={Phone} />
+          {statsCards.map((stat, index) => (
+            <Card
+              key={index}
+              title={stat.title}
+              amount={stat.value.toString()}
+              percentage={stat.percentValue}
+              trend={stat.trend}
+              statusText={stat.subText || `${stat.trend} change`}
+              icon={stat.icon}
+            />
+          ))}
         </div>
 
         {/* ✅ Tabs */}

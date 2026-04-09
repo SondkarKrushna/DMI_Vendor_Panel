@@ -1,18 +1,23 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Layout from "../../components/layout/Layout";
 import Table from "../../components/table/Table";
 import Card from "../../components/cards/Card";
 import SearchBar from "../../components/search/SearchBar";
-import { 
-  DollarSign, 
-  Calendar, 
-  Eye, 
-  Printer, 
-  Download, 
-  ArrowDownToLine, 
+import {
+  DollarSign,
+  Calendar,
+  Eye,
+  Printer,
+  Download,
+  ArrowDownToLine,
+  FileSpreadsheet,
+  FileText,
 } from "lucide-react";
 import { useGetInvoicesQuery, useGetActiveServicesQuery } from "../../redux/api/invoiceApi";
-import { exportToCSV, getExportData } from "../../utils/exportUtils";
+import { toast } from "react-toastify";
+import * as XLSX from "xlsx-js-style";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const Invoice = () => {
   const [selectedRows, setSelectedRows] = useState([]);
@@ -30,26 +35,73 @@ const Invoice = () => {
 
   const activeServices = servicesData?.data || [];
   const invoices = invoicesResponse?.data || (Array.isArray(invoicesResponse) ? invoicesResponse : []);
-  const apiStats = invoicesResponse?.stats || {};
-  const totalRev = invoices.reduce((sum, inv) => sum + (inv.amount || 0), 0);
-  
-  const stats = {
-    totalRevenue: apiStats.totalRevenue || totalRev,
-    thisMonthRevenue: apiStats.thisMonthRevenue || totalRev,
+
+  // ✅ Dynamic Stats Cards Mapping with Fallback
+  const statsCards = useMemo(() => {
+    // 1. If backend provides statsCards array
+    if (invoicesResponse?.statsCards && Array.isArray(invoicesResponse.statsCards)) {
+      return invoicesResponse.statsCards.map(stat => ({
+        ...stat,
+        parsedPercent: parseFloat(stat.percent?.replace(/[+%]/g, '')) || 0,
+        icon: stat.title.toLowerCase().includes('revenue') ? DollarSign : Calendar
+      }));
+    }
+
+    // 2. Fallback to legacy stats or computed values
+    const s = invoicesResponse?.stats || {};
+    const totalRev = invoices.reduce((sum, inv) => sum + (inv.amount || 0), 0);
+
+    return [
+      {
+        title: "Total Revenue",
+        value: s.totalRevenue || totalRev,
+        formatted: `₹${(s.totalRevenue || totalRev).toLocaleString()}`,
+        parsedPercent: parseFloat(s.revenuePercent) || 42,
+        trend: s.revenueTrend || "up",
+        subText: "Total earnings",
+        icon: DollarSign
+      },
+      {
+        title: "This Month",
+        value: s.thisMonthRevenue || totalRev,
+        formatted: `₹${(s.thisMonthRevenue || totalRev).toLocaleString()}`,
+        parsedPercent: parseFloat(s.monthPercent) || -30,
+        trend: s.monthTrend || "down",
+        subText: "Earnings this month",
+        icon: Calendar
+      }
+    ];
+  }, [invoicesResponse, invoices]);
+
+
+  const [showExportOptions, setShowExportOptions] = useState(false);
+
+  const exportToExcel = () => {
+    if (!tableData.length) { toast.error("No data to export"); return; }
+    const header = [["Invoice ID", "Name", "Service", "Amount", "Payment Method", "Date"]];
+    const rows = tableData.map((item) => [item.id, item.name, item.service, item.amount, item.payment, item.date]);
+    const ws = XLSX.utils.aoa_to_sheet([...header, ...rows]);
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let col = range.s.c; col <= range.e.c; col++) {
+      const cell = ws[XLSX.utils.encode_cell({ r: 0, c: col })];
+      if (cell) cell.s = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "7E1080" } }, alignment: { horizontal: "center" } };
+    }
+    ws["!cols"] = [{ wch: 18 }, { wch: 22 }, { wch: 20 }, { wch: 14 }, { wch: 18 }, { wch: 16 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Invoices");
+    XLSX.writeFile(wb, "Invoices_Report.xlsx");
   };
 
-  const exportHeaders = [
-    { key: 'id', label: 'Invoice ID' },
-    { key: 'name', label: 'Name' },
-    { key: 'service', label: 'Service' },
-    { key: 'amount', label: 'Amount' },
-    { key: 'payment', label: 'Payment Method' },
-    { key: 'date', label: 'Date' },
-  ];
-
-  const handleExport = () => {
-    const dataToExport = getExportData(invoices, selectedRows, 'id');
-    exportToCSV(dataToExport, exportHeaders, 'invoices');
+  const exportToPDF = () => {
+    if (!tableData.length) { toast.error("No data to export"); return; }
+    const doc = new jsPDF();
+    doc.text("Payments & Invoices", 14, 10);
+    autoTable(doc, {
+      head: [["Invoice ID", "Name", "Service", "Amount", "Payment Method", "Date"]],
+      body: tableData.map((item) => [item.id, item.name, item.service, item.amount, item.payment, item.date]),
+      startY: 20,
+    });
+    doc.save("invoices.pdf");
   };
 
   const serviceOptions = [
@@ -61,12 +113,12 @@ const Invoice = () => {
   ];
 
   const pagination = invoicesResponse?.pagination || {
-  page: 1,
-  total_pages: 1,
-  has_next_page: false,
-  has_prev_page: false,
-  total: 0
-};
+    page: 1,
+    total_pages: 1,
+    has_next_page: false,
+    has_prev_page: false,
+    total: 0
+  };
 
   const handleServiceChange = (label) => {
     setSelectedService(label);
@@ -95,8 +147,8 @@ const Invoice = () => {
   );
 
   useEffect(() => {
-  setCurrentPage(1);
-}, [selectedServiceId, searchValue]);
+    setCurrentPage(1);
+  }, [selectedServiceId, searchValue]);
 
   // ✅ Columns
   const columns = [
@@ -165,41 +217,58 @@ const Invoice = () => {
           </div>
 
           <div className="flex gap-3 w-full sm:w-auto">
-            <button 
-              className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold shadow-md hover:scale-105 hover:shadow-lg active:scale-95 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2"
-              onClick={handleExport}
-            >
-              <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" />
-              Export
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowExportOptions(prev => !prev)}
+                className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold flex items-center gap-2"
+              >
+                <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" />
+                Export
+              </button>
+              {showExportOptions && (
+                <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                  <button
+                    onClick={() => { exportToExcel(); setShowExportOptions(false); }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm flex items-center gap-2"
+                  >
+                    <FileSpreadsheet size={16} className="text-green-600" />
+                    Export as Excel
+                  </button>
+                  <button
+                    onClick={() => { exportToPDF(); setShowExportOptions(false); }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm flex items-center gap-2"
+                  >
+                    <FileText size={16} className="text-red-500" />
+                    Export as PDF
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* ✅ CARDS (FORCED 4 GRID) */}
+        {/* ✅ CARDS (DRIVEN BY STATSCARDS) */}
         <div className="mb-6 flex justify-center">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 w-full max-w-7xl">
+            {statsCards.map((stat, idx) => (
+              <Card
+                key={idx}
+                title={stat.title}
+                amount={stat.formatted || `₹${stat.value.toLocaleString()}`}
+                percentage={stat.parsedPercent || 0}
+                statusText={stat.subText || `${stat.trend} change`}
+                trend={stat.trend}
+                icon={stat.icon}
+              />
+            ))}
 
-            <Card
-              title="Total Revenue"
-              amount={`₹${(stats.totalRevenue || 0).toLocaleString()}`}
-              percentage={42}
-              statusText="Increased by Last Month"
-              icon={DollarSign}
-            />
-
-            <Card
-              title="This Month"
-              amount={`₹${(stats.thisMonthRevenue || 0).toLocaleString()}`}
-              percentage={-30}
-              statusText="Decreased by Last Month"
-              isDecrease
-              icon={Calendar}
-            />
-
-            {/* Empty placeholders to maintain 4-grid */}
-            <div className="hidden lg:block"></div>
-            <div className="hidden lg:block"></div>
-
+            {/* Empty placeholders to maintain 4-grid layout if needed */}
+            {statsCards.length < 3 && (
+              <>
+                <div className="hidden lg:block"></div>
+                <div className="hidden lg:block"></div>
+              </>
+            )}
           </div>
         </div>
 
@@ -297,41 +366,41 @@ const Invoice = () => {
               {/* Pagination UI */}
 
               {pagination.total > 10 && (
-  <div className="flex justify-center items-center gap-4 mt-10 mb-6">
+                <div className="flex justify-center items-center gap-4 mt-10 mb-6">
 
-    {/* Previous */}
-    <button
-      disabled={!pagination.has_prev_page}
-      onClick={() => setCurrentPage(prev => prev - 1)}
-      className={`px-4 py-2 rounded-lg border flex items-center gap-2 transition
-        ${!pagination.has_prev_page
-          ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 active:scale-95'
-        }`}
-    >
-      Previous
-    </button>
+                  {/* Previous */}
+                  <button
+                    disabled={!pagination.has_prev_page && pagination.page === 1}
+                    onClick={() => setCurrentPage(prev => prev - 1)}
+                    className={`px-4 py-2 rounded-lg border flex items-center gap-2 transition
+        ${(!pagination.has_prev_page && pagination.page === 1)
+                        ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 active:scale-95'
+                      }`}
+                  >
+                    Previous
+                  </button>
 
-    {/* Page Info */}
-    <span className="text-sm font-medium text-gray-600">
-      Page {pagination.page} of {pagination.total_pages}
-    </span>
+                  {/* Page Info */}
+                  <span className="text-sm font-medium text-gray-600">
+                    Page {pagination.page} of {pagination.total_pages}
+                  </span>
 
-    {/* Next */}
-    <button
-      disabled={!pagination.has_next_page}
-      onClick={() => setCurrentPage(prev => prev + 1)}
-      className={`px-4 py-2 rounded-lg border flex items-center gap-2 transition
-        ${!pagination.has_next_page
-          ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 active:scale-95'
-        }`}
-    >
-      Next
-    </button>
+                  {/* Next */}
+                  <button
+                    disabled={!pagination.has_next_page && pagination.page === (pagination.total_pages || 1)}
+                    onClick={() => setCurrentPage(prev => prev + 1)}
+                    className={`px-4 py-2 rounded-lg border flex items-center gap-2 transition
+        ${(!pagination.has_next_page && pagination.page === (pagination.total_pages || 1))
+                        ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 active:scale-95'
+                      }`}
+                  >
+                    Next
+                  </button>
 
-  </div>
-)}
+                </div>
+              )}
             </div>
           </div>
         </div>

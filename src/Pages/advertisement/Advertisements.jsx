@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/cards/Card";
 import SearchBar from "../../components/search/SearchBar";
@@ -6,6 +6,9 @@ import Button from "../../components/buttons/Button";
 import advertisementImg from "../../../public/images/advertisement.png";
 import { toast } from "react-toastify";
 import { PulseLoader } from "react-spinners";
+import * as XLSX from "xlsx-js-style";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 import {
   Megaphone,
@@ -14,7 +17,12 @@ import {
   Clock,
   SquarePen,
   Trash2,
+  ArrowDownToLine,
+  FileSpreadsheet,
+  FileText,
+  Loader2,
 } from "lucide-react";
+import Modal, { FormField, FormInput, FormSelect, FormTextarea, FormImageUpload, ModalSubmitBtn } from "../../components/Model";
 import { MdArrowForward } from "react-icons/md";
 import {
   useGetAdvertisementsQuery,
@@ -29,7 +37,9 @@ const Advertisements = () => {
   const [activeTab, setActiveTab] = useState("Classified");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAd, setEditingAd] = useState(null);
+  const [confirmModal, setConfirmModal] = useState({ show: false, id: null });
   const [errors, setErrors] = useState({});
+  const [showExportOptions, setShowExportOptions] = useState(false);
   const [formData, setFormData] = useState({
     type: "classified", // defaults to classified
     businessVertical: "",
@@ -48,13 +58,56 @@ const Advertisements = () => {
 
   const responseData = data?.data || data || {};
   const ads = responseData.ads || (Array.isArray(responseData) ? responseData : []);
-  const apiStats = data?.stats || responseData.stats || {};
-  
-  const stats = {
-    totalAds: apiStats.totalAds || apiStats.total || ads.length || 0,
-    activeAds: apiStats.activeAds || apiStats.active || ads.filter(a => a.status?.toLowerCase() === 'active').length || 0,
-    expiredAds: apiStats.expiredAds || apiStats.expired || ads.filter(a => a.status?.toLowerCase() === 'expired').length || 0,
-  };
+
+  // ✅ Dynamic Stats Cards Mapping with Fallback support
+  const statsCards = useMemo(() => {
+    // 1. If backend provides statsCards array
+    if (data?.statsCards && Array.isArray(data.statsCards)) {
+      return data.statsCards.map(stat => {
+        let Icon = Megaphone;
+        if (stat.title.toLowerCase().includes('active')) Icon = CheckCircle;
+        if (stat.title.toLowerCase().includes('expired')) Icon = XCircle;
+
+        return {
+          ...stat,
+          parsedPercent: parseFloat(stat.percent?.replace(/[+%]/g, '')) || 0,
+          icon: Icon
+        };
+      });
+    }
+
+    // 2. Otherwise, map from legacy stats object (Fallback)
+    const s = data?.stats || responseData.stats || {};
+    return [
+      {
+        title: "Total Ads",
+        value: s.totalAds || s.total || ads.length || 0,
+        percent: s.totalPercent || "0.0%",
+        parsedPercent: parseFloat(s.totalPercent) || 0,
+        trend: s.totalTrend || "neutral",
+        subText: "Combined classified & commercial",
+        icon: Megaphone
+      },
+      {
+        title: "Active Ads",
+        value: s.activeAds || s.active || ads.filter(a => a.status?.toLowerCase() === 'active').length || 0,
+        percent: s.activePercent || "42%",
+        parsedPercent: parseFloat(s.activePercent) || 0,
+        trend: s.activeTrend || "up",
+        subText: "Currently visible to users",
+        icon: CheckCircle
+      },
+      {
+        title: "Expired Ads",
+        value: s.expiredAds || s.expired || ads.filter(a => a.status?.toLowerCase() === 'expired').length || 0,
+        percent: s.expiredPercent || "0.0%",
+        parsedPercent: parseFloat(s.expiredPercent) || 0,
+        trend: s.expiredTrend || "neutral",
+        subText: "Past validity period",
+        icon: XCircle
+      }
+    ];
+  }, [data, responseData, ads]);
 
   const filteredAds = ads.filter((ad) => {
     const matchesSearch = search === "" || ad.title?.toLowerCase().includes(search.toLowerCase()) || ad.description?.toLowerCase().includes(search.toLowerCase());
@@ -70,6 +123,42 @@ const Advertisements = () => {
     }))
   ];
 
+  const exportToExcel = () => {
+    if (!filteredAds.length) { toast.error("No data to export"); return; }
+    const header = [["Title", "Business Vertical", "Type", "Status", "Valid Till"]];
+    const rows = filteredAds.map((ad) => [
+      ad.title, ad.businessVertical, ad.type,
+      ad.status || "Pending",
+      ad.endDate ? new Date(ad.endDate).toLocaleDateString() : "—"
+    ]);
+    const ws = XLSX.utils.aoa_to_sheet([...header, ...rows]);
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let col = range.s.c; col <= range.e.c; col++) {
+      const cell = ws[XLSX.utils.encode_cell({ r: 0, c: col })];
+      if (cell) cell.s = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "7E1080" } }, alignment: { horizontal: "center" } };
+    }
+    ws["!cols"] = [{ wch: 28 }, { wch: 22 }, { wch: 14 }, { wch: 12 }, { wch: 16 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Advertisements");
+    XLSX.writeFile(wb, "Advertisements_Report.xlsx");
+  };
+
+  const exportToPDF = () => {
+    if (!filteredAds.length) { toast.error("No data to export"); return; }
+    const doc = new jsPDF();
+    doc.text("Advertisements List", 14, 10);
+    autoTable(doc, {
+      head: [["Title", "Business Vertical", "Type", "Status", "Valid Till"]],
+      body: filteredAds.map((ad) => [
+        ad.title, ad.businessVertical, ad.type,
+        ad.status || "Pending",
+        ad.endDate ? new Date(ad.endDate).toLocaleDateString() : "—"
+      ]),
+      startY: 20,
+    });
+    doc.save("advertisements.pdf");
+  };
+
   const handleEdit = (ad) => {
     setErrors({});
     setEditingAd(ad);
@@ -84,14 +173,14 @@ const Advertisements = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this advertisement?")) {
-      try {
-        await deleteAdvertisement(id).unwrap();
-        toast.success("Advertisement deleted successfully!");
-      } catch (error) {
-        toast.error(error?.data?.message || "Failed to delete advertisement");
-      }
+  const handleDelete = async () => {
+    if (!confirmModal.id) return;
+    try {
+      await deleteAdvertisement(confirmModal.id).unwrap();
+      toast.success("Advertisement deleted successfully!");
+      setConfirmModal({ show: false, id: null });
+    } catch (error) {
+      toast.error(error?.data?.message || "Failed to delete advertisement");
     }
   };
 
@@ -180,37 +269,49 @@ const Advertisements = () => {
                 setIsModalOpen(true);
               }}
             />
-            <button className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold shadow-md hover:scale-105 hover:shadow-lg active:scale-95 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2">
-              {/* <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" /> */}
-              Export
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowExportOptions(prev => !prev)}
+                className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold flex items-center gap-2"
+              >
+                <ArrowDownToLine className="w-4 h-4" />
+                Export
+              </button>
+              {showExportOptions && (
+                <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                  <button
+                    onClick={() => { exportToExcel(); setShowExportOptions(false); }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm flex items-center gap-2"
+                  >
+                    <FileSpreadsheet size={16} className="text-green-600" />
+                    Export as Excel
+                  </button>
+                  <button
+                    onClick={() => { exportToPDF(); setShowExportOptions(false); }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm flex items-center gap-2"
+                  >
+                    <FileText size={16} className="text-red-500" />
+                    Export as PDF
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Top Cards (4 column grid) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card
-            title="Total Ads"
-            amount={stats.totalAds.toString()}
-            percentage={42}
-            statusText="Increased by last month"
-            icon={Megaphone}
-          />
-          <Card
-            title="Active Ads"
-            amount={stats.activeAds.toString()}
-            percentage={-30}
-            statusText="Decreased by last month"
-            isDecrease
-            icon={CheckCircle}
-          />
-          <Card
-            title="Expired Ads"
-            amount={stats.expiredAds.toString()}
-            percentage={42}
-            statusText="Increased by last month"
-            icon={XCircle}
-          />
+        {/* Dynamic Cards Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+          {statsCards.map((stat, idx) => (
+            <Card
+              key={idx}
+              title={stat.title}
+              amount={stat.formatted || stat.value.toString()}
+              percentage={stat.parsedPercent || 0}
+              statusText={stat.subText || `${stat.trend} change`}
+              trend={stat.trend}
+              icon={stat.icon || Megaphone}
+            />
+          ))}
         </div>
 
         {/* Tabs */}
@@ -312,7 +413,7 @@ const Advertisements = () => {
                     </button>
                     {/* Delete Button */}
                     <button
-                      onClick={() => handleDelete(item._id)}
+                      onClick={() => setConfirmModal({ show: true, id: item._id })}
                       className="w-10 h-10 flex items-center justify-center rounded-xl bg-[#FBE8FF] border border-[#E9D5FF] transition-transform active:scale-95"
                     >
                       <Trash2 size={18} className="text-[#FF0000]" />
@@ -325,165 +426,128 @@ const Advertisements = () => {
         </div>
 
       </div>
-      {isModalOpen && (
-        <div
-          onClick={() => {
-            setIsModalOpen(false);
-            resetForm();
-          }}
-          className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 backdrop-blur"
-        >
+      {/* Add / Edit Modal */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => { setIsModalOpen(false); resetForm(); }}
+        title={editingAd ? "Edit Advertisement" : "Add Advertisement"}
+      >
+        <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="Advertisement Type" error={errors.type} required>
+              <FormSelect
+                name="type"
+                value={formData.type}
+                onChange={handleChange}
+                error={errors.type}
+              >
+                <option value="" disabled>Select Type</option>
+                <option value="commercial">Commercial</option>
+                <option value="classified">Classified</option>
+              </FormSelect>
+            </FormField>
 
-          <form
-            onSubmit={handleSubmit}
-            onClick={(e) => e.stopPropagation()}
-            className="bg-white w-[500px] rounded-2xl p-6 shadow-xl relative max-h-[90vh] overflow-y-auto"
-          >
+            <FormField label="Business Vertical" error={errors.businessVertical} required>
+              <FormSelect
+                name="businessVertical"
+                value={formData.businessVertical}
+                onChange={handleChange}
+                error={errors.businessVertical}
+              >
+                <option value="" disabled>Select Vertical</option>
+                <option value="Education">Education</option>
+                <option value="Technology">Technology</option>
+                <option value="Healthcare">Healthcare</option>
+                <option value="Finance">Finance</option>
+                <option value="Retail">Retail</option>
+                <option value="Real Estate">Real Estate</option>
+                <option value="Entertainment">Entertainment</option>
+                <option value="Food & Beverage">Food & Beverage</option>
+                <option value="Travel & Tourism">Travel & Tourism</option>
+                <option value="Auto & Transport">Auto & Transport</option>
+                <option value="Lifestyle">Lifestyle</option>
+                <option value="Others">Others</option>
+              </FormSelect>
+            </FormField>
+          </div>
 
-            <h2 className="text-lg font-semibold mb-4">
-              {editingAd ? "Edit Advertisement" : "Add Advertisement"}
-            </h2>
+          <FormField label="Title" error={errors.title} required>
+            <FormInput
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              placeholder="e.g. Summer Offer Banner"
+              error={errors.title}
+            />
+          </FormField>
 
-            <div className="space-y-4">
+          <FormField label="Description" error={errors.description} required>
+            <FormTextarea
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              placeholder="Enter advertisement details..."
+              rows={2}
+              error={errors.description}
+            />
+          </FormField>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1">
-                  <label className="text-sm text-black font-medium">
-                    Advertisement Type <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    name="type"
-                    value={formData.type}
-                    onChange={handleChange}
-                    className={`px-4 py-3 rounded-xl bg-gray-100 outline-none text-sm border ${errors.type ? 'border-red-500' : 'border-transparent'}`}
-                  >
-                    <option value="" disabled>Select Type</option>
-                    <option value="commercial">Commercial</option>
-                    <option value="classified">Classified</option>
-                  </select>
-                  {errors.type && <p className="text-red-500 text-xs">{errors.type}</p>}
-                </div>
+          <FormField label="Valid Till" error={errors.endDate} required>
+            <FormInput
+              type="date"
+              name="endDate"
+              value={formData.endDate}
+              onChange={handleChange}
+              error={errors.endDate}
+            />
+          </FormField>
 
-                <div className="flex flex-col gap-1">
-                  <label className="text-sm text-black font-medium">
-                    Business Vertical <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    name="businessVertical"
-                    value={formData.businessVertical}
-                    onChange={handleChange}
-                    className={`px-4 py-3 rounded-xl bg-gray-100 outline-none text-sm border ${errors.businessVertical ? 'border-red-500' : 'border-transparent'}`}
-                  >
-                    <option value="" disabled>Select Vertical</option>
-                    <option value="Education">Education</option>
-                    <option value="Technology">Technology</option>
-                    <option value="Healthcare">Healthcare</option>
-                    <option value="Finance">Finance</option>
-                    <option value="Retail">Retail</option>
-                    <option value="Real Estate">Real Estate</option>
-                    <option value="Entertainment">Entertainment</option>
-                    <option value="Food & Beverage">Food & Beverage</option>
-                    <option value="Travel & Tourism">Travel & Tourism</option>
-                    <option value="Auto & Transport">Auto & Transport</option>
-                    <option value="Lifestyle">Lifestyle</option>
-                    <option value="Others">Others</option>
-                  </select>
-                  {errors.businessVertical && <p className="text-red-500 text-xs">{errors.businessVertical}</p>}
-                </div>
-              </div>
+          <FormImageUpload
+            label="Advertisement Banner"
+            name="imageUrl"
+            onChange={handleChange}
+            error={errors.imageUrl}
+            required={!editingAd}
+            previewUrl={formData.imageUrl ? (formData.imageUrl instanceof File ? URL.createObjectURL(formData.imageUrl) : formData.imageUrl) : null}
+          />
 
-              {/* Title */}
-              <div className="flex flex-col gap-1">
-                <label className="text-sm text-black font-medium">Title <span className="text-red-500">*</span></label>
-                <input
-                  name="title"
-                  value={formData.title}
-                  onChange={handleChange}
-                  placeholder="Summer Offer Banner"
-                  className={`w-full px-4 py-3 rounded-xl bg-gray-100 outline-none text-sm border ${errors.title ? 'border-red-500' : 'border-transparent'}`}
-                />
-                {errors.title && <p className="text-red-500 text-xs">{errors.title}</p>}
-              </div>
-
-              {/* Description */}
-              <div className="flex flex-col gap-1">
-                <label className="text-sm text-black font-medium">Description <span className="text-red-500">*</span></label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  placeholder="Enter description details..."
-                  rows={2}
-                  className={`w-full px-4 py-3 rounded-xl bg-gray-100 outline-none text-sm resize-none border ${errors.description ? 'border-red-500' : 'border-transparent'}`}
-                />
-                {errors.description && <p className="text-red-500 text-xs">{errors.description}</p>}
-              </div>
-
-              {/* Valid Till */}
-              <div className="flex flex-col gap-1">
-                <label className="text-sm text-black font-medium">Valid Till <span className="text-red-500">*</span></label>
-                <input
-                  type="date"
-                  name="endDate"
-                  value={formData.endDate}
-                  onChange={handleChange}
-                  className={`w-full px-4 py-3 rounded-xl bg-gray-100 outline-none text-sm border ${errors.endDate ? 'border-red-500' : 'border-transparent'}`}
-                />
-                {errors.endDate && <p className="text-red-500 text-xs">{errors.endDate}</p>}
-              </div>
-
-              {/* Image */}
-              <div className="flex flex-col gap-1">
-                <label className="text-sm text-black font-medium">
-                  Image {!editingAd && <span className="text-red-500">*</span>}
-                </label>
-
-                <div className="flex items-center gap-4">
-                  {/* Input Container */}
-                  <div className="flex-1">
-                    <input
-                      type="file"
-                      name="imageUrl"
-                      accept="image/*"
-                      onChange={handleChange}
-                      className={`w-full px-4 py-3 rounded-xl bg-gray-100 outline-none text-sm border ${errors.imageUrl ? 'border-red-500' : 'border-transparent'
-                        }`}
-                    />
-                    {errors.imageUrl && <p className="text-red-500 text-xs mt-1">{errors.imageUrl}</p>}
-                  </div>
-
-                  {/* Preview Container - Displays on the right */}
-                  {formData.imageUrl && (
-                    <div className="shrink-0">
-                      <img
-                        src={formData.imageUrl instanceof File ? URL.createObjectURL(formData.imageUrl) : formData.imageUrl}
-                        alt="Preview"
-                        className="w-16 h-16 object-cover rounded-xl border border-gray-200 shadow-sm"
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Button */}
-              <div className="flex justify-center pt-4">
-                <button
-                  type="submit"
-                  disabled={isAdding || isUpdating}
-                  className="px-10 py-3 rounded-xl bg-gradient-to-b from-[#7E1080] to-[#1A031A] text-white font-semibold flex items-center gap-2"
-                >
-                  {(isAdding || isUpdating) ? (
-                    <PulseLoader size={8} color="#fff" />
-                  ) : (
-                    editingAd ? "Update Ad" : "+ Add Ad"
-                  )}
-                </button>
-              </div>
-
-            </div>
-          </form>
+          <ModalSubmitBtn onClick={handleSubmit} disabled={isAdding || isUpdating}>
+            {(isAdding || isUpdating) ? "Processing..." : (editingAd ? "Update Advertisement" : "Add Advertisement")}
+          </ModalSubmitBtn>
         </div>
-      )}
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={confirmModal.show}
+        onClose={() => setConfirmModal({ show: false, id: null })}
+        title="Delete Advertisement"
+        className="max-w-sm"
+      >
+        <div className="text-center py-2">
+          <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Trash2 size={32} />
+          </div>
+          <h3 className="text-xl font-bold text-gray-800 mb-2">Are you sure?</h3>
+          <p className="text-gray-500 text-sm leading-relaxed mb-6">
+            Do you want to delete this advertisement? This action cannot be undone.
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setConfirmModal({ show: false, id: null })}
+              className="flex-1 px-4 py-3 bg-gray-50 hover:bg-gray-100 text-gray-600 font-bold rounded-2xl transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDelete}
+              className="flex-1 px-4 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-2xl transition-all shadow-lg shadow-red-100"
+            >
+              Yes, Delete
+            </button>
+          </div>
+        </div>
+      </Modal>
     </Layout>
   );
 };

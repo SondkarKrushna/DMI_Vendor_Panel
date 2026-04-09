@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/cards/Card";
 import Button from "../../components/buttons/Button";
-import { Tag, SquarePen, Trash2, ArrowDownToLine, FileSpreadsheet, FileText } from "lucide-react";
+import { Tag, SquarePen, Trash2, ArrowDownToLine, FileSpreadsheet, FileText, Loader2 } from "lucide-react";
 import offerImg from "../../../public/images/offer.png";
 import { PulseLoader } from "react-spinners";
 import { toast } from "react-toastify";
@@ -38,7 +38,7 @@ const Offers = () => {
   const [errors, setErrors] = useState({});
 
 
-  const { data, isLoading, isError } = useGetOffersQuery({
+  const { data, isLoading } = useGetOffersQuery({
     page: currentPage,
     status: activeTab.toLowerCase()
   });
@@ -47,15 +47,60 @@ const Offers = () => {
   const [deleteOffer, { isLoading: isDeleting }] = useDeleteOfferMutation();
 
   const offers = data?.data || (Array.isArray(data) ? data : []);
-  const apiStats = data?.stats || {};
   
-  const stats = {
-    total: apiStats.total || offers.length || 0,
-    pending: apiStats.pending || offers.filter(o => o.status?.toLowerCase() === 'pending').length || 0,
-    active: apiStats.active || offers.filter(o => o.status?.toLowerCase() === 'active').length || 0,
-    expired: apiStats.expired || offers.filter(o => o.status?.toLowerCase() === 'expired').length || 0,
-    rejected: apiStats.rejected || offers.filter(o => o.status?.toLowerCase() === 'rejected').length || 0,
-  };
+  // ✅ Dynamic Stats Cards Mapping with Fallback support
+  const statsCards = useMemo(() => {
+    // 1. If backend provides the array, use it directly (Parsing percent if needed)
+    if (data?.statsCards && Array.isArray(data.statsCards)) {
+      return data.statsCards.map(stat => ({
+        ...stat,
+        parsedPercent: parseFloat(stat.percent?.replace(/[+%]/g, '')) || 0,
+        icon: stat.icon || Tag
+      }));
+    }
+
+    // 2. Otherwise, map from legacy stats object (Fallback)
+    const s = data?.stats || {};
+    return [
+      {
+        title: "Total Offers",
+        value: s.total || offers.length || 0,
+        percent: s.totalPercent || "0.0%",
+        parsedPercent: parseFloat(s.totalPercent) || 0,
+        trend: s.totalTrend || "neutral",
+        subText: "Total offers created",
+        icon: Tag
+      },
+      {
+        title: "Active Offers",
+        value: s.active || offers.filter(o => o.status?.toLowerCase() === 'active').length || 0,
+        percent: s.activePercent || "0.0%",
+        parsedPercent: parseFloat(s.activePercent) || 0,
+        trend: s.activeTrend || "neutral",
+        subText: "Currently running offers",
+        icon: Tag
+      },
+      {
+        title: "Pending Offers",
+        value: s.pending || offers.filter(o => o.status?.toLowerCase() === 'pending').length || 0,
+        percent: s.pendingPercent || "0.0%",
+        parsedPercent: parseFloat(s.pendingPercent) || 0,
+        trend: s.pendingTrend || "neutral",
+        subText: "Awaiting approval",
+        icon: Tag
+      },
+      {
+        title: "Expired Offers",
+        value: s.expired || offers.filter(o => o.status?.toLowerCase() === 'expired').length || 0,
+        percent: s.expiredPercent || "0.0%",
+        parsedPercent: parseFloat(s.expiredPercent) || 0,
+        trend: s.expiredTrend || "neutral",
+        subText: "Past validity date",
+        icon: Tag
+      }
+    ];
+  }, [data, offers]);
+
   const pagination = data?.pagination || { total: 0, has_next_page: false, has_prev_page: false };
 
   // Sync tab changes to page 1
@@ -413,41 +458,19 @@ const Offers = () => {
           </div>
         </div>
 
-        {/* Stats Cards */}
+        {/* Dynamic Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-
-          <Card
-            title="Total Offers"
-            amount={stats.total.toString()}
-            percentage={42}
-            statusText="Increased by Yesterday"
-            icon={Tag}
-          />
-
-          <Card
-            title="Pending Offers"
-            amount={stats.pending.toString()}
-            percentage={30}
-            statusText="Decreased by Yesterday"
-            isDecrease={true}
-            icon={Tag}
-          />
-
-          <Card
-            title="Active Offers"
-            amount={stats.active.toString()}
-            percentage={42}
-            statusText="Increased by Last Month"
-            icon={Tag}
-          />
-
-          <Card
-            title="Expired Offers"
-            amount={stats.expired.toString()}
-            percentage={42}
-            statusText="Increased by Last Month"
-            icon={Tag}
-          />
+          {statsCards.map((stat, idx) => (
+            <Card
+              key={idx}
+              title={stat.title}
+              amount={stat.formatted || stat.value.toString()}
+              percentage={stat.parsedPercent || 0}
+              statusText={stat.subText || `${stat.trend} change`}
+              trend={stat.trend}
+              icon={stat.icon || Tag}
+            />
+          ))}
         </div>
 
 
@@ -485,10 +508,10 @@ const Offers = () => {
         {pagination.total > 10 && (
           <div className="flex justify-center items-center gap-4 mt-10 mb-6">
             <button
-              disabled={!pagination.has_prev_page}
+              disabled={!pagination.has_prev_page && pagination.page === 1}
               onClick={() => setCurrentPage(prev => prev - 1)}
               className={`px-4 py-2 rounded-lg border flex items-center gap-2 transition
-                ${!pagination.has_prev_page
+                ${(!pagination.has_prev_page && pagination.page === 1)
                   ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
                   : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 active:scale-95'
                 }`}
@@ -499,10 +522,10 @@ const Offers = () => {
               Page {pagination.page} of {pagination.total_pages}
             </span>
             <button
-              disabled={!pagination.has_next_page}
+              disabled={!pagination.has_next_page && pagination.page === (pagination.total_pages || 1)}
               onClick={() => setCurrentPage(prev => prev + 1)}
               className={`px-4 py-2 rounded-lg border flex items-center gap-2 transition
-                ${!pagination.has_next_page
+                ${(!pagination.has_next_page && pagination.page === (pagination.total_pages || 1))
                   ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
                   : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 active:scale-95'
                 }`}
@@ -515,8 +538,8 @@ const Offers = () => {
       </div>
 
       {/* Model */}
-      <Modal 
-        isOpen={isModalOpen} 
+      <Modal
+        isOpen={isModalOpen}
         onClose={() => { setIsModalOpen(false); resetForm(); }}
         title={editingOffer ? "Edit Offer" : "Add Offer"}
       >
@@ -539,9 +562,8 @@ const Offers = () => {
               value={formData.title}
               onChange={handleChange}
               placeholder="e.g 20% off on dev courses"
-              className={errors.title ? 'border-red-500' : ''}
+              error={errors.title}
             />
-            {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title}</p>}
           </FormField>
 
           {/* Discount */}
@@ -554,9 +576,8 @@ const Offers = () => {
               placeholder="e.g 10"
               min="0"
               max="100"
-              className={errors.discount ? 'border-red-500' : ''}
+              error={errors.discount}
             />
-            {errors.discount && <p className="text-red-500 text-xs mt-1">{errors.discount}</p>}
           </FormField>
 
           {/* Dates */}
@@ -567,9 +588,8 @@ const Offers = () => {
                 name="startDate"
                 value={formData.startDate}
                 onChange={handleChange}
-                className={errors.startDate ? 'border-red-500' : ''}
+                error={errors.startDate}
               />
-              {errors.startDate && <p className="text-red-500 text-xs mt-1">{errors.startDate}</p>}
             </FormField>
 
             <FormField label="Expiry Date" error={errors.endDate} required>
@@ -578,9 +598,8 @@ const Offers = () => {
                 name="endDate"
                 value={formData.endDate}
                 onChange={handleChange}
-                className={errors.endDate ? 'border-red-500' : ''}
+                error={errors.endDate}
               />
-              {errors.endDate && <p className="text-red-500 text-xs mt-1">{errors.endDate}</p>}
             </FormField>
           </div>
 
@@ -592,9 +611,8 @@ const Offers = () => {
               onChange={handleChange}
               placeholder="Enter offer description"
               rows={2}
-              className={errors.description ? 'border-red-500' : ''}
+              error={errors.description}
             />
-            {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
           </FormField>
 
           <ModalSubmitBtn onClick={handleSubmit} disabled={isAdding || isUpdating}>
@@ -603,43 +621,38 @@ const Offers = () => {
         </div>
       </Modal>
 
-      {/* Delete model */}
-      {confirmModal.show && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100]">
-          <div className="bg-white rounded-2xl p-6 w-[90%] max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
-
-            <h3 className="text-xl font-bold text-gray-800 mb-2 text-center">
-              Are you sure?
-            </h3>
-
-            <p className="text-gray-600 text-center mb-6">
-              Do you want to delete this offer? This action cannot be undone.
-            </p>
-
-            <div className="flex gap-4">
-              <button
-                onClick={() => setConfirmModal({ show: false, id: null })}
-                className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl"
-              >
-                Cancel
-              </button>
-
-              <button
-                onClick={handleDelete}
-                disabled={isDeleting}
-                className="flex-1 px-4 py-3 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl flex items-center justify-center gap-2"
-              >
-                {isDeleting ? (
-                  <PulseLoader size={8} color="#fff" />
-                ) : (
-                  "Yes, Delete"
-                )}
-              </button>
-            </div>
-
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={confirmModal.show}
+        onClose={() => setConfirmModal({ show: false, id: null })}
+        title="Delete Offer"
+        className="max-w-sm"
+      >
+        <div className="text-center py-2">
+          <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Trash2 size={32} />
+          </div>
+          <h3 className="text-xl font-bold text-gray-800 mb-2">Are you sure?</h3>
+          <p className="text-gray-500 text-sm leading-relaxed mb-6">
+            Do you really want to delete this offer? This action cannot be undone and the record will be permanently removed.
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setConfirmModal({ show: false, id: null })}
+              className="flex-1 px-4 py-3 bg-gray-50 hover:bg-gray-100 text-gray-600 font-bold rounded-2xl transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="flex-1 px-4 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-2xl transition-all shadow-lg shadow-red-100 flex items-center justify-center gap-2"
+            >
+              {isDeleting ? <Loader2 size={18} className="animate-spin" /> : "Delete"}
+            </button>
           </div>
         </div>
-      )}
+      </Modal>
     </Layout>
   );
 };

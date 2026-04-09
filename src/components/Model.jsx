@@ -1,166 +1,223 @@
 import React, { useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { IoMdClose } from 'react-icons/io';
+import { X, ChevronDown, Upload, Image as ImageIcon, Loader2 } from 'lucide-react';
 
+/**
+ * ══════════════════════════════════════════════════
+ * PREMIUM MODAL COMPONENT (v2.0)
+ * ══════════════════════════════════════════════════
+ */
 const Modal = ({
-    isOpen,
-    onClose,
-    title,
-    children,
-    className = 'max-w-md',
-    footer,
-    disableBackdropClick = false,
-    ariaLabelledBy = 'modal-title',
+  isOpen,
+  onClose,
+  title,
+  children,
+  className = 'max-w-md',
+  footer,
+  disableBackdropClick = false,
+  ariaLabelledBy = 'modal-title',
 }) => {
-    // Close on Escape key
-    useEffect(() => {
-        const handleEsc = (e) => { if (e.key === 'Escape' && isOpen) onClose(); };
-        window.addEventListener('keydown', handleEsc);
-        return () => window.removeEventListener('keydown', handleEsc);
-    }, [isOpen, onClose]);
+  // Close on Escape key
+  useEffect(() => {
+    const handleEsc = (e) => { if (e.key === 'Escape' && isOpen) onClose(); };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [isOpen, onClose]);
 
-    // Lock background scroll
-    useEffect(() => {
-        document.body.style.overflow = isOpen ? 'hidden' : 'unset';
-        return () => { document.body.style.overflow = 'unset'; };
-    }, [isOpen]);
+  // Lock background scroll
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [isOpen]);
 
-    if (!isOpen) return null;
+  if (!isOpen) return null;
 
-    return (
-        <div className="fixed font-dm-sans inset-0 z-1000 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            {/* Backdrop */}
-            {!disableBackdropClick && (
-                <div className="absolute inset-0 w-full h-full" onClick={onClose} />
-            )}
+  return (
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+      {/* Backdrop with premium blur */}
+      <div 
+        className="absolute inset-0 bg-black/40 backdrop-blur-md transition-opacity duration-300 animate-in fade-in"
+        onClick={!disableBackdropClick ? onClose : undefined}
+      />
 
-            {/* Modal Panel */}
-            <div
-                className={`bg-white rounded-3xl h-full shadow-2xl w-full relative z-1001 flex flex-col overflow-hidden border border-gray-100 ${className}`}
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby={ariaLabelledBy}
-            >
-                {/* Header */}
-                <div className="flex items-center justify-between px-6 pt-6 pb-4">
-                    <h2 id={ariaLabelledBy} className="text-xl font-bold text-gray-900">
-                        {title}
-                    </h2>
-                    <button
-                        onClick={onClose}
-                        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-all text-gray-400 hover:text-gray-600 hover:rotate-90"
-                        aria-label="Close modal"
-                    >
-                        <IoMdClose size={20} />
-                    </button>
-                </div>
-
-                {/* Divider */}
-                <div className="h-px bg-gray-100 mx-6" />
-
-                {/* Body */}
-                <div className="px-6 py-5 max-h-[75vh] overflow-y-auto custom-scrollbar flex flex-col gap-4">
-                    {children}
-                </div>
-
-                {/* Footer (optional external actions) */}
-                {footer && (
-                    <div className="px-6 pb-6 pt-2 flex justify-end items-center gap-3">
-                        {footer}
-                    </div>
-                )}
-            </div>
+      {/* Modal Panel with Entry Animation */}
+      <div
+        className={`bg-white rounded-[2rem] shadow-2xl w-full relative z-[1001] flex flex-col overflow-hidden border border-gray-100 animate-in fade-in zoom-in-95 slide-in-from-bottom-8 duration-300 ${className}`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={ariaLabelledBy}
+      >
+        {/* Header - Sleek & Modern */}
+        <div className="flex items-center justify-between px-8 pt-8 pb-5">
+          <h2 id={ariaLabelledBy} className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+            {title}
+          </h2>
+          <button
+            onClick={onClose}
+            className="w-10 h-10 flex items-center justify-center rounded-2xl bg-gray-50 text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200"
+            aria-label="Close modal"
+          >
+            <X size={20} />
+          </button>
         </div>
-    );
+
+        {/* Subtle Gradient Divider */}
+        <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent mx-8" />
+
+        {/* Body - Comfortable Spacing & Custom Scrollbar */}
+        <div className="px-8 py-6 max-h-[75vh] overflow-y-auto custom-scrollbar flex flex-col gap-5">
+          {children}
+        </div>
+
+        {/* Footer - Optional external actions */}
+        {footer && (
+          <div className="px-8 pb-8 pt-2 flex justify-end items-center gap-3">
+            {footer}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };
 
-/* ────────────────────────────────────────────
-   Reusable form building blocks
-──────────────────────────────────────────── */
+/**
+ * ══════════════════════════════════════════════════
+ * REUSABLE FORM COMPONENTS (PREMIUM UI)
+ * ══════════════════════════════════════════════════
+ */
 
-/** Generic field wrapper with label */
-export const FormField = ({ label, children, className = '', required = false }) => (
-    <div className={`flex flex-col gap-1.5 ${className}`}>
-        <label className="text-sm font-semibold text-gray-700">
-            {label} {required && <span className="text-red-500">*</span>}
-        </label>
-        {children}
+/** Generic field wrapper with label and integrated error display */
+export const FormField = ({ label, children, error, required, className = '' }) => (
+  <div className={`flex flex-col gap-2 ${className}`}>
+    {label && (
+      <label className="text-sm font-bold text-gray-700 ml-1 flex items-center gap-1">
+        {label}
+        {required && <span className="text-red-500">*</span>}
+      </label>
+    )}
+    <div className="relative">
+      {children}
     </div>
+    {error && (
+      <p className="text-[11px] font-bold text-red-500 ml-1 animate-in slide-in-from-top-1">
+        {error}
+      </p>
+    )}
+  </div>
 );
 
-/** Text / number input */
-export const FormInput = ({ placeholder = 'Enter', type = 'text', ...rest }) => (
-    <input
-        type={type}
-        placeholder={placeholder}
-        className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-800 placeholder-gray-400 outline-none focus:border-[#7E1080] focus:bg-white focus:ring-2 focus:ring-purple-100 transition-all"
-        {...rest}
-    />
+/** Professional Input Styling - Rebuilt for maximum visibility */
+export const FormInput = ({ placeholder = 'Enter...', error, ...rest }) => (
+  <input
+    className={`w-full px-5 py-3.5 rounded-2xl border bg-white text-sm text-gray-800 placeholder-gray-400 outline-none transition-all duration-200 shadow-sm
+      ${error 
+        ? 'border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-50' 
+        : 'border-gray-200 focus:border-[#7E1080] focus:ring-4 focus:ring-purple-50'
+      }
+    `}
+    {...rest}
+    placeholder={placeholder}
+  />
 );
 
-/** Select dropdown */
-export const FormSelect = ({ children, ...rest }) => (
+/** Professional Select Styling with Custom Icon */
+export const FormSelect = ({ children, error, ...rest }) => (
+  <div className="relative group">
     <select
-        className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-400 outline-none focus:border-[#7E1080] focus:bg-white focus:ring-2 focus:ring-purple-100 transition-all appearance-none cursor-pointer"
-        {...rest}
+      className={`w-full px-5 py-3.5 rounded-2xl border bg-white text-sm outline-none transition-all duration-200 appearance-none cursor-pointer shadow-sm
+        ${error 
+          ? 'border-red-300 text-red-900 focus:border-red-500 focus:ring-4 focus:ring-red-50' 
+          : 'border-gray-200 text-gray-700 focus:border-[#7E1080] focus:ring-4 focus:ring-purple-50'
+        }
+      `}
+      {...rest}
     >
-        {children}
+      {children}
     </select>
-);
-
-/** Textarea */
-export const FormTextarea = ({ placeholder = 'Enter', rows = 4, ...rest }) => (
-    <textarea
-        rows={rows}
-        placeholder={placeholder}
-        className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-800 placeholder-gray-400 outline-none focus:border-[#7E1080] focus:bg-white focus:ring-2 focus:ring-purple-100 transition-all resize-none"
-        {...rest}
-    />
-);
-
-/** Image upload box */
-export const FormImageUpload = ({ label = 'Image', onChange, name, error, previewUrl, required = false }) => (
-    <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-semibold text-gray-700">
-            {label} {required && <span className="text-red-500">*</span>}
-        </label>
-        <label className={`flex flex-col items-center justify-center gap-2 w-full ${previewUrl ? 'h-40' : 'h-28'} rounded-xl border-2 border-dashed ${error ? 'border-red-500' : 'border-gray-200'} bg-gray-50 cursor-pointer hover:border-[#7E1080] hover:bg-purple-50/30 transition-all group overflow-hidden`}>
-            {previewUrl ? (
-                <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
-            ) : (
-                <>
-                    <svg className="w-7 h-7 text-gray-300 group-hover:text-[#7E1080] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    <span className="text-xs text-gray-400 group-hover:text-[#7E1080] transition-colors font-medium">Click to Upload</span>
-                </>
-            )}
-            <input type="file" name={name} accept="image/*" className="hidden" onChange={onChange} />
-        </label>
-        {error && <p className="text-red-500 text-xs mt-0.5">{error}</p>}
+    <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover:text-gray-600 transition-colors">
+      <ChevronDown size={18} />
     </div>
+  </div>
 );
 
-/** Brand submit button — the CTA at bottom of modal */
-export const ModalSubmitBtn = ({ children, onClick }) => (
-    <button
-        type="button"
-        onClick={onClick}
-        className="w-50 py-3.5 mt-2 rounded-xl mx-auto font-semibold text-sm text-white bg-[linear-gradient(180deg,#7E1080_0%,#1A031A_100%)] shadow-lg shadow-purple-200 hover:opacity-90 active:scale-[.98] transition-all flex items-center justify-center gap-2"
-    >
-        {children}
-    </button>
+/** Professional Textarea Styling */
+export const FormTextarea = ({ placeholder = 'Tell us more...', rows = 3, error, ...rest }) => (
+  <textarea
+    rows={rows}
+    className={`w-full px-5 py-4 rounded-2xl border bg-white text-sm text-gray-800 placeholder-gray-400 outline-none transition-all duration-200 resize-none shadow-sm
+      ${error 
+        ? 'border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-50' 
+        : 'border-gray-200 focus:border-[#7E1080] focus:ring-4 focus:ring-purple-50'
+      }
+    `}
+    {...rest}
+    placeholder={placeholder}
+  />
+);
+
+/** Redesigned Image Upload with Preview Support */
+export const FormImageUpload = ({ label = 'Upload Image', error, previewUrl, onChange, ...rest }) => (
+  <div className="flex flex-col gap-2">
+    {label && <label className="text-sm font-bold text-gray-700 ml-1">{label}</label>}
+    
+    <label className={`relative flex flex-col items-center justify-center gap-3 w-full h-40 rounded-[1.5rem] border-2 border-dashed cursor-pointer overflow-hidden transition-all duration-200 group
+      ${error 
+        ? 'border-red-300 bg-red-50/30' 
+        : previewUrl 
+          ? 'border-purple-200 bg-white shadow-sm' 
+          : 'border-gray-200 bg-gray-50/50 hover:bg-white hover:border-[#7E1080] shadow-sm'
+      }
+    `}>
+      {previewUrl ? (
+        <>
+          <img src={previewUrl} alt="Preview" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+            <Upload size={24} className="text-white" />
+            <span className="text-xs text-white font-bold">Change Image</span>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-gray-400 group-hover:text-[#7E1080] group-hover:scale-110 transition-all duration-300">
+            <Upload size={24} />
+          </div>
+          <div className="text-center">
+            <span className="text-sm text-gray-600 font-bold block">Choose a file</span>
+            <span className="text-[11px] text-gray-400 font-medium uppercase tracking-wider mt-1">PNG, JPG or WebP (Max 5MB)</span>
+          </div>
+        </>
+      )}
+      <input type="file" accept="image/*" className="hidden" onChange={onChange} {...rest} />
+    </label>
+    
+    {error && <p className="text-[11px] font-bold text-red-500 ml-1">{error}</p>}
+  </div>
+);
+
+/** Premium Brand Submit Button */
+export const ModalSubmitBtn = ({ children, onClick, disabled, className = '' }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    disabled={disabled}
+    className={`w-full py-4 mt-4 rounded-2xl font-bold text-sm text-white bg-gradient-to-r from-[#7E1080] to-[#1A031A] shadow-xl shadow-purple-100 hover:shadow-purple-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none ${className}`}
+  >
+    {disabled && <Loader2 size={18} className="animate-spin" />}
+    {children}
+  </button>
 );
 
 Modal.propTypes = {
-    isOpen: PropTypes.bool.isRequired,
-    onClose: PropTypes.func.isRequired,
-    title: PropTypes.string.isRequired,
-    children: PropTypes.node.isRequired,
-    className: PropTypes.string,
-    footer: PropTypes.node,
-    disableBackdropClick: PropTypes.bool,
-    ariaLabelledBy: PropTypes.string,
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  title: PropTypes.string.isRequired,
+  children: PropTypes.node.isRequired,
+  className: PropTypes.string,
+  footer: PropTypes.node,
+  disableBackdropClick: PropTypes.bool,
+  ariaLabelledBy: PropTypes.string,
 };
 
 export default Modal;

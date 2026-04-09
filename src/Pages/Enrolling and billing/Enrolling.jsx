@@ -1,15 +1,17 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/cards/Card";
 import Button from "../../components/buttons/Button";
 import Table from "../../components/table/Table";
 import SearchBar from "../../components/search/SearchBar";
 import CardholderDetailsModal from "../../components/CardholderDetailsModal";
-import { Users, Calendar, Eye, ArrowDownToLine, Upload, X } from "lucide-react";
+import { Users, Calendar, Eye, ArrowDownToLine, Upload, X, FileSpreadsheet, FileText } from "lucide-react";
 import { toast } from "react-toastify";
 import { useCreateEnrollmentMutation, useGetEnrollmentsQuery } from "../../redux/api/enrollmentApi";
 import Modal, { FormField, FormInput, FormSelect, ModalSubmitBtn, FormImageUpload } from "../../components/Model";
-import { exportToCSV, getExportData } from "../../utils/exportUtils";
+import * as XLSX from "xlsx-js-style";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const Enrolling = () => {
   const [selectedRows, setSelectedRows] = useState([]);
@@ -36,18 +38,36 @@ const Enrolling = () => {
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = useRef(null);
 
-  const exportHeaders = [
-    { key: 'id', label: 'User ID' },
-    { key: 'name', label: 'Name' },
-    { key: 'contact', label: 'Contact' },
-    { key: 'cardType', label: 'Card Type' },
-    { key: 'cardNumber', label: 'Card Number' },
-    { key: 'date', label: 'Date' },
-  ];
+  const [showExportOptions, setShowExportOptions] = useState(false);
 
-  const handleExport = () => {
-    const dataToExport = getExportData(tableData, selectedRows, 'id');
-    exportToCSV(dataToExport, exportHeaders, 'enrollments');
+  const exportToExcel = () => {
+    if (!tableData.length) { toast.error("No data to export"); return; }
+    const header = [["User ID", "Name", "Contact", "Card Type", "Card Number", "Date"]];
+    const rows = tableData.map((item) => [
+      item.id, item.name, item.contact, item.cardType, item.cardNumber, item.date
+    ]);
+    const ws = XLSX.utils.aoa_to_sheet([...header, ...rows]);
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let col = range.s.c; col <= range.e.c; col++) {
+      const cell = ws[XLSX.utils.encode_cell({ r: 0, c: col })];
+      if (cell) cell.s = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "7E1080" } }, alignment: { horizontal: "center" } };
+    }
+    ws["!cols"] = [{ wch: 18 }, { wch: 22 }, { wch: 28 }, { wch: 14 }, { wch: 18 }, { wch: 16 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Enrollments");
+    XLSX.writeFile(wb, "Enrollments_Report.xlsx");
+  };
+
+  const exportToPDF = () => {
+    if (!tableData.length) { toast.error("No data to export"); return; }
+    const doc = new jsPDF();
+    doc.text("Enrollments List", 14, 10);
+    autoTable(doc, {
+      head: [["User ID", "Name", "Contact", "Card Type", "Card Number", "Date"]],
+      body: tableData.map((item) => [item.id, item.name, item.contact, item.cardType, item.cardNumber, item.date]),
+      startY: 20,
+    });
+    doc.save("enrollments.pdf");
   };
 
   // ✅ API Hooks
@@ -66,12 +86,42 @@ const Enrolling = () => {
 
   const enrollmentsResponse = data?.data || data || {};
   const enrollments = enrollmentsResponse.enrollments || (Array.isArray(enrollmentsResponse) ? enrollmentsResponse : []);
-  const apiStats = data?.stats || enrollmentsResponse.stats || {};
 
-  const stats = {
-    totalEnrollments: apiStats.totalEnrollments || apiStats.total || enrollments.length || 0,
-    thisMonthEnrollments: apiStats.thisMonthEnrollments || enrollments.length || 0,
-  };
+  // ✅ Dynamic Stats Cards Mapping with Fallback support
+  const statsCards = useMemo(() => {
+    // 1. If backend provides the array, use it directly (Parsing percent)
+    const backendStats = data?.statsCards || enrollmentsResponse.statsCards;
+    if (backendStats && Array.isArray(backendStats)) {
+      return backendStats.map(stat => ({
+        ...stat,
+        parsedPercent: parseFloat(stat.percent?.replace(/[+%]/g, '')) || 0,
+        icon: stat.title.toLowerCase().includes('month') ? Calendar : Users
+      }));
+    }
+
+    // 2. Otherwise, map from legacy stats object (Fallback)
+    const s = data?.stats || enrollmentsResponse.stats || {};
+    return [
+      {
+        title: "Total Enrollments",
+        value: s.totalEnrollments || s.total || enrollments.length || 0,
+        percent: s.totalPercent || "0.0%",
+        parsedPercent: parseFloat(s.totalPercent) || 0,
+        trend: s.totalTrend || "neutral",
+        subText: "All time records",
+        icon: Users
+      },
+      {
+        title: "This Month",
+        value: s.thisMonthEnrollments || enrollments.length || 0,
+        percent: s.monthPercent || "0.0%",
+        parsedPercent: parseFloat(s.monthPercent) || 0,
+        trend: s.monthTrend || "neutral",
+        subText: "New enrollments this month",
+        icon: Calendar
+      }
+    ];
+  }, [data, enrollmentsResponse, enrollments]);
 
   // ✅ Filter options
   const filterOptions = [
@@ -218,20 +268,49 @@ const Enrolling = () => {
             </div>
             <div className="flex gap-3 w-full sm:w-auto">
               <Button text="Enroll New" className="flex-1 sm:flex-none" onClick={() => setShowModal(true)} />
-              <button 
-                className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold shadow-md active:scale-95 transition-all text-sm flex items-center justify-center gap-2"
-                onClick={handleExport}
-              >
-                <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" /> Export
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => setShowExportOptions(prev => !prev)}
+                  className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold flex items-center gap-2"
+                >
+                  <ArrowDownToLine className="w-4 h-4" />
+                  Export
+                </button>
+                {showExportOptions && (
+                  <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                    <button
+                      onClick={() => { exportToExcel(); setShowExportOptions(false); }}
+                      className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm flex items-center gap-2"
+                    >
+                      <FileSpreadsheet size={16} className="text-green-600" />
+                      Export as Excel
+                    </button>
+                    <button
+                      onClick={() => { exportToPDF(); setShowExportOptions(false); }}
+                      className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm flex items-center gap-2"
+                    >
+                      <FileText size={16} className="text-red-500" />
+                      Export as PDF
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
           <div className="mb-6 flex justify-center">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 w-full max-w-7xl">
-              <Card title="Total Enrollments" amount={stats?.totalEnrollments ?? allTableData.length ?? "0"} percentage={0} statusText="All Time" icon={Users} />
-              <Card title="This Month" amount={stats?.thisMonthEnrollments ?? "0"} percentage={0} statusText="Current Month" icon={Calendar} />
-              <div className="hidden lg:block"></div><div className="hidden lg:block"></div>
+              {statsCards.map((stat, idx) => (
+                <Card
+                  key={idx}
+                  title={stat.title}
+                  amount={stat.formatted || stat.value.toString()}
+                  percentage={stat.parsedPercent || 0}
+                  statusText={stat.subText || `${stat.trend} change`}
+                  trend={stat.trend}
+                  icon={stat.icon || Users}
+                />
+              ))}
             </div>
           </div>
 
@@ -302,14 +381,13 @@ const Enrolling = () => {
                 <FormSelect
                   value={formData.cardType}
                   onChange={(e) => handleChange("cardType", e.target.value)}
-                  className={errors.cardType ? 'border-red-400' : ''}
+                  error={errors.cardType}
                 >
                   <option value="">Select</option>
                   {cardTypes.map((type) => (
                     <option key={type} value={type}>{type}</option>
                   ))}
                 </FormSelect>
-                {errors.cardType && <p className="text-red-500 text-xs mt-1">{errors.cardType}</p>}
               </FormField>
 
               <FormField label="CHF Number" error={errors.chfNumber} required>
@@ -318,9 +396,8 @@ const Enrolling = () => {
                   placeholder="CHF-1234"
                   value={formData.chfNumber}
                   onChange={(e) => handleChange("chfNumber", e.target.value)}
-                  className={errors.chfNumber ? 'border-red-400' : ''}
+                  error={errors.chfNumber}
                 />
-                {errors.chfNumber && <p className="text-red-500 text-xs mt-1">{errors.chfNumber}</p>}
               </FormField>
             </div>
 
@@ -330,34 +407,33 @@ const Enrolling = () => {
                 placeholder="Enter name"
                 value={formData.fullName}
                 onChange={(e) => handleChange("fullName", e.target.value)}
-                className={errors.fullName ? 'border-red-400' : ''}
+                error={errors.fullName}
               />
-              {errors.fullName && <p className="text-red-500 text-xs mt-1">{errors.fullName}</p>}
             </FormField>
 
             <FormField label="Mobile" error={errors.mobile} required>
               <FormInput
                 type="text"
                 maxLength={10}
+                placeholder="10-digit mobile"
                 value={formData.mobile}
                 onChange={(e) => handleChange("mobile", e.target.value.replace(/\D/g, ""))}
-                className={errors.mobile ? 'border-red-400' : ''}
+                error={errors.mobile}
               />
-              {errors.mobile && <p className="text-red-500 text-xs mt-1">{errors.mobile}</p>}
             </FormField>
 
             <FormField label="Email" error={errors.email} required>
               <FormInput
                 type="email"
+                placeholder="example@mail.com"
                 value={formData.email}
                 onChange={(e) => handleChange("email", e.target.value)}
-                className={errors.email ? 'border-red-400' : ''}
+                error={errors.email}
               />
-              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
             </FormField>
 
             <FormImageUpload
-              label="Image"
+              label="User Photograph"
               name="image"
               onChange={handleImageChange}
               error={errors.image}

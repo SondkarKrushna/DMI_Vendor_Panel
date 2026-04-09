@@ -6,6 +6,7 @@ import Services from "../Pages/Services/Services";
 import Invoice from "../Pages/Payment and invoices/Invoice";
 import Enrolling from "../Pages/Enrolling and billing/Enrolling";
 import CardHolder from "../Pages/cardholder/CardHolder";
+import PaymentCheckout from "../Pages/cardholder/PaymentCheckout";
 import CallNotepad from "../Pages/Call notepad/CallNotepad";
 import PunchManagement from "../Pages/Punch management/PunchManagement";
 import Advertisements from "../Pages/advertisement/Advertisements";
@@ -28,6 +29,7 @@ const AppRoutes = () => {
         <Route path="/Invoice" element={<Invoice />} />
         <Route path="/enrolling" element={<Enrolling />} />
         <Route path="/card-holder" element={<CardHolder />} />
+        <Route path="/payment-checkout" element={<PaymentCheckout />} />
         <Route path="/call-notepad" element={<CallNotepad />} />
         <Route path="/punch-management" element={<PunchManagement />} />
         <Route path="/advertisements" element={<Advertisements />} />

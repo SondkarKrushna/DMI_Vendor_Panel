@@ -10,11 +10,9 @@ export const punchApi = createApi({
     credentials: "include",
     prepareHeaders: (headers) => {
       const token = localStorage.getItem("token");
-
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
       }
-
       return headers;
     },
   }),
@@ -27,10 +25,20 @@ export const punchApi = createApi({
       query: (query) => `/api/cards/search?query=${query}`,
     }),
 
-    // ✅ CREATE PUNCH
+    // ✅ CREATE PUNCH (also creates Razorpay order + invoice)
     createPunch: builder.mutation({
       query: (data) => ({
         url: "/api/vendor/create-punch",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["Punches"],
+    }),
+
+    // ✅ VERIFY RAZORPAY PAYMENT
+    verifyPayment: builder.mutation({
+      query: (data) => ({
+        url: "/vendor/verify",
         method: "POST",
         body: data,
       }),
@@ -41,7 +49,7 @@ export const punchApi = createApi({
     getPunches: builder.query({
       query: (params) => ({
         url: "/api/vendor/get-punch",
-        params, // dynamically passes dateFilter, startDate, endDate
+        params,
       }),
       providesTags: ["Punches"],
     }),
@@ -51,5 +59,6 @@ export const punchApi = createApi({
 export const {
   useLazySearchCardHolderQuery,
   useCreatePunchMutation,
+  useVerifyPaymentMutation,
   useGetPunchesQuery,
 } = punchApi;

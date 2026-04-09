@@ -3,16 +3,22 @@ import Layout from "../../components/layout/Layout";
 import Button from "../../components/buttons/Button";
 import cardDesign from "../../../public/images/card-design.png";
 import logo from "../../../public/logo.png";
-import { ArrowDownToLine, Search as SearchIcon, Loader2 } from "lucide-react";
+import { ArrowDownToLine, Search as SearchIcon, Loader2, FileSpreadsheet, FileText } from "lucide-react";
 import DMIPremiumCard from '../../components/DMIPremiumCard';
 import { useLazySearchCardHolderQuery, useCreatePunchMutation } from "../../redux/api/punchApi";
 import { useGetActiveServicesQuery } from "../../redux/api/servicesApi";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import * as XLSX from "xlsx-js-style";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const CardHolder = () => {
   const [activeTab, setActiveTab] = useState("Punch");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [chfQuery, setChfQuery] = useState("");
+  const [mobileQuery, setMobileQuery] = useState("");
   const [cardData, setCardData] = useState(null);
+  const [showExportOptions, setShowExportOptions] = useState(false);
 
   // Punch Form State
   const [punchForm, setPunchForm] = useState({
@@ -24,7 +30,7 @@ const CardHolder = () => {
 
   // API Hooks
   const [searchCard, { isFetching: isSearching }] = useLazySearchCardHolderQuery();
-  const [createPunch, { isLoading: isPunching }] = useCreatePunchMutation();
+  const navigate = useNavigate();
   const { data: servicesResponse } = useGetActiveServicesQuery();
 
   const services = servicesResponse?.data || [];
@@ -38,11 +44,58 @@ const CardHolder = () => {
 
   const selectedService = services.find(s => s._id === punchForm.serviceId);
 
+  const exportToExcel = () => {
+    if (!cardData) { toast.error("No cardholder data to export"); return; }
+    const header = [["Full Name", "Card Type", "CHF No", "Service", "Bill Amount", "Discount", "Final Amount", "Date"]];
+    const rows = [[
+      cardData?.userId?.fullName || cardData?.fullName || "—",
+      cardData?.cardType || "—",
+      cardData?.chfNo || "—",
+      selectedService?.serviceName || "—",
+      punchForm.billAmount || "—",
+      `${punchForm.discount || 0}%`,
+      finalAmount.toFixed(2),
+      punchForm.date,
+    ]];
+    const ws = XLSX.utils.aoa_to_sheet([...header, ...rows]);
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let col = range.s.c; col <= range.e.c; col++) {
+      const cell = ws[XLSX.utils.encode_cell({ r: 0, c: col })];
+      if (cell) cell.s = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "7E1080" } }, alignment: { horizontal: "center" } };
+    }
+    ws["!cols"] = [{ wch: 22 }, { wch: 14 }, { wch: 16 }, { wch: 20 }, { wch: 14 }, { wch: 10 }, { wch: 14 }, { wch: 14 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "CardholderPunch");
+    XLSX.writeFile(wb, "CardholderPunch_Report.xlsx");
+  };
+
+  const exportToPDF = () => {
+    if (!cardData) { toast.error("No cardholder data to export"); return; }
+    const doc = new jsPDF();
+    doc.text("Cardholder Punch Details", 14, 10);
+    autoTable(doc, {
+      head: [["Full Name", "Card Type", "CHF No", "Service", "Bill Amount", "Discount", "Final Amount", "Date"]],
+      body: [[
+        cardData?.userId?.fullName || cardData?.fullName || "—",
+        cardData?.cardType || "—",
+        cardData?.chfNo || "—",
+        selectedService?.serviceName || "—",
+        punchForm.billAmount || "—",
+        `${punchForm.discount || 0}%`,
+        `$${finalAmount.toFixed(2)}`,
+        punchForm.date,
+      ]],
+      startY: 20,
+    });
+    doc.save("cardholder_punch.pdf");
+  };
+
   // Handlers
   const handleSearch = async () => {
-    if (!searchQuery.trim()) return toast.error("Please enter a CHF Number or Mobile");
+    const query = chfQuery.trim() || mobileQuery.trim();
+    if (!query) return toast.error("Please enter a CHF Number or Mobile");
     try {
-      const res = await searchCard(searchQuery.trim()).unwrap();
+      const res = await searchCard(query).unwrap();
       // Support multiple response shapes from the API
       const data = res?.data || res?.card || res?.enrollment || res;
       if (data && (data._id || data.userId)) {
@@ -57,38 +110,43 @@ const CardHolder = () => {
     }
   };
 
+  // Load Razorpay script dynamically
+  const loadRazorpayScript = () =>
+    new Promise((resolve) => {
+      if (window.Razorpay) return resolve(true);
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+
   const handleProcessPunch = async () => {
     if (!cardData) return toast.error("Please search and select a cardholder first");
     if (!punchForm.serviceId) return toast.error("Please select a service");
     if (!punchForm.billAmount) return toast.error("Please enter bill amount");
+    if (parseFloat(punchForm.billAmount) <= 0) return toast.error("Bill amount must be greater than 0");
 
-    const payload = {
-      cardType: cardData.cardType || "",
-      chfNo: cardData.chfNo || "",
-      fullName: cardData.userId?.fullName || cardData.fullName || "",
-      mobile: cardData.userId?.mobile || cardData.mobile || "",
-      email: cardData.userId?.email || cardData.email || "",
-      serviceId: punchForm.serviceId,
-      billAmount: punchForm.billAmount,
-      discount: punchForm.discount,
-      finalAmount: finalAmount.toFixed(2),
-      date: punchForm.date,
-    };
-
-    try {
-      await createPunch(payload).unwrap();
-      toast.success("Punch processed successfully!");
-      setPunchForm({
-        serviceId: "",
-        date: new Date().toISOString().split('T')[0],
-        billAmount: "",
-        discount: "",
-      });
-      setCardData(null);
-      setSearchQuery("");
-    } catch (err) {
-      toast.error(err?.data?.message || "Failed to process punch");
-    }
+    // Navigate to the dedicated payment checkout screen
+    navigate("/payment-checkout", {
+      state: {
+        punchPayload: {
+          cardType: cardData.cardType || "",
+          chfNo: cardData.chfNo || "",
+          fullName: cardData.userId?.fullName || cardData.fullName || "",
+          mobile: cardData.userId?.mobile || cardData.mobile || "",
+          email: cardData.userId?.email || cardData.email || "",
+          serviceId: punchForm.serviceId,
+          billAmount: punchForm.billAmount,
+          discount: punchForm.discount,
+          finalAmount: finalAmount.toFixed(2),
+          date: punchForm.date,
+        },
+        cardData,
+        serviceName: selectedService?.serviceName || "",
+        finalAmount: finalAmount.toFixed(2),
+      },
+    });
   };
 
   // Auto-fill form when service is selected
@@ -113,10 +171,33 @@ const CardHolder = () => {
           </div>
 
           <div className="flex gap-3 w-full sm:w-auto">
-            <button className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold shadow-md hover:scale-105 hover:shadow-lg active:scale-95 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2">
-              <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" />
-              Export
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowExportOptions(prev => !prev)}
+                className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold flex items-center gap-2"
+              >
+                <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" />
+                Export
+              </button>
+              {showExportOptions && (
+                <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                  <button
+                    onClick={() => { exportToExcel(); setShowExportOptions(false); }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm flex items-center gap-2"
+                  >
+                    <FileSpreadsheet size={16} className="text-green-600" />
+                    Export as Excel
+                  </button>
+                  <button
+                    onClick={() => { exportToPDF(); setShowExportOptions(false); }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm flex items-center gap-2"
+                  >
+                    <FileText size={16} className="text-red-500" />
+                    Export as PDF
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -130,37 +211,59 @@ const CardHolder = () => {
             </h2>
 
             <div className="flex flex-col sm:flex-row items-end gap-4 mb-6">
-              <div className="flex-1 w-full">
-                <label className="text-sm font-medium text-gray-600 block mb-2">
-                  CHF Number
-                </label>
-                <input
-                  type="text"
-                  placeholder="Search"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200"
-                />
-              </div>
+              {(chfQuery || !mobileQuery) && (
+                <div className="flex-1 w-full relative">
+                  <label className="text-sm font-medium text-gray-600 block mb-2">
+                    CHF Number
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Search by CHF"
+                    value={chfQuery}
+                    onChange={(e) => setChfQuery(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                    className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200"
+                  />
+                  {chfQuery && (
+                    <button
+                      onClick={() => setChfQuery("")}
+                      className="absolute right-3 top-10 text-gray-400 hover:text-gray-600"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              )}
 
-              <div className="flex items-center justify-center py-3 text-gray-400 font-bold px-2">
-                OR
-              </div>
+              {!chfQuery && !mobileQuery && (
+                <div className="flex items-center justify-center py-3 text-gray-400 font-bold px-2">
+                  OR
+                </div>
+              )}
 
-              <div className="flex-1 w-full">
-                <label className="text-sm font-medium text-gray-600 block mb-2">
-                  Mobile Number
-                </label>
-                <input
-                  type="text"
-                  placeholder="Search"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200"
-                />
-              </div>
+              {(mobileQuery || !chfQuery) && (
+                <div className="flex-1 w-full relative">
+                  <label className="text-sm font-medium text-gray-600 block mb-2">
+                    Mobile Number
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Search by Mobile"
+                    value={mobileQuery}
+                    onChange={(e) => setMobileQuery(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                    className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200"
+                  />
+                  {mobileQuery && (
+                    <button
+                      onClick={() => setMobileQuery("")}
+                      className="absolute right-3 top-10 text-gray-400 hover:text-gray-600"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="mt-auto">
@@ -290,11 +393,10 @@ const CardHolder = () => {
           <div className="flex justify-end">
             <button
               onClick={handleProcessPunch}
-              disabled={isPunching || !cardData}
+              disabled={!cardData || !punchForm.serviceId || !punchForm.billAmount}
               className="bg-[#581c56] hover:bg-[#4a1848] text-white px-10 py-3 rounded-xl font-bold transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
-              {isPunching ? <Loader2 className="animate-spin w-4 h-4" /> : null}
-              Process Punch
+              Proceed to Payment
             </button>
           </div>
         </div>

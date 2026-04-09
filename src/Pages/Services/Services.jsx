@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/cards/Card";
 import Button from "../../components/buttons/Button";
@@ -15,6 +15,9 @@ import {
   Edit3,
   Eye,
   Trash2,
+  ArrowDownToLine,
+  FileSpreadsheet,
+  FileText,
 } from "lucide-react";
 import {
   useGetServicesQuery,
@@ -22,7 +25,9 @@ import {
   useUpdateServiceMutation,
   useDeleteServiceMutation
 } from "../../redux/api/servicesApi";
-import { exportToCSV, getExportData } from "../../utils/exportUtils";
+import * as XLSX from "xlsx-js-style";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const Services = () => {
   const [search, setSearch] = useState("");
@@ -42,23 +47,38 @@ const Services = () => {
   });
   const [errors, setErrors] = useState({});
 
-  const exportHeaders = [
-    { key: 'serviceId', label: 'Service ID' },
-    { key: 'serviceName', label: 'Service Name' },
-    { key: 'price', label: 'Price' },
-    { key: 'cardType', label: 'Card Type' },
-    { key: 'discountRate', label: 'Discount (%)' },
-    { key: 'status', label: 'Status' },
-    { key: 'description', label: 'Description' },
-  ];
+  const [showExportOptions, setShowExportOptions] = useState(false);
 
-  const handleExport = () => {
-    const dataToExport = getExportData(data?.data || [], selectedRows, '_id');
-    exportToCSV(dataToExport, exportHeaders, 'services');
+  const exportToExcel = () => {
+    if (!services.length) { toast.error("No data to export"); return; }
+    const header = [["Service ID", "Service Name", "Price", "Card Type", "Discount (%)", "Status", "Description"]];
+    const rows = services.map((s) => [s.serviceId, s.serviceName, s.price, s.cardType, s.discountRate, s.status, s.description]);
+    const ws = XLSX.utils.aoa_to_sheet([...header, ...rows]);
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let col = range.s.c; col <= range.e.c; col++) {
+      const cell = ws[XLSX.utils.encode_cell({ r: 0, c: col })];
+      if (cell) cell.s = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "7E1080" } }, alignment: { horizontal: "center" } };
+    }
+    ws["!cols"] = [{ wch: 16 }, { wch: 22 }, { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 12 }, { wch: 35 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Services");
+    XLSX.writeFile(wb, "Services_Report.xlsx");
   };
 
-  const { data, isLoading, isError } = useGetServicesQuery({ 
-    page: currentPage, 
+  const exportToPDF = () => {
+    if (!services.length) { toast.error("No data to export"); return; }
+    const doc = new jsPDF();
+    doc.text("Services List", 14, 10);
+    autoTable(doc, {
+      head: [["Service ID", "Name", "Price", "Card Type", "Discount", "Status"]],
+      body: services.map((s) => [s.serviceId, s.serviceName, `$${s.price}`, s.cardType, `${s.discountRate}%`, s.status]),
+      startY: 20,
+    });
+    doc.save("services.pdf");
+  };
+
+  const { data, isLoading, isError } = useGetServicesQuery({
+    page: currentPage,
     per_page: 10,
     search: search,
     status: statusFilter === "all" ? undefined : statusFilter
@@ -68,14 +88,59 @@ const Services = () => {
   const [deleteService] = useDeleteServiceMutation();
 
   const services = data?.data || (Array.isArray(data) ? data : []);
-  const apiStats = data?.stats || {};
   
-  const stats = {
-    total: apiStats.total || services.length || 0,
-    pending: apiStats.pending || services.filter(s => s.status?.toLowerCase() === 'pending').length || 0,
-    active: apiStats.active || services.filter(s => s.status?.toLowerCase() === 'active').length || 0,
-    inactive: apiStats.inactive || services.filter(s => s.status?.toLowerCase() === 'inactive').length || 0,
-  };
+  // ✅ Dynamic Stats Cards Mapping with Fallback support
+  const statsCards = useMemo(() => {
+    // 1. If backend provides the array, use it directly (Parsing percent if needed)
+    if (data?.statsCards && Array.isArray(data.statsCards)) {
+      return data.statsCards.map(stat => ({
+        ...stat,
+        parsedPercent: parseFloat(stat.percent?.replace(/[+%]/g, '')) || 0,
+        icon: stat.icon || Briefcase
+      }));
+    }
+
+    // 2. Otherwise, map from legacy stats object (Fallback)
+    const s = data?.stats || {};
+    return [
+      {
+        title: "Total Services",
+        value: s.total || services.length || 0,
+        percent: s.totalPercent || "0.0%",
+        parsedPercent: parseFloat(s.totalPercent) || 0,
+        trend: s.totalTrend || "neutral",
+        subText: "Combined across all types",
+        icon: Briefcase
+      },
+      {
+        title: "Pending Services",
+        value: s.pending || services.filter(s => s.status?.toLowerCase() === 'pending').length || 0,
+        percent: s.pendingPercent || "0.0%",
+        parsedPercent: parseFloat(s.pendingPercent) || 0,
+        trend: s.pendingTrend || "neutral",
+        subText: "Awaiting verification",
+        icon: Clock
+      },
+      {
+        title: "Active Services",
+        value: s.active || services.filter(s => s.status?.toLowerCase() === 'active').length || 0,
+        percent: s.activePercent || "42%", 
+        parsedPercent: parseFloat(s.activePercent) || 0,
+        trend: s.activeTrend || "up",
+        subText: "Visible on customer app",
+        icon: CheckCircle
+      },
+      {
+        title: "Inactive Services",
+        value: s.inactive || services.filter(s => s.status?.toLowerCase() === 'inactive').length || 0,
+        percent: s.inactivePercent || "0%",
+        parsedPercent: parseFloat(s.inactivePercent) || 0,
+        trend: s.inactiveTrend || "neutral",
+        subText: "Currently disabled",
+        icon: Clock
+      }
+    ];
+  }, [data, services]);
 
   const pagination = data?.pagination || { total: 0, page: currentPage, per_page: 10, total_pages: 1, has_next_page: false, has_prev_page: false };
 
@@ -309,47 +374,49 @@ const Services = () => {
                 setShowModal(true);
               }}
             />
-            <button 
-              className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold shadow-md hover:scale-105 hover:shadow-lg active:scale-95 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2"
-              onClick={handleExport}
-            >
-              {/* <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" /> */}
-              Export
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowExportOptions(prev => !prev)}
+                className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold flex items-center gap-2"
+              >
+                <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" />
+                Export
+              </button>
+              {showExportOptions && (
+                <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                  <button
+                    onClick={() => { exportToExcel(); setShowExportOptions(false); }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm flex items-center gap-2"
+                  >
+                    <FileSpreadsheet size={16} className="text-green-600" />
+                    Export as Excel
+                  </button>
+                  <button
+                    onClick={() => { exportToPDF(); setShowExportOptions(false); }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm flex items-center gap-2"
+                  >
+                    <FileText size={16} className="text-red-500" />
+                    Export as PDF
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Cards Row */}
+        {/* Dynamic Cards Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card
-            title="Total Services"
-            amount={stats.total.toString()}
-            percentage={42}
-            statusText="Increased By Yesterday"
-            icon={Briefcase}
-          />
-          <Card
-            title="Pending Services"
-            amount={stats.pending.toString()}
-            percentage={-30}
-            statusText="Decreased By Yesterday"
-            isDecrease
-            icon={Clock}
-          />
-          <Card
-            title="Active Services"
-            amount={stats.active.toString()}
-            percentage={42}
-            statusText="Increased By Last Month"
-            icon={CheckCircle}
-          />
-          <Card
-            title="Inactive Services"
-            amount={stats.inactive.toString()}
-            percentage={0}
-            statusText="Current count"
-            icon={Clock}
-          />
+          {statsCards.map((stat, idx) => (
+            <Card
+              key={idx}
+              title={stat.title}
+              amount={stat.formatted || stat.value.toString()}
+              percentage={stat.parsedPercent || 0}
+              statusText={stat.subText || `${stat.trend} change`}
+              trend={stat.trend}
+              icon={stat.icon || Briefcase}
+            />
+          ))}
         </div>
 
         {/* Search Section */}
@@ -449,17 +516,17 @@ const Services = () => {
             </div>
             <div className="flex items-center gap-3">
               <button
-                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                disabled={!pagination.has_prev_page}
-                className={`px-4 py-2 rounded-lg border transition ${pagination.has_prev_page ? 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50' : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'}`}>
-                Previous
-              </button>
-              <button
-                onClick={() => setCurrentPage((prev) => Math.min(pagination.total_pages, prev + 1))}
-                disabled={!pagination.has_next_page}
-                className={`px-4 py-2 rounded-lg border transition ${pagination.has_next_page ? 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50' : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'}`}>
-                Next
-              </button>
+              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              disabled={!pagination.has_prev_page && pagination.page === 1}
+              className={`px-4 py-2 rounded-lg border transition ${(!pagination.has_prev_page && pagination.page === 1) ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+              Previous
+            </button>
+            <button
+              onClick={() => setCurrentPage((prev) => Math.min(pagination.total_pages, prev + 1))}
+              disabled={!pagination.has_next_page && pagination.page === (pagination.total_pages || 1)}
+              className={`px-4 py-2 rounded-lg border transition ${(!pagination.has_next_page && pagination.page === (pagination.total_pages || 1)) ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+              Next
+            </button>
             </div>
           </div>
         )}
@@ -482,8 +549,8 @@ const Services = () => {
 
       </div>
       {/* Model */}
-      <Modal 
-        isOpen={showModal} 
+      <Modal
+        isOpen={showModal}
         onClose={() => { setShowModal(false); resetForm(); }}
         title={editingService ? "Edit Service" : "Add Service"}
       >
@@ -495,9 +562,8 @@ const Services = () => {
               value={formData.name}
               onChange={handleChange}
               placeholder="Enter service name"
-              className={errors.name ? 'border-red-500' : ''}
+              error={errors.name}
             />
-            {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
           </FormField>
 
           {/* Price */}
@@ -509,9 +575,8 @@ const Services = () => {
               onChange={handleChange}
               placeholder="0.00"
               min="0"
-              className={errors.price ? 'border-red-500' : ''}
+              error={errors.price}
             />
-            {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price}</p>}
           </FormField>
 
           {/* Card Type + Discount */}
@@ -521,7 +586,7 @@ const Services = () => {
                 name="cardType"
                 value={formData.cardType}
                 onChange={handleChange}
-                className={errors.cardType ? 'border-red-500' : ''}
+                error={errors.cardType}
               >
                 <option value="" disabled>Select Card Type</option>
                 <option value="Silver">Silver</option>
@@ -530,7 +595,6 @@ const Services = () => {
                 <option value="Diamond">Diamond</option>
                 <option value="Vip">Vip</option>
               </FormSelect>
-              {errors.cardType && <p className="text-red-500 text-xs mt-1">{errors.cardType}</p>}
             </FormField>
 
             <FormField label="Discount (%)" error={errors.discount} required>
@@ -542,9 +606,8 @@ const Services = () => {
                 placeholder="0"
                 min="0"
                 max="100"
-                className={errors.discount ? 'border-red-500' : ''}
+                error={errors.discount}
               />
-              {errors.discount && <p className="text-red-500 text-xs mt-1">{errors.discount}</p>}
             </FormField>
           </div>
 
@@ -556,9 +619,8 @@ const Services = () => {
               onChange={handleChange}
               placeholder="Enter description"
               rows={2}
-              className={errors.description ? 'border-red-500' : ''}
+              error={errors.description}
             />
-            {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
           </FormField>
 
           {/* Image Upload */}

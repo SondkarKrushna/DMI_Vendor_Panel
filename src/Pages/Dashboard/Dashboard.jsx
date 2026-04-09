@@ -3,11 +3,16 @@ import Layout from "../../components/layout/Layout";
 import Graph from "../../components/Graphs/Graph";
 import Card from "../../components/cards/Card";
 // import Button from "../../components/buttons/Button";
-import { Users, ArrowDownToLine } from "lucide-react"
+import { Users, ArrowDownToLine, FileSpreadsheet, FileText } from "lucide-react"
+import { toast } from "react-toastify";
 import { useGetDashboardQuery } from "../../redux/api/dashboardApi"
+import * as XLSX from "xlsx-js-style";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 const Dashboard = () => {
   const graphOptions = ["weekly", "monthly", "yearly"];
   const [selectedGraphFilter, setSelectedGraphFilter] = useState("weekly");
+  const [showExportOptions, setShowExportOptions] = useState(false);
 
   const {
     data: apiData,
@@ -20,6 +25,34 @@ const Dashboard = () => {
     if (!apiData?.data?.stats) return [];
     return apiData.data.stats;
   }, [apiData]);
+
+  const exportToExcel = () => {
+    if (!dashboardStats.length) { toast.error("No dashboard data to export"); return; }
+    const header = [["Metric", "Value", "Change", "Trend"]];
+    const rows = dashboardStats.map((s) => [s.title, s.formatted || s.value, s.percent, s.trend]);
+    const ws = XLSX.utils.aoa_to_sheet([...header, ...rows]);
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let col = range.s.c; col <= range.e.c; col++) {
+      const cell = ws[XLSX.utils.encode_cell({ r: 0, c: col })];
+      if (cell) cell.s = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "7E1080" } }, alignment: { horizontal: "center" } };
+    }
+    ws["!cols"] = [{ wch: 28 }, { wch: 16 }, { wch: 12 }, { wch: 12 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Dashboard");
+    XLSX.writeFile(wb, "Dashboard_Report.xlsx");
+  };
+
+  const exportToPDF = () => {
+    if (!dashboardStats.length) { toast.error("No dashboard data to export"); return; }
+    const doc = new jsPDF();
+    doc.text("Dashboard Summary Report", 14, 10);
+    autoTable(doc, {
+      head: [["Metric", "Value", "Change", "Trend"]],
+      body: dashboardStats.map((s) => [s.title, s.formatted || s.value, s.percent, s.trend]),
+      startY: 20,
+    });
+    doc.save("dashboard_report.pdf");
+  };
 
   const formatChartLabel = (dateStr) => {
     const date = new Date(dateStr);
@@ -98,10 +131,33 @@ const Dashboard = () => {
           </div>
 
           <div className="flex gap-3 w-full sm:w-auto">
-            <button className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold shadow-md hover:scale-105 hover:shadow-lg active:scale-95 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2">
-              <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" />
-              Export
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowExportOptions(prev => !prev)}
+                className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold flex items-center gap-2"
+              >
+                <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" />
+                Export
+              </button>
+              {showExportOptions && (
+                <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                  <button
+                    onClick={() => { exportToExcel(); setShowExportOptions(false); }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm flex items-center gap-2"
+                  >
+                    <FileSpreadsheet size={16} className="text-green-600" />
+                    Export as Excel
+                  </button>
+                  <button
+                    onClick={() => { exportToPDF(); setShowExportOptions(false); }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm flex items-center gap-2"
+                  >
+                    <FileText size={16} className="text-red-500" />
+                    Export as PDF
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
