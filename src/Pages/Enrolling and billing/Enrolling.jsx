@@ -9,6 +9,7 @@ import { Users, Calendar, Eye, ArrowDownToLine, Upload, X } from "lucide-react";
 import { toast } from "react-toastify";
 import { useCreateEnrollmentMutation, useGetEnrollmentsQuery } from "../../redux/api/enrollmentApi";
 import Modal, { FormField, FormInput, FormSelect, ModalSubmitBtn, FormImageUpload } from "../../components/Model";
+import { exportToCSV, getExportData } from "../../utils/exportUtils";
 
 const Enrolling = () => {
   const [selectedRows, setSelectedRows] = useState([]);
@@ -35,6 +36,20 @@ const Enrolling = () => {
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = useRef(null);
 
+  const exportHeaders = [
+    { key: 'id', label: 'User ID' },
+    { key: 'name', label: 'Name' },
+    { key: 'contact', label: 'Contact' },
+    { key: 'cardType', label: 'Card Type' },
+    { key: 'cardNumber', label: 'Card Number' },
+    { key: 'date', label: 'Date' },
+  ];
+
+  const handleExport = () => {
+    const dataToExport = getExportData(tableData, selectedRows, 'id');
+    exportToCSV(dataToExport, exportHeaders, 'enrollments');
+  };
+
   // ✅ API Hooks
   const [createEnrollment, { isLoading: isCreating }] = useCreateEnrollmentMutation();
 
@@ -44,15 +59,15 @@ const Enrolling = () => {
       : { filter: activeFilter };
 
   const {
-    data: enrollmentsResponse,
+    data,
     isFetching,
     refetch,
   } = useGetEnrollmentsQuery(queryParams);
 
-  //const enrollmentsResponse = data?.data || data || {};
+  const enrollmentsResponse = data?.data || data || {};
   const enrollments = enrollmentsResponse.enrollments || (Array.isArray(enrollmentsResponse) ? enrollmentsResponse : []);
   const apiStats = data?.stats || enrollmentsResponse.stats || {};
-  
+
   const stats = {
     totalEnrollments: apiStats.totalEnrollments || apiStats.total || enrollments.length || 0,
     thisMonthEnrollments: apiStats.thisMonthEnrollments || enrollments.length || 0,
@@ -203,7 +218,10 @@ const Enrolling = () => {
             </div>
             <div className="flex gap-3 w-full sm:w-auto">
               <Button text="Enroll New" className="flex-1 sm:flex-none" onClick={() => setShowModal(true)} />
-              <button className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold shadow-md active:scale-95 transition-all text-sm flex items-center justify-center gap-2">
+              <button 
+                className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold shadow-md active:scale-95 transition-all text-sm flex items-center justify-center gap-2"
+                onClick={handleExport}
+              >
                 <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" /> Export
               </button>
             </div>

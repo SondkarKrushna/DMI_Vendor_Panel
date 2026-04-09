@@ -1,41 +1,90 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
 import Layout from "../../components/layout/Layout";
 import Graph from "../../components/Graphs/Graph";
 import Card from "../../components/cards/Card";
 // import Button from "../../components/buttons/Button";
 import { Users, ArrowDownToLine } from "lucide-react"
-
+import { useGetDashboardQuery } from "../../redux/api/dashboardApi"
 const Dashboard = () => {
-  // Sample Data (you can replace with API)
-  const revenueData = [
-    { month: "Jan", value: 15000 },
-    { month: "Feb", value: 22000 },
-    { month: "Mar", value: 18000 },
-    { month: "Apr", value: 26000 },
-    { month: "May", value: 31000 },
-    { month: "Jun", value: 28000 },
-    { month: "Jul", value: 34000 },
-    { month: "Aug", value: 30000 },
-    { month: "Sep", value: 38000 },
-    { month: "Oct", value: 42000 },
-    { month: "Nov", value: 39000 },
-    { month: "Dec", value: 45000 },
-  ];
+  const graphOptions = ["weekly", "monthly", "yearly"];
+  const [selectedGraphFilter, setSelectedGraphFilter] = useState("weekly");
 
-  const usageData = [
-    { month: "Jan", value: 3000 },
-    { month: "Feb", value: 3800 },
-    { month: "Mar", value: 4200 },
-    { month: "Apr", value: 3900 },
-    { month: "May", value: 4600 },
-    { month: "Jun", value: 5200 },
-    { month: "Jul", value: 4800 },
-    { month: "Aug", value: 5500 },
-    { month: "Sep", value: 6100 },
-    { month: "Oct", value: 5800 },
-    { month: "Nov", value: 6400 },
-    { month: "Dec", value: 7000 },
-  ];
+  const {
+    data: apiData,
+    isFetching,
+    refetch,
+  } = useGetDashboardQuery({ graphFilter: selectedGraphFilter });
+
+  // Extract API data with fallbacks
+  const dashboardStats = useMemo(() => {
+    if (!apiData?.data?.stats) return [];
+    return apiData.data.stats;
+  }, [apiData]);
+
+  const formatChartLabel = (dateStr) => {
+    const date = new Date(dateStr);
+    if (Number.isNaN(date.getTime())) return dateStr;
+
+    if (selectedGraphFilter === "weekly") {
+      return date.toLocaleDateString("en-US", { weekday: "short" });
+    }
+
+    if (selectedGraphFilter === "monthly") {
+      return date.toLocaleDateString("en-US", { day: "numeric" });
+    }
+
+    if (selectedGraphFilter === "yearly") {
+      return date.toLocaleDateString("en-US", { month: "short" });
+    }
+
+    return date.toLocaleDateString();
+  };
+
+  const revenueData = useMemo(() => {
+    if (!apiData?.data?.charts?.revenueOverview) {
+      return [
+        { month: "Jan", value: 15000 },
+        { month: "Feb", value: 22000 },
+        { month: "Mar", value: 18000 },
+        { month: "Apr", value: 26000 },
+        { month: "May", value: 31000 },
+        { month: "Jun", value: 28000 },
+        { month: "Jul", value: 34000 },
+        { month: "Aug", value: 30000 },
+        { month: "Sep", value: 38000 },
+        { month: "Oct", value: 42000 },
+        { month: "Nov", value: 39000 },
+        { month: "Dec", value: 45000 },
+      ];
+    }
+    return apiData.data.charts.revenueOverview.map((item) => ({
+      label: formatChartLabel(item.date),
+      value: item.revenue,
+    }));
+  }, [apiData, selectedGraphFilter]);
+
+  const usageData = useMemo(() => {
+    if (!apiData?.data?.charts?.punchUsage) {
+      return [
+        { month: "Jan", value: 3000 },
+        { month: "Feb", value: 3800 },
+        { month: "Mar", value: 4200 },
+        { month: "Apr", value: 3900 },
+        { month: "May", value: 4600 },
+        { month: "Jun", value: 5200 },
+        { month: "Jul", value: 4800 },
+        { month: "Aug", value: 5500 },
+        { month: "Sep", value: 6100 },
+        { month: "Oct", value: 5800 },
+        { month: "Nov", value: 6400 },
+        { month: "Dec", value: 7000 },
+      ];
+    }
+    return apiData.data.charts.punchUsage.map((item) => ({
+      label: formatChartLabel(item.date),
+      value: item.punches,
+    }));
+  }, [apiData, selectedGraphFilter]);
 
   return (
     <Layout>
@@ -58,39 +107,61 @@ const Dashboard = () => {
 
         {/* Cards Section */}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-6">
-          <Card
-            title="Active Services"
-            amount="21"
-            percentage={42}
-            statusText="Increased by Yesterday"
-            icon={Users}
-          />
-          <Card
-            title="Total Punches"
-            amount="2100"
-            percentage={42}
-            statusText="Increased by Yesterday"
-            icon={Users}
-          />
-          <Card
-            title="Revenue"
-            amount="₹24.5L"
-            percentage={42}
-            statusText="Increased by Yesterday"
-            icon={Users}
-          />
-          <Card
-            title="Total Offers"
-            amount="2100"
-            percentage={42}
-            statusText="Increased by Yesterday"
-            icon={Users}
-          />
+          {dashboardStats.length > 0 ? (
+            dashboardStats.map((stat, index) => (
+              <Card
+                key={index}
+                title={stat.title}
+                amount={stat.formatted || stat.value.toString()}
+                percentage={parseFloat(stat.percent) || 0}
+                statusText={stat.subText || `${stat.trend} from yesterday`}
+                isDecrease={stat.trend === 'down'}
+                icon={Users}
+              />
+            ))
+          ) : (
+            <>
+              <Card
+                title="Active Services"
+                amount="21"
+                percentage={42}
+                statusText="Increased by Yesterday"
+                icon={Users}
+              />
+              <Card
+                title="Total Punches"
+                amount="2100"
+                percentage={42}
+                statusText="Increased by Yesterday"
+                icon={Users}
+              />
+              <Card
+                title="Revenue"
+                amount="₹24.5L"
+                percentage={42}
+                statusText="Increased by Yesterday"
+                icon={Users}
+              />
+              <Card
+                title="Total Offers"
+                amount="2100"
+                percentage={42}
+                statusText="Increased by Yesterday"
+                icon={Users}
+              />
+            </>
+          )}
         </div>
 
         {/* Graph Section */}
         <div className="mb-6">
-          <Graph revenueData={revenueData} usageData={usageData} />
+          <Graph
+            revenueData={revenueData}
+            usageData={usageData}
+            filterOptions={graphOptions}
+            selectedFilter={selectedGraphFilter}
+            onFilterChange={setSelectedGraphFilter}
+          />
         </div>
 
         {/* Bottom Section */}

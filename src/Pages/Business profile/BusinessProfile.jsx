@@ -206,8 +206,8 @@ const BusinessProfile = () => {
             </div>
 
             <div className="text-white">
-              <h2 className="text-xl sm:text-2xl font-bold">{profile?.businessName || "N/A"}</h2>
-              <p className="text-white/80 text-sm">{profile?.businessType || "N/A"}</p>
+              <h2 className="text-xl sm:text-2xl font-bold">{profile?.businessName || "-"}</h2>
+              <p className="text-white/80 text-sm">{profile?.businessType || "-"}</p>
             </div>
           </div>
 
@@ -270,7 +270,7 @@ const BusinessProfile = () => {
                 <textarea
                   readOnly
                   rows={1}
-                  value={profile?.description || "N/A"}
+                  value={profile?.description || "-"}
                   className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-500 text-sm outline-none cursor-default resize-none"
                 />
               </div>
@@ -402,7 +402,7 @@ const BusinessProfile = () => {
               <input
                 type="text"
                 readOnly
-                value={profile?.socialLinks?.facebook || "N/A"}
+                value={profile?.socialLinks?.facebook || "-"}
                 className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-400 text-sm outline-none cursor-default"
               />
             </div>
@@ -411,7 +411,7 @@ const BusinessProfile = () => {
               <input
                 type="text"
                 readOnly
-                value={profile?.socialLinks?.instagram || "N/A"}
+                value={profile?.socialLinks?.instagram || "-"}
                 className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-400 text-sm outline-none cursor-default"
               />
             </div>
@@ -420,7 +420,7 @@ const BusinessProfile = () => {
               <input
                 type="text"
                 readOnly
-                value={profile?.socialLinks?.linkedIn || "N/A"}
+                value={profile?.socialLinks?.linkedIn || "-"}
                 className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-400 text-sm outline-none cursor-default"
               />
             </div>
@@ -429,7 +429,7 @@ const BusinessProfile = () => {
               <input
                 type="text"
                 readOnly
-                value={profile?.socialLinks?.youtube || "N/A"}
+                value={profile?.socialLinks?.youtube || "-"}
                 className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-400 text-sm outline-none cursor-default"
               />
             </div>

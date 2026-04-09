@@ -44,11 +44,12 @@ const Login = () => {
     e.preventDefault();
 
     // 1. Client-side Validation
-    if (!validate()) {
-      message.error("fill all the details");
+    const errorMsg = validate();
+
+    if (errorMsg !== true) {
+      message.error(errorMsg || "Please fill all the details");
       return;
     }
-
     try {
       // 2. API Call
       const res = await loginVendor({

@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/cards/Card";
+import { useGetAffiliationDashboardQuery } from "../../redux/api/affiliationApi";
 
 import {
   Users,
@@ -15,13 +16,74 @@ import {
 } from "lucide-react";
 
 const Affilation = () => {
-  const referralLink = "https://vendorDMI.com/ref/vEN2026001";
+  const { data: apiData, isFetching } = useGetAffiliationDashboardQuery();
+console.log("Affiliation Dashboard Data:", apiData);
+  const affiliationStats = useMemo(() => {
+    if (!apiData?.stats) return [];
+    return [
+      {
+        title: "Total Referrals",
+        value: apiData.stats.totalReferrals,
+        percent: "0%",
+        trend: "neutral",
+        subText: "No daily comparison available",
+      },
+      {
+        title: "Conversions",
+        value: apiData.stats.conversions,
+        percent: "0%",
+        trend: "neutral",
+        subText: "No daily comparison available",
+      },
+      {
+        title: "Total Earnings",
+        value: apiData.stats.totalEarnings,
+        formatted: `₹${apiData.stats.totalEarnings}`,
+        percent: "0%",
+        trend: "neutral",
+        subText: "No daily comparison available",
+      },
+      {
+        title: "Pending Conversions",
+        value: apiData.stats.pendingConversions,
+        percent: "0%",
+        trend: "neutral",
+        subText: "No daily comparison available",
+      },
+    ];
+  }, [apiData]);
+
+  const referrals = useMemo(() => {
+    if (!apiData?.data) return [];
+    return apiData.data;
+  }, [apiData]);
+
+  const referralLink = apiData?.referralLink || "https://vendorDMI.com/ref/vEN2026001";
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(referralLink);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleShareEmail = () => {
+    const subject = "Join Vendor DMI - Earn Rewards!";
+    const body = `Hi,\n\nI'd like to invite you to join Vendor DMI. Use my referral link to sign up and earn rewards!\n\nReferral Link: ${referralLink}\n\nBest regards,\nYour Friend`;
+    const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.open(mailtoUrl);
+  };
+
+  const handleShareWhatsApp = () => {
+    const message = `Hi! Join Vendor DMI and earn rewards. Use my referral link: ${referralLink}`;
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
+  const handleShareSMS = () => {
+    const message = `Join Vendor DMI and earn rewards! Referral link: ${referralLink}`;
+    const smsUrl = `sms:?body=${encodeURIComponent(message)}`;
+    window.open(smsUrl);
   };
 
   return (
@@ -44,10 +106,26 @@ const Affilation = () => {
 
         {/* Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card title="Total Referrals" amount="7" percentage={42} statusText="Increased by last month" icon={Users} />
-          <Card title="Conversions" amount="5" percentage={-30} statusText="Decreased by last month" isDecrease icon={Repeat} />
-          <Card title="Total Earnings" amount="400" percentage={42} statusText="Increased by last month" icon={IndianRupee} />
-          <Card title="Pending Conversions" amount="1" percentage={42} statusText="Increased by last month" icon={Clock} />
+          {affiliationStats.length > 0 ? (
+            affiliationStats.map((stat, index) => (
+              <Card
+                key={index}
+                title={stat.title}
+                amount={stat.formatted || stat.value.toString()}
+                percentage={parseFloat(stat.percent) || 0}
+                statusText={stat.subText || `${stat.trend} from last month`}
+                isDecrease={stat.trend === 'down'}
+                icon={index === 0 ? Users : index === 1 ? Repeat : index === 2 ? IndianRupee : Clock}
+              />
+            ))
+          ) : (
+            <>
+              <Card title="Total Referrals" amount="7" percentage={42} statusText="Increased by last month" icon={Users} />
+              <Card title="Conversions" amount="5" percentage={-30} statusText="Decreased by last month" isDecrease icon={Repeat} />
+              <Card title="Total Earnings" amount="400" percentage={42} statusText="Increased by last month" icon={IndianRupee} />
+              <Card title="Pending Conversions" amount="1" percentage={42} statusText="Increased by last month" icon={Clock} />
+            </>
+          )}
         </div>
 
         {/* Middle Section */}
@@ -93,19 +171,19 @@ const Affilation = () => {
             <div className="grid grid-cols-3 gap-3">
 
               {/* Email */}
-              <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 text-sm">
+              <button onClick={handleShareEmail} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 text-sm hover:bg-gray-200 transition-colors">
                 <Share2 size={14} className="text-purple-600" />
                 Email
               </button>
 
               {/* WhatsApp */}
-              <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 text-sm">
+              <button onClick={handleShareWhatsApp} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 text-sm hover:bg-gray-200 transition-colors">
                 <Share2 size={14} className="text-green-500" />
                 WhatsApp
               </button>
 
               {/* SMS */}
-              <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 text-sm">
+              <button onClick={handleShareSMS} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 text-sm hover:bg-gray-200 transition-colors">
                 <Share2 size={14} className="text-pink-500" />
                 SMS
               </button>
@@ -160,18 +238,30 @@ const Affilation = () => {
 
         {/* Bottom Referrals */}
         <div className="bg-white border border-gray-300 rounded-2xl p-5 shadow-md">
-          <h2 className="font-semibold mb-4">My Referrals (03)</h2>
+          <h2 className="font-semibold mb-4">My Referrals ({referrals.length})</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[1, 2, 3].map((item) => (
-              <div key={item} className="border border-gray-200 border-l-4 border-l-amber-500 rounded-xl p-4">
-                <p className="font-medium">Amit Sharma</p>
-                <p className="text-xs text-gray-500">25 December 2026</p>
-                <p className="text-sm mt-2 font-semibold text-right">
-                  20 Points
-                </p>
-              </div>
-            ))}
+            {referrals.length > 0 ? (
+              referrals.map((referral, index) => (
+                <div key={index} className="border border-gray-200 border-l-4 border-l-amber-500 rounded-xl p-4">
+                  <p className="font-medium">{referral.referredUser?.fullName || "Unknown"}</p>
+                  <p className="text-xs text-gray-500">{new Date(referral.referralDate).toLocaleDateString()}</p>
+                  <p className="text-sm mt-2 font-semibold text-right">
+                    {referral.pointsAwarded} Points
+                  </p>
+                </div>
+              ))
+            ) : (
+              [1, 2, 3].map((item) => (
+                <div key={item} className="border border-gray-200 border-l-4 border-l-amber-500 rounded-xl p-4">
+                  <p className="font-medium">Amit Sharma</p>
+                  <p className="text-xs text-gray-500">25 December 2026</p>
+                  <p className="text-sm mt-2 font-semibold text-right">
+                    20 Points
+                  </p>
+                </div>
+              ))
+            )}
           </div>
         </div>
 

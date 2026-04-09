@@ -13,6 +13,7 @@ import {
   useGetPunchesQuery 
 } from "../../redux/api/punchApi";
 import { useGetServicesQuery } from "../../redux/api/servicesApi";
+import { exportToCSV, getExportData } from "../../utils/exportUtils";
 
 const PunchManagement = () => {
   const [selectedRows, setSelectedRows] = useState([]);
@@ -34,6 +35,21 @@ const PunchManagement = () => {
     serviceId: "",
   };
   const [punchForm, setPunchForm] = useState(initialFormState);
+
+  const exportHeaders = [
+    { key: 'name', label: 'Cardholder Name' },
+    { key: 'chf', label: 'CHF No' },
+    { key: 'contact', label: 'Contact' },
+    { key: 'service', label: 'Service' },
+    { key: 'date', label: 'Date' },
+    { key: 'amount', label: 'Amount' },
+    { key: 'discount', label: 'Discount' },
+  ];
+
+  const handleExport = () => {
+    const dataToExport = getExportData(data?.data || [], selectedRows, '_id');
+    exportToCSV(dataToExport, exportHeaders, 'punches');
+  };
 
   // API Hooks
   const [searchCard, { isFetching: isSearching }] = useLazySearchCardHolderQuery();
@@ -199,7 +215,10 @@ const PunchManagement = () => {
             >
               <Plus className="w-5 h-5" /> Punch Card
             </button>
-            <button className="flex-1 sm:flex-none px-5 py-3 rounded-2xl bg-white border border-gray-100 text-gray-700 font-bold shadow-sm hover:bg-gray-50 transition-all flex items-center justify-center gap-2 text-sm">
+            <button 
+              className="flex-1 sm:flex-none px-5 py-3 rounded-2xl bg-white border border-gray-100 text-gray-700 font-bold shadow-sm hover:bg-gray-50 transition-all flex items-center justify-center gap-2 text-sm"
+              onClick={handleExport}
+            >
               <ArrowDownToLine className="w-4 h-4" /> Export
             </button>
           </div>

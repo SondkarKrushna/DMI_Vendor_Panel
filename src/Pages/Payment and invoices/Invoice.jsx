@@ -12,6 +12,7 @@ import {
   ArrowDownToLine, 
 } from "lucide-react";
 import { useGetInvoicesQuery, useGetActiveServicesQuery } from "../../redux/api/invoiceApi";
+import { exportToCSV, getExportData } from "../../utils/exportUtils";
 
 const Invoice = () => {
   const [selectedRows, setSelectedRows] = useState([]);
@@ -35,6 +36,20 @@ const Invoice = () => {
   const stats = {
     totalRevenue: apiStats.totalRevenue || totalRev,
     thisMonthRevenue: apiStats.thisMonthRevenue || totalRev,
+  };
+
+  const exportHeaders = [
+    { key: 'id', label: 'Invoice ID' },
+    { key: 'name', label: 'Name' },
+    { key: 'service', label: 'Service' },
+    { key: 'amount', label: 'Amount' },
+    { key: 'payment', label: 'Payment Method' },
+    { key: 'date', label: 'Date' },
+  ];
+
+  const handleExport = () => {
+    const dataToExport = getExportData(invoices, selectedRows, 'id');
+    exportToCSV(dataToExport, exportHeaders, 'invoices');
   };
 
   const serviceOptions = [
@@ -150,7 +165,10 @@ const Invoice = () => {
           </div>
 
           <div className="flex gap-3 w-full sm:w-auto">
-            <button className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold shadow-md hover:scale-105 hover:shadow-lg active:scale-95 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2">
+            <button 
+              className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold shadow-md hover:scale-105 hover:shadow-lg active:scale-95 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2"
+              onClick={handleExport}
+            >
               <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" />
               Export
             </button>

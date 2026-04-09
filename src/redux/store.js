@@ -8,6 +8,8 @@ import { enrollmentApi } from "./api/enrollmentApi";
 import { callNotesApi } from "./api/callNotesApi";
 import { punchApi } from "./api/punchApi";
 import { invoiceApi } from "./api/invoiceApi";
+import { dashboardApi } from "./api/dashboardApi";
+import { affiliationApi } from "./api/affiliationApi";
 
 export const store = configureStore({
     reducer: {
@@ -20,6 +22,8 @@ export const store = configureStore({
         [callNotesApi.reducerPath]: callNotesApi.reducer,
         [punchApi.reducerPath]: punchApi.reducer,
         [invoiceApi.reducerPath]: invoiceApi.reducer,
+        [dashboardApi.reducerPath]: dashboardApi.reducer,
+        [affiliationApi.reducerPath]: affiliationApi.reducer,
     },
 
     middleware: (getDefaultMiddleware) =>
@@ -33,5 +37,7 @@ export const store = configureStore({
             callNotesApi.middleware,
             punchApi.middleware,
             invoiceApi.middleware,
+            dashboardApi.middleware,
+            affiliationApi.middleware,
         ),
 });

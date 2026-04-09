@@ -22,6 +22,7 @@ import {
   useUpdateServiceMutation,
   useDeleteServiceMutation
 } from "../../redux/api/servicesApi";
+import { exportToCSV, getExportData } from "../../utils/exportUtils";
 
 const Services = () => {
   const [search, setSearch] = useState("");
@@ -40,6 +41,21 @@ const Services = () => {
     image: null
   });
   const [errors, setErrors] = useState({});
+
+  const exportHeaders = [
+    { key: 'serviceId', label: 'Service ID' },
+    { key: 'serviceName', label: 'Service Name' },
+    { key: 'price', label: 'Price' },
+    { key: 'cardType', label: 'Card Type' },
+    { key: 'discountRate', label: 'Discount (%)' },
+    { key: 'status', label: 'Status' },
+    { key: 'description', label: 'Description' },
+  ];
+
+  const handleExport = () => {
+    const dataToExport = getExportData(data?.data || [], selectedRows, '_id');
+    exportToCSV(dataToExport, exportHeaders, 'services');
+  };
 
   const { data, isLoading, isError } = useGetServicesQuery({ 
     page: currentPage, 
@@ -293,7 +309,10 @@ const Services = () => {
                 setShowModal(true);
               }}
             />
-            <button className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold shadow-md hover:scale-105 hover:shadow-lg active:scale-95 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2">
+            <button 
+              className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold shadow-md hover:scale-105 hover:shadow-lg active:scale-95 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2"
+              onClick={handleExport}
+            >
               {/* <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" /> */}
               Export
             </button>
