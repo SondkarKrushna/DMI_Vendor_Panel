@@ -106,7 +106,7 @@ const Sidebar = React.memo(({ isSidebarOpen, toggleSidebar }) => {
         {/* Desktop Toggle Arrow */}
         <button
           onClick={handleToggleCollapse}
-          className="hidden xl:flex absolute -right-2.5 top-10 w-8 h-8 bg-[#FAB800] rounded-full items-center justify-center text-black shadow-lg cursor-pointer z-[80] hover:scale-110 transition-transform"
+          className="hidden xl:flex absolute -right-3 top-9 w-8 h-8 bg-[#FAB800] rounded-full items-center justify-center text-black shadow-lg cursor-pointer z-[80] hover:scale-110 transition-transform"
         >
           <MdKeyboardArrowRight size={24} className={!isDesktopOpen ? '' : 'rotate-180'} />
         </button>

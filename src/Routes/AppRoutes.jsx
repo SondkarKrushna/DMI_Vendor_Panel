@@ -17,25 +17,30 @@ import Login from '../Pages/Auth/Login';
 import Register from '../Pages/Auth/Register';
 
 
+import ProtectedRoute from '../components/auth/ProtectedRoute';
+
 const AppRoutes = () => {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        
+        {/* Protected Routes */}
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/offers" element={<ProtectedRoute><Offers /></ProtectedRoute>} />
+        <Route path="/services" element={<ProtectedRoute><Services /></ProtectedRoute>} />
+        <Route path="/Invoice" element={<ProtectedRoute><Invoice /></ProtectedRoute>} />
+        <Route path="/enrolling" element={<ProtectedRoute><Enrolling /></ProtectedRoute>} />
+        <Route path="/card-holder" element={<ProtectedRoute><CardHolder /></ProtectedRoute>} />
+        <Route path="/payment-checkout" element={<ProtectedRoute><PaymentCheckout /></ProtectedRoute>} />
+        <Route path="/call-notepad" element={<ProtectedRoute><CallNotepad /></ProtectedRoute>} />
+        <Route path="/punch-management" element={<ProtectedRoute><PunchManagement /></ProtectedRoute>} />
+        <Route path="/advertisements" element={<ProtectedRoute><Advertisements /></ProtectedRoute>} />
+        <Route path="/affilation" element={<ProtectedRoute><Affilation /></ProtectedRoute>} />
+        <Route path="/Business-profile" element={<ProtectedRoute><BusinessProfile /></ProtectedRoute>} />
+        <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
 
-        <Route path="/offers" element={<Offers />} />
-        <Route path="/services" element={<Services />} />
-        <Route path="/Invoice" element={<Invoice />} />
-        <Route path="/enrolling" element={<Enrolling />} />
-        <Route path="/card-holder" element={<CardHolder />} />
-        <Route path="/payment-checkout" element={<PaymentCheckout />} />
-        <Route path="/call-notepad" element={<CallNotepad />} />
-        <Route path="/punch-management" element={<PunchManagement />} />
-        <Route path="/advertisements" element={<Advertisements />} />
-        <Route path="/affilation" element={<Affilation />} />
-        <Route path="/Business-profile" element={<BusinessProfile />} />
-        <Route path="/support" element={<Support />} />
+        {/* Public Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 

@@ -24,7 +24,7 @@ import {
 
 const Affilation = () => {
   const { data: apiData, isFetching } = useGetAffiliationDashboardQuery();
-//console.log("Affiliation Dashboard Data:", apiData);
+  //console.log("Affiliation Dashboard Data:", apiData);
   const affiliationStats = useMemo(() => {
     if (!apiData?.stats) return [];
     return [
@@ -239,7 +239,7 @@ const Affilation = () => {
                     style={{ height: "auto", maxWidth: "100%", width: "120px" }}
                     viewBox={`0 0 256 256`}
                   />
-                  <button 
+                  <button
                     onClick={downloadQRCode}
                     className="mt-2 text-xs text-purple-600 hover:text-purple-800 font-semibold flex items-center gap-1"
                   >
@@ -363,15 +363,7 @@ const Affilation = () => {
                 </div>
               ))
             ) : (
-              [1, 2, 3].map((item) => (
-                <div key={item} className="border border-gray-200 border-l-4 border-l-amber-500 rounded-xl p-4">
-                  <p className="font-medium">Amit Sharma</p>
-                  <p className="text-xs text-gray-500">25 December 2026</p>
-                  <p className="text-sm mt-2 font-semibold text-right">
-                    20 Points
-                  </p>
-                </div>
-              ))
+              <h1 className="text-center text-gray-500">No Referrals Yet</h1>
             )}
           </div>
         </div>

@@ -1,24 +1,9 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-
-const baseUrl = import.meta.env.VITE_BACKEND_URL;
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { baseQueryWithReauth } from "./apiUtils";
 
 export const invoiceApi = createApi({
     reducerPath: "invoiceApi",
-    baseQuery: fetchBaseQuery({
-        baseUrl,
-        credentials: "include",
-        prepareHeaders: (headers) => {
-      const token = localStorage.getItem("token"); 
-
-
-
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
-      }
-
-      return headers;
-    }
-    }),
+    baseQuery: baseQueryWithReauth,
 
     tagTypes: ["Invoices"],
 

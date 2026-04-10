@@ -171,11 +171,11 @@ const Dashboard = () => {
 
         {/* Cards Section */}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-6">
-          {dashboardStats.length > 0 ? (
+          {
             dashboardStats.map((stat, index) => (
               <Card
                 key={index}
-                title={stat.title}
+                title={stat.title || ""}
                 amount={stat.formatted || stat.value.toString()}
                 percentage={parseFloat(stat.percent) || 0}
                 statusText={stat.subText || `${stat.trend} from yesterday`}
@@ -183,38 +183,7 @@ const Dashboard = () => {
                 icon={Users}
               />
             ))
-          ) : (
-            <>
-              <Card
-                title="Active Services"
-                amount="21"
-                percentage={42}
-                statusText="Increased by Yesterday"
-                icon={Users}
-              />
-              <Card
-                title="Total Punches"
-                amount="2100"
-                percentage={42}
-                statusText="Increased by Yesterday"
-                icon={Users}
-              />
-              <Card
-                title="Revenue"
-                amount="₹24.5L"
-                percentage={42}
-                statusText="Increased by Yesterday"
-                icon={Users}
-              />
-              <Card
-                title="Total Offers"
-                amount="2100"
-                percentage={42}
-                statusText="Increased by Yesterday"
-                icon={Users}
-              />
-            </>
-          )}
+          }
         </div>
 
         {/* Graph Section */}
