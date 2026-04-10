@@ -47,7 +47,7 @@ const Offers = () => {
   const [deleteOffer, { isLoading: isDeleting }] = useDeleteOfferMutation();
 
   const offers = data?.data || (Array.isArray(data) ? data : []);
-  
+
   // ✅ Dynamic Stats Cards Mapping with Fallback support
   const statsCards = useMemo(() => {
     // 1. If backend provides the array, use it directly (Parsing percent if needed)
@@ -604,12 +604,12 @@ const Offers = () => {
           </div>
 
           {/* Description */}
-          <FormField label="Description" error={errors.description} required>
+          <FormField label="Terms & Conditions" error={errors.description} required>
             <FormTextarea
               name="description"
               value={formData.description}
               onChange={handleChange}
-              placeholder="Enter offer description"
+              placeholder="Terms & Conditions"
               rows={2}
               error={errors.description}
             />

@@ -25,6 +25,14 @@ const Dashboard = () => {
     if (!apiData?.data?.stats) return [];
     return apiData.data.stats;
   }, [apiData]);
+  const ExpiredOffers = useMemo(() => {
+    if (!apiData?.data?.offers.expiring) return [];
+    return apiData.data.offers.expiring;
+  }, [apiData]);
+  const ActiveOffers = useMemo(() => {
+    if (!apiData?.data?.offers.recent) return [];
+    return apiData.data.offers.recent;
+  }, [apiData]);
 
   const exportToExcel = () => {
     if (!dashboardStats.length) { toast.error("No dashboard data to export"); return; }
@@ -229,17 +237,17 @@ const Dashboard = () => {
               Expires Offers
             </h2>
 
-            {[1, 2, 3].map((item, index) => (
+            {ExpiredOffers.map((item, index) => (
               <div
                 key={index}
                 className="flex justify-between items-center bg-yellow-50 p-4 rounded-xl mb-3"
               >
                 <div>
                   <p className="font-medium">
-                    Summer Special Discount
+                    {item.title}
                   </p>
                   <p className="text-sm text-gray-500">
-                    Expires in 3 Days
+                    Expires in {item.daysLeft} Days
                   </p>
                 </div>
 
@@ -257,7 +265,7 @@ const Dashboard = () => {
             </h2>
 
             <div className="space-y-3">
-              {[1, 2, 3].map((item, index) => (
+              {ActiveOffers.map((item, index) => (
                 <div
                   key={index}
                   className="flex justify-between items-center bg-gray-100 px-4 py-3 rounded-xl"
@@ -265,15 +273,15 @@ const Dashboard = () => {
                   {/* Left */}
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-yellow-400 text-white flex items-center justify-center rounded-full font-bold text-sm">
-                      JD
+                      {item.initials}
                     </div>
 
                     <div>
                       <p className="font-medium text-gray-800">
-                        John Doe
+                        {item.title}
                       </p>
                       <p className="text-sm text-gray-500">
-                        Premium Membership
+                        {item.offer}
                       </p>
                     </div>
                   </div>
@@ -281,10 +289,10 @@ const Dashboard = () => {
                   {/* Right */}
                   <div className="text-right">
                     <p className="text-green-600 font-semibold">
-                      $50
+                      {item.discount}%
                     </p>
                     <p className="text-xs text-gray-400">
-                      2 min ago
+                      {item.time}
                     </p>
                   </div>
                 </div>

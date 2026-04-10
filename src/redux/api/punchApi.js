@@ -38,7 +38,7 @@ export const punchApi = createApi({
     // ✅ VERIFY RAZORPAY PAYMENT
     verifyPayment: builder.mutation({
       query: (data) => ({
-        url: "/vendor/verify",
+        url: "/api/vendor/verify",
         method: "POST",
         body: data,
       }),

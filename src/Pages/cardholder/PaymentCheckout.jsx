@@ -40,18 +40,23 @@ const PaymentCheckout = () => {
     setStatus("processing");
 
     // ── Step 1: Create order on backend ─────────────────────────────
-    let orderData;
+    let responseData;
     try {
-      orderData = await createPunch(punchPayload).unwrap();
-      console.log("Backend response:", orderData);
+      responseData = await createPunch(punchPayload).unwrap();
+      console.log("✅ Backend response:", responseData);
     } catch (err) {
-      console.error("Create punch error:", err);
+      console.error("❌ Create punch error:", err);
       setStatus("failed");
       return toast.error(err?.data?.message || "Failed to create payment order");
     }
 
-    const rInfo = orderData?.data || orderData;
-    console.log("Order info (rInfo):", rInfo);
+    // Extract order info and Razorpay order details
+    const punchInfo = responseData?.data || responseData;
+    const razorpayOrder = responseData?.razorpayOrder || punchInfo?.razorpayOrder;
+    const razorpayOrderId = razorpayOrder?.id || punchInfo?.razorpay_order_id;
+
+    console.log("ℹ️ Order Info:", punchInfo);
+    console.log("ℹ️ Razorpay Order ID:", razorpayOrderId);
 
     const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
     if (!razorpayKey) {
@@ -66,19 +71,19 @@ const PaymentCheckout = () => {
     }
 
     // Validate amount
-    if (!rInfo.amount || rInfo.amount <= 0) {
+    if (!punchInfo.amount || punchInfo.amount <= 0) {
       setStatus("failed");
       return toast.error("Invalid payment amount. Please try again.");
     }
 
     const options = {
       key: razorpayKey,
-      amount: rInfo.amount,
-      currency: rInfo.currency || "INR",
+      amount: Math.round(Number(punchInfo.amount || finalAmount) * 100), // Convert Rupees to Paise (Critical for Razorpay)
+      currency: punchInfo.currency || "INR",
       name: "DMI Vendor Panel",
       description: serviceName || "Service Punch",
-      // Only include order_id if it exists (for signature verification)
-      ...(rInfo.razorpay_order_id && { order_id: rInfo.razorpay_order_id }),
+      // Include order_id for signature verification (Crucial for senior-level flow)
+      ...(razorpayOrderId && { order_id: razorpayOrderId }),
       prefill: {
         name: cardData?.userId?.fullName || cardData?.fullName || "",
         email: cardData?.userId?.email || cardData?.email || "",
@@ -96,33 +101,32 @@ const PaymentCheckout = () => {
           return toast.error("Payment verification failed: Missing payment ID");
         }
 
-        // Extract invoiceId from the createPunch response
-        const orderInfo = orderData?.data || orderData;
-        const invoiceId = orderInfo?.invoiceId || orderInfo?._id || orderInfo?.id;
+        // ✅ Extract IDs strictly
+        // Try multiple keys for invoiceId/punchId to be safe
+        const invoiceId = punchInfo?.invoiceId || punchInfo?._id || punchInfo?.id;
 
         if (!invoiceId) {
           setStatus("failed");
-          return toast.error("Payment verification failed: Missing invoice ID");
+          console.error("❌ Missing Invoice/Punch ID from backend response:", punchInfo);
+          return toast.error("Payment verification failed: Missing reference ID");
         }
 
+        // ✅ Construct full Verification Payload
+        const verifyData = {
+          razorpay_order_id: response.razorpay_order_id || razorpayOrderId || "",
+          razorpay_payment_id: response.razorpay_payment_id || "",
+          razorpay_signature: response.razorpay_signature || "",
+          invoiceId: invoiceId, // Providing the ID to map the payment to the punch
+        };
+
         try {
-          // Send verification request
-          const verifyData = {
-            razorpay_payment_id: response.razorpay_payment_id,
-            invoiceId: invoiceId,
-            // Include these only if they exist
-            ...(response.razorpay_order_id && { razorpay_order_id: response.razorpay_order_id }),
-            ...(response.razorpay_signature && { razorpay_signature: response.razorpay_signature }),
-          };
-
-          console.log("Verification data:", verifyData);
-
+          console.log("🚀 Sending Verification Payload:", verifyData);
           await verifyPayment(verifyData).unwrap();
 
           setStatus("success");
           toast.success("✅ Payment verified! Punch processed successfully.");
         } catch (err) {
-          console.error("Verification error:", err);
+          console.error("❌ Verification API Error:", err);
           setStatus("failed");
           toast.error(err?.data?.message || "Payment verification failed");
         }
@@ -136,7 +140,8 @@ const PaymentCheckout = () => {
       },
     };
 
-    console.log("Razorpay options:", options);
+    console.log("📦 Razorpay options initialized:", options);
+
 
     try {
       const rzp = new window.Razorpay(options);

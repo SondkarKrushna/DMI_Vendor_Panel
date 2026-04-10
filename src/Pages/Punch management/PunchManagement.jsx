@@ -7,10 +7,10 @@ import CardholderDetailsModal from "../../components/CardholderDetailsModal";
 import Modal, { FormField, FormInput, FormSelect, ModalSubmitBtn } from "../../components/Model";
 import { Users, DollarSign, Calendar, Eye, Printer, ArrowDownToLine, Search as SearchIcon, Plus, FileSpreadsheet, FileText } from "lucide-react";
 import { toast } from "react-toastify";
-import { 
-  useLazySearchCardHolderQuery, 
-  useCreatePunchMutation, 
-  useGetPunchesQuery 
+import {
+  useLazySearchCardHolderQuery,
+  useCreatePunchMutation,
+  useGetPunchesQuery
 } from "../../redux/api/punchApi";
 import { useGetServicesQuery } from "../../redux/api/servicesApi";
 import * as XLSX from "xlsx-js-style";
@@ -71,7 +71,7 @@ const PunchManagement = () => {
   const [searchCard, { isFetching: isSearching }] = useLazySearchCardHolderQuery();
   const [createPunch, { isLoading: isPunching }] = useCreatePunchMutation();
   const { data: servicesData } = useGetServicesQuery();
-  
+
   const queryParams = {
     page: currentPage,
     per_page: 10,
@@ -87,7 +87,7 @@ const PunchManagement = () => {
 
   const punches = punchesResponse?.data || punchesResponse?.punches || (Array.isArray(punchesResponse) ? punchesResponse : []);
   const apiStats = punchesResponse?.stats || {};
-  
+
   const stats = {
     totalPunches: apiStats.totalPunches || punches.length || 0,
     totalRevenue: apiStats.totalRevenue || punches.reduce((sum, p) => sum + (p.revenue || p.amount || p.serviceId?.price || 0), 0),
@@ -101,7 +101,7 @@ const PunchManagement = () => {
     try {
       const res = await searchCard(searchTerm.trim()).unwrap();
       const card = res.data || res.card || res;
-      
+
       if (card) {
         setPunchForm({
           cardType: card.cardType || "",
@@ -223,35 +223,35 @@ const PunchManagement = () => {
             <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Punch Management</h1>
             <p className="text-sm text-gray-500 font-medium tracking-wide italic mt-0.5">Track and record service utilization logs</p>
           </div>
-            <div className="flex gap-3 w-full sm:w-auto">
-             
-              <div className="relative">
-                <button
-                  onClick={() => setShowExportOptions(prev => !prev)}
-                  className="flex-1 sm:flex-none px-5 py-3 rounded-2xl bg-white border border-gray-100 text-gray-700 font-bold shadow-sm hover:bg-gray-50 transition-all flex items-center justify-center gap-2 text-sm"
-                >
-                  <ArrowDownToLine className="w-4 h-4" /> Export
-                </button>
-                {showExportOptions && (
-                  <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                    <button
-                      onClick={() => { exportToExcel(); setShowExportOptions(false); }}
+          <div className="flex gap-3 w-full sm:w-auto">
+
+            <div className="relative">
+              <button
+                onClick={() => setShowExportOptions(prev => !prev)}
                 className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold flex items-center gap-2"
-                    >
-                      <FileSpreadsheet size={16} className="text-green-600" />
-                      Export as Excel
-                    </button>
-                    <button
-                      onClick={() => { exportToPDF(); setShowExportOptions(false); }}
-                      className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm flex items-center gap-2"
-                    >
-                      <FileText size={16} className="text-red-500" />
-                      Export as PDF
-                    </button>
-                  </div>
-                )}
-              </div>
+              >
+                <ArrowDownToLine className="w-4 h-4" /> Export
+              </button>
+              {showExportOptions && (
+                <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                  <button
+                    onClick={() => { exportToExcel(); setShowExportOptions(false); }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm flex items-center gap-2"
+                  >
+                    <FileSpreadsheet size={16} className="text-green-600" />
+                    Export as Excel
+                  </button>
+                  <button
+                    onClick={() => { exportToPDF(); setShowExportOptions(false); }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm flex items-center gap-2"
+                  >
+                    <FileText size={16} className="text-red-500" />
+                    Export as PDF
+                  </button>
+                </div>
+              )}
             </div>
+          </div>
         </div>
 
         {/* ✅ Dynamic Stats */}

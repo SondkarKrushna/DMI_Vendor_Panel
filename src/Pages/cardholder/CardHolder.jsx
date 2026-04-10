@@ -140,6 +140,7 @@ const CardHolder = () => {
           billAmount: punchForm.billAmount,
           discount: punchForm.discount,
           finalAmount: finalAmount.toFixed(2),
+          paymentMethod: "online",
           date: punchForm.date,
         },
         cardData,

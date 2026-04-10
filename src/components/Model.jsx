@@ -37,7 +37,7 @@ const Modal = ({
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
       {/* Backdrop with premium blur */}
-      <div 
+      <div
         className="absolute inset-0 bg-black/40 backdrop-blur-md transition-opacity duration-300 animate-in fade-in"
         onClick={!disableBackdropClick ? onClose : undefined}
       />
@@ -50,8 +50,8 @@ const Modal = ({
         aria-labelledby={ariaLabelledBy}
       >
         {/* Header - Sleek & Modern */}
-        <div className="flex items-center justify-between px-8 pt-8 pb-5">
-          <h2 id={ariaLabelledBy} className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+        <div className="flex items-center justify-between px-8 pt-4 pb-2">
+          <h2 id={ariaLabelledBy} className="text-xl font-bold text-gray-900">
             {title}
           </h2>
           <button
@@ -112,8 +112,8 @@ export const FormField = ({ label, children, error, required, className = '' }) 
 export const FormInput = ({ placeholder = 'Enter...', error, ...rest }) => (
   <input
     className={`w-full px-5 py-3.5 rounded-2xl border bg-white text-sm text-gray-800 placeholder-gray-400 outline-none transition-all duration-200 shadow-sm
-      ${error 
-        ? 'border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-50' 
+      ${error
+        ? 'border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-50'
         : 'border-gray-200 focus:border-[#7E1080] focus:ring-4 focus:ring-purple-50'
       }
     `}
@@ -127,8 +127,8 @@ export const FormSelect = ({ children, error, ...rest }) => (
   <div className="relative group">
     <select
       className={`w-full px-5 py-3.5 rounded-2xl border bg-white text-sm outline-none transition-all duration-200 appearance-none cursor-pointer shadow-sm
-        ${error 
-          ? 'border-red-300 text-red-900 focus:border-red-500 focus:ring-4 focus:ring-red-50' 
+        ${error
+          ? 'border-red-300 text-red-900 focus:border-red-500 focus:ring-4 focus:ring-red-50'
           : 'border-gray-200 text-gray-700 focus:border-[#7E1080] focus:ring-4 focus:ring-purple-50'
         }
       `}
@@ -147,8 +147,8 @@ export const FormTextarea = ({ placeholder = 'Tell us more...', rows = 3, error,
   <textarea
     rows={rows}
     className={`w-full px-5 py-4 rounded-2xl border bg-white text-sm text-gray-800 placeholder-gray-400 outline-none transition-all duration-200 resize-none shadow-sm
-      ${error 
-        ? 'border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-50' 
+      ${error
+        ? 'border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-50'
         : 'border-gray-200 focus:border-[#7E1080] focus:ring-4 focus:ring-purple-50'
       }
     `}
@@ -161,12 +161,12 @@ export const FormTextarea = ({ placeholder = 'Tell us more...', rows = 3, error,
 export const FormImageUpload = ({ label = 'Upload Image', error, previewUrl, onChange, ...rest }) => (
   <div className="flex flex-col gap-2">
     {label && <label className="text-sm font-bold text-gray-700 ml-1">{label}</label>}
-    
-    <label className={`relative flex flex-col items-center justify-center gap-3 w-full h-40 rounded-[1.5rem] border-2 border-dashed cursor-pointer overflow-hidden transition-all duration-200 group
-      ${error 
-        ? 'border-red-300 bg-red-50/30' 
-        : previewUrl 
-          ? 'border-purple-200 bg-white shadow-sm' 
+
+    <label className={`relative flex flex-col items-center justify-center gap-2 w-full h-28 rounded-[1.5rem] border-2 border-dashed cursor-pointer overflow-hidden transition-all duration-200 group
+      ${error
+        ? 'border-red-300 bg-red-50/30'
+        : previewUrl
+          ? 'border-purple-200 bg-white shadow-sm'
           : 'border-gray-200 bg-gray-50/50 hover:bg-white hover:border-[#7E1080] shadow-sm'
       }
     `}>
@@ -180,7 +180,7 @@ export const FormImageUpload = ({ label = 'Upload Image', error, previewUrl, onC
         </>
       ) : (
         <>
-          <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-gray-400 group-hover:text-[#7E1080] group-hover:scale-110 transition-all duration-300">
+          <div className="w-9 h-9 rounded-2xl bg-white shadow-sm flex items-center justify-center text-gray-400 group-hover:text-[#7E1080] group-hover:scale-110 transition-all duration-300">
             <Upload size={24} />
           </div>
           <div className="text-center">
@@ -191,7 +191,7 @@ export const FormImageUpload = ({ label = 'Upload Image', error, previewUrl, onC
       )}
       <input type="file" accept="image/*" className="hidden" onChange={onChange} {...rest} />
     </label>
-    
+
     {error && <p className="text-[11px] font-bold text-red-500 ml-1">{error}</p>}
   </div>
 );
