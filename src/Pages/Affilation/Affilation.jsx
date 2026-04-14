@@ -222,10 +222,10 @@ const Affilation = () => {
         </div>
 
         {/* Middle Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
 
-          {/* Referral Tools */}
-          <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-md space-y-4">
+          {/* LEFT SIDE */}
+          <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-md space-y-4 h-full">
 
             <h2 className="font-semibold">Your Referral Tools</h2>
 
@@ -237,7 +237,6 @@ const Affilation = () => {
                     value={referralLink}
                     size={128}
                     style={{ height: "auto", maxWidth: "100%", width: "120px" }}
-                    viewBox={`0 0 256 256`}
                   />
                   <button
                     onClick={downloadQRCode}
@@ -262,15 +261,15 @@ const Affilation = () => {
             <div>
               <p className="text-sm font-medium mb-2">Your Referral Link</p>
 
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center">
                 <input
                   value={referralLink}
                   readOnly
-                  className="flex-1 px-3 py-2 rounded-xl bg-gray-100 text-sm outline-none"
+                  className="flex-1 px-3 py-2 rounded-xl bg-gray-100 text-sm outline-none border border-gray-200"
                 />
                 <button
                   onClick={handleCopy}
-                  className="flex items-center gap-1 px-3 py-2 rounded-xl bg-linear-to-b from-[#7E1080] to-[#1A031A]  text-white text-sm"
+                  className="flex items-center gap-1 px-4 py-2 rounded-xl bg-gradient-to-b from-[#7E1080] to-[#1A031A] text-white text-sm"
                 >
                   <Copy size={14} />
                   {copied ? "Copied" : "Copy"}
@@ -280,38 +279,34 @@ const Affilation = () => {
 
             {/* Share Buttons */}
             <div className="grid grid-cols-3 gap-3">
-
-              {/* Email */}
-              <button onClick={handleShareEmail} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 text-sm hover:bg-gray-200 transition-colors">
+              <button onClick={handleShareEmail} className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-gray-100 text-sm hover:bg-gray-200">
                 <Share2 size={14} className="text-purple-600" />
                 Email
               </button>
 
-              {/* WhatsApp */}
-              <button onClick={handleShareWhatsApp} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 text-sm hover:bg-gray-200 transition-colors">
+              <button onClick={handleShareWhatsApp} className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-gray-100 text-sm hover:bg-gray-200">
                 <Share2 size={14} className="text-green-500" />
                 WhatsApp
               </button>
 
-              {/* SMS */}
-              <button onClick={handleShareSMS} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 text-sm hover:bg-gray-200 transition-colors">
+              <button onClick={handleShareSMS} className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-gray-100 text-sm hover:bg-gray-200">
                 <Share2 size={14} className="text-pink-500" />
                 SMS
               </button>
-
             </div>
+
           </div>
 
-          {/* Right Side */}
-          <div className="space-y-5">
+          {/* RIGHT SIDE */}
+          <div className="flex flex-col gap-5 h-full">
 
             {/* How it works */}
-            <div className="bg-white border border-gray-300 rounded-2xl p-5 shadow-md space-y-4">
+            <div className="bg-white border border-gray-300 rounded-2xl p-5 shadow-md space-y-4 flex-1">
               <h2 className="font-semibold">How It Works ?</h2>
 
               {[1, 2, 3].map((step) => (
                 <div key={step} className="flex gap-3 items-start">
-                  <div className="w-7 h-7 rounded-full bg-yellow-400 flex items-center justify-center text-sm font-bold">
+                  <div className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center text-sm font-semibold">
                     {step}
                   </div>
                   <div>
@@ -331,20 +326,26 @@ const Affilation = () => {
             </div>
 
             {/* Reward Structure */}
-            <div className="bg-yellow-50 border border-yellow-500 rounded-2xl p-5 space-y-3">
-              <h2 className="font-semibold">Reward Structure</h2>
+            <div className="bg-yellow-50 border border-yellow-500 rounded-2xl p-5 shadow-sm flex flex-col justify-center flex-1">
 
-              <div className="flex justify-between text-sm">
-                <span>Per Successful Referral</span>
+              <h2 className="font-semibold mb-4">Reward Structure</h2>
+
+              {/* Row 1 */}
+              <div className="flex justify-between items-center bg-white/70 rounded-md px-4 py-3 text-sm mb-3">
+                <span className="text-gray-800">Per Successful Referral</span>
                 <span className="text-green-600 font-medium">+10 Points</span>
               </div>
 
-              <div className="flex justify-between text-sm">
-                <span>Bonus (10+ Referrals/Month)</span>
+              {/* Row 2 */}
+              <div className="flex justify-between items-center bg-white/70 rounded-md px-4 py-3 text-sm">
+                <span className="text-gray-800">Bonus (10+ Referrals/Month)</span>
                 <span className="text-green-600 font-medium">+$500</span>
               </div>
+
             </div>
+
           </div>
+
         </div>
 
         {/* Bottom Referrals */}
