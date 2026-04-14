@@ -199,7 +199,7 @@ const Invoice = () => {
 
   const handleSelectAll = (checked) => {
     if (checked) {
-      setSelectedRows(filteredData.map((row) => row.id));
+      setSelectedRows(filteredData.map((row) => row._id)); // ✅ use _id
     } else {
       setSelectedRows([]);
     }

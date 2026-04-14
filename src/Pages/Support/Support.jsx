@@ -48,7 +48,7 @@ const Support = () => {
     {
       question: "How do I reset my password?",
       answer: "Go to the profile section in your dashboard and click on Security settings. You will find an option to change your password there."
-    },
+    },  
     {
       question: "Why is my payment not showing in the history?",
       answer: "Payments usually take 5-10 minutes to reflect. If it has been longer, please check your bank statement and contact us with the transaction ID."
