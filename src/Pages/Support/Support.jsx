@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import Layout from '../../components/layout/Layout';
-import { 
-  Search, 
-  User, 
-  CreditCard, 
-  Settings, 
-  History, 
-  Phone, 
-  Mail, 
-  MessageSquare, 
-  ChevronDown, 
+import {
+  Search,
+  User,
+  CreditCard,
+  Settings,
+  History,
+  Phone,
+  Mail,
+  MessageSquare,
+  ChevronDown,
   HelpCircle,
   AlertCircle
 } from 'lucide-react';
@@ -48,7 +48,7 @@ const Support = () => {
     {
       question: "How do I reset my password?",
       answer: "Go to the profile section in your dashboard and click on Security settings. You will find an option to change your password there."
-    },  
+    },
     {
       question: "Why is my payment not showing in the history?",
       answer: "Payments usually take 5-10 minutes to reflect. If it has been longer, please check your bank statement and contact us with the transaction ID."
@@ -66,7 +66,7 @@ const Support = () => {
   return (
     <Layout>
       <div className="max-w-6xl mx-auto py-8 px-4">
-        
+
         {/* ── HERO SECTION ────────────────────────────────────────── */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-extrabold text-gray-900 mb-4 animate-in fade-in slide-in-from-bottom-2 duration-700">
@@ -75,11 +75,11 @@ const Support = () => {
           <p className="text-lg text-gray-500 max-w-2xl mx-auto mb-8">
             Search our help center or choose a category below to get the support you need.
           </p>
-          
+
           <div className="relative max-w-xl mx-auto group">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#7E1080] transition-colors" size={20} />
-            <input 
-              type="text" 
+            <input
+              type="text"
               placeholder="Search for articles, solutions, or guides..."
               className="w-full bg-white border border-gray-200 rounded-2xl py-4 pl-12 pr-4 shadow-sm focus:ring-4 focus:ring-purple-100 focus:border-[#7E1080] outline-none transition-all text-gray-700"
             />
@@ -89,8 +89,8 @@ const Support = () => {
         {/* ── CATEGORIES GRID ─────────────────────────────────────── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
           {categories.map((cat) => (
-            <div 
-              key={cat.id} 
+            <div
+              key={cat.id}
               className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer group"
             >
               <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -103,34 +103,33 @@ const Support = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 items-start">
-          
+
           {/* ── FAQ SECTION (Left/Center) ─────────────────────────── */}
           <div className="lg:col-span-2 space-y-6">
             <div className="flex items-center gap-3 mb-6">
               <HelpCircle className="text-[#7E1080]" />
               <h2 className="text-2xl font-bold text-gray-800">Frequently Asked Questions</h2>
             </div>
-            
+
             <div className="space-y-4">
               {faqs.map((faq, index) => (
-                <div 
+                <div
                   key={index}
                   className="bg-white rounded-2xl border border-gray-100 overflow-hidden transition-all shadow-sm"
                 >
-                  <button 
+                  <button
                     onClick={() => setActiveFaq(activeFaq === index ? null : index)}
                     className="w-full px-6 py-5 text-left flex justify-between items-center hover:bg-gray-50 transition-colors"
                   >
                     <span className="font-semibold text-gray-800">{faq.question}</span>
-                    <ChevronDown 
-                      className={`text-gray-400 transition-transform duration-300 ${activeFaq === index ? 'rotate-180' : ''}`} 
-                      size={20} 
+                    <ChevronDown
+                      className={`text-gray-400 transition-transform duration-300 ${activeFaq === index ? 'rotate-180' : ''}`}
+                      size={20}
                     />
                   </button>
-                  <div 
-                    className={`px-6 transition-all duration-300 ease-in-out ${
-                      activeFaq === index ? 'max-h-40 py-5 border-t border-gray-50 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
-                    }`}
+                  <div
+                    className={`px-6 transition-all duration-300 ease-in-out ${activeFaq === index ? 'max-h-40 py-5 border-t border-gray-50 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
+                      }`}
                   >
                     <p className="text-gray-600 leading-relaxed">{faq.answer}</p>
                   </div>
@@ -155,7 +154,7 @@ const Support = () => {
           {/* ── CONTACT METHODS (Right Sidebar) ───────────────────── */}
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-gray-800 mb-6">Contact Us</h2>
-            
+
             {/* Phone */}
             <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex items-start gap-4">
               <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600 flex-shrink-0">
