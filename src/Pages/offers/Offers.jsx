@@ -17,6 +17,7 @@ import {
   useDeleteOfferMutation
 } from "../../redux/api/offersApi";
 import Modal, { FormField, FormInput, FormTextarea, ModalSubmitBtn, FormImageUpload } from "../../components/Model";
+import Pagination from "../../components/Pagination";
 
 const Offers = () => {
   const [activeTab, setActiveTab] = useState(() => {
@@ -505,35 +506,10 @@ const Offers = () => {
         </div>
 
         {/* Pagination UI */}
-        {pagination.total > 10 && (
-          <div className="flex justify-center items-center gap-4 mt-10 mb-6">
-            <button
-              disabled={!pagination.has_prev_page && pagination.page === 1}
-              onClick={() => setCurrentPage(prev => prev - 1)}
-              className={`px-4 py-2 rounded-lg border flex items-center gap-2 transition
-                ${(!pagination.has_prev_page && pagination.page === 1)
-                  ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 active:scale-95'
-                }`}
-            >
-              Previous
-            </button>
-            <span className="text-sm font-medium text-gray-600">
-              Page {pagination.page} of {pagination.total_pages}
-            </span>
-            <button
-              disabled={!pagination.has_next_page && pagination.page === (pagination.total_pages || 1)}
-              onClick={() => setCurrentPage(prev => prev + 1)}
-              className={`px-4 py-2 rounded-lg border flex items-center gap-2 transition
-                ${(!pagination.has_next_page && pagination.page === (pagination.total_pages || 1))
-                  ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 active:scale-95'
-                }`}
-            >
-              Next
-            </button>
-          </div>
-        )}
+        <Pagination 
+          pagination={pagination}
+          onPageChange={setCurrentPage}
+        />
 
       </div>
 

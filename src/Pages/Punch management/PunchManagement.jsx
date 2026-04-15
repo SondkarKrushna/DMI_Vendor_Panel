@@ -16,6 +16,7 @@ import { useGetServicesQuery } from "../../redux/api/servicesApi";
 import * as XLSX from "xlsx-js-style";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import Pagination from "../../components/Pagination";
 
 const PunchManagement = () => {
   const [selectedRows, setSelectedRows] = useState([]);
@@ -293,27 +294,10 @@ const PunchManagement = () => {
         {/* ✅ Dynamic History Table */}
         <div className="hidden md:block">
           <Table columns={columns} data={tableData} selectedRows={selectedRows} onRowSelect={handleRowSelect} onSelectAll={handleSelectAll} isLoading={isLoadingPunches} />
-          {pagination.total > pagination.per_page && (
-            <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-sm text-gray-600">
-              <div>Showing {tableData.length} of {pagination.total} records</div>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  disabled={!pagination.has_prev_page}
-                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                  className={`px-4 py-2 rounded-xl border ${pagination.has_prev_page ? 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50' : 'border-gray-200 text-gray-400 bg-gray-100 cursor-not-allowed'}`}>
-                  Prev
-                </button>
-                <button
-                  type="button"
-                  disabled={!pagination.has_next_page}
-                  onClick={() => setCurrentPage((prev) => Math.min(pagination.total_pages, prev + 1))}
-                  className={`px-4 py-2 rounded-xl border ${pagination.has_next_page ? 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50' : 'border-gray-200 text-gray-400 bg-gray-100 cursor-not-allowed'}`}>
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
+          <Pagination 
+            pagination={pagination}
+            onPageChange={setCurrentPage}
+          />
         </div>
 
         {/* ✅ Mobile Responsive View */}

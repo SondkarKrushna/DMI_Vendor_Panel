@@ -54,7 +54,8 @@ const Login = () => {
       // 2. API Call
       const res = await loginVendor({
         identifier,
-        password
+        password,
+        enrollmentType: "Vendor"
       }).unwrap();
 
       // 3. Success Handling
@@ -62,7 +63,7 @@ const Login = () => {
       localStorage.setItem("role", res.user?.role);
       localStorage.setItem("user", JSON.stringify(res.user));
 
-      toast.success(res.message || "Login successful!"); // Display API success message
+      toast.success(res.message || "Login successful!");
       navigate('/dashboard');
 
 
@@ -209,12 +210,12 @@ const Login = () => {
 
           </form>
 
-          <p className="mt-8 text-center text-gray-600">
+          {/* <p className="mt-8 text-center text-gray-600">
             Don't have an account?{' '}
             <Link to="/register" className="text-[#7E1080] font-bold hover:underline">
               Sign up for free
             </Link>
-          </p>
+          </p> */}
         </div>
       </div>
     </div>

@@ -15,6 +15,7 @@ import {
   useAddCallNoteMutation,
   useUpdateCallNoteStatusMutation,
 } from "../../redux/api/callNotesApi";
+import Pagination from "../../components/Pagination";
 
 const CallNotepad = () => {
   const [selectedRows, setSelectedRows] = useState([]);
@@ -55,7 +56,7 @@ const CallNotepad = () => {
 
   // ✅ Extract notes from callNotes array
   const notes = data?.callNotes || data?.data || (Array.isArray(data) ? data : []);
-  
+
   // ✅ Dynamic Stats Cards Mapping with Fallback
   const statsCards = useMemo(() => {
     // If backend provides statsCards array
@@ -466,38 +467,10 @@ const CallNotepad = () => {
                 isLoading={isLoading}
               />
 
-              {/* Pagination UI */}
-              {(pagination.pages > 1 || pagination.total > 10) && (
-                <div className="flex justify-center items-center gap-4 mt-10 mb-6">
-                  <button
-                    disabled={!pagination.has_prev_page && pagination.page === 1}
-                    onClick={() => setCurrentPage((prev) => prev - 1)}
-                    className={`px-4 py-2 rounded-lg border transition
-                      ${(!pagination.has_prev_page && pagination.page === 1)
-                        ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50 active:scale-95"
-                      }`}
-                  >
-                    Previous
-                  </button>
-
-                  <span className="text-sm font-medium text-gray-600">
-                    Page {pagination.page} of {pagination.pages}
-                  </span>
-
-                  <button
-                    disabled={!pagination.has_next_page && pagination.page === pagination.pages}
-                    onClick={() => setCurrentPage((prev) => prev + 1)}
-                    className={`px-4 py-2 rounded-lg border transition
-                      ${(!pagination.has_next_page && pagination.page === pagination.pages)
-                        ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50 active:scale-95"
-                      }`}
-                  >
-                    Next
-                  </button>
-                </div>
-              )}
+              <Pagination 
+                pagination={pagination}
+                onPageChange={setCurrentPage}
+              />
             </div>
           </div>
         </div>

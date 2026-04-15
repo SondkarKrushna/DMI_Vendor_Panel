@@ -28,6 +28,7 @@ import {
 import * as XLSX from "xlsx-js-style";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import Pagination from "../../components/Pagination";
 
 const Services = () => {
   const [search, setSearch] = useState("");
@@ -509,27 +510,10 @@ const Services = () => {
         </div>
 
         {/* Pagination Controls */}
-        {pagination.total > pagination.per_page && (
-          <div className="flex flex-col gap-3 mt-6 items-center justify-between sm:flex-row">
-            <div className="text-sm text-gray-600">
-              Showing page {pagination.page} of {pagination.total_pages} — {pagination.total} records
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-              disabled={!pagination.has_prev_page && pagination.page === 1}
-              className={`px-4 py-2 rounded-lg border transition ${(!pagination.has_prev_page && pagination.page === 1) ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
-              Previous
-            </button>
-            <button
-              onClick={() => setCurrentPage((prev) => Math.min(pagination.total_pages, prev + 1))}
-              disabled={!pagination.has_next_page && pagination.page === (pagination.total_pages || 1)}
-              className={`px-4 py-2 rounded-lg border transition ${(!pagination.has_next_page && pagination.page === (pagination.total_pages || 1)) ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
-              Next
-            </button>
-            </div>
-          </div>
-        )}
+        <Pagination 
+          pagination={pagination}
+          onPageChange={setCurrentPage}
+        />
 
         {/* ✅ TABLE VIEW */}
         <div className="hidden md:block">
