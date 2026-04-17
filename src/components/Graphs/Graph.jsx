@@ -58,15 +58,10 @@ const Graph = ({
     new Intl.NumberFormat('en-IN', { notation: 'compact' }).format(val);
 
   return (
-    <div className="w-full p-6 bg-white rounded-3xl border border-gray-200 shadow-sm font-sans">
+    <div className="w-full font-sans">
       
-      {/* Header & Filter Toggle */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-        <div>
-          <h2 className="text-xl font-bold text-gray-800">Business Analytics</h2>
-          <p className="text-sm text-gray-500">Real-time performance tracking</p>
-        </div>
-        
+      {/* Filter Toggle - Centered or Right Aligned usually, but keeping it clean */}
+      <div className="flex justify-end mb-6">
         <div className="flex bg-gray-100 p-1 rounded-xl">
           {filterOptions.map((opt) => (
             <button
@@ -74,7 +69,7 @@ const Graph = ({
               onClick={() => onFilterChange(opt)}
               className={`px-4 py-1.5 text-sm font-semibold rounded-lg transition-all ${
                 selectedFilter === opt 
-                ? "bg-white text-violet-600 shadow-sm" 
+                ? "bg-white text-[#7E1080] shadow-sm" 
                 : "text-gray-500 hover:text-gray-700"
               }`}
             >
@@ -84,36 +79,35 @@ const Graph = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
-        {/* Revenue Chart */}
-        <div className="space-y-4">
-          <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Revenue Overview</h3>
-          <div className="h-[300px] w-full">
+        {/* Revenue Chart Card */}
+        <div className="bg-white p-6 rounded-2xl border-2 border-gray-100 shadow-sm">
+          <h3 className="text-lg font-bold text-gray-800 mb-6">Revenue Overview</h3>
+          <div className="h-[320px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={revenueData}>
+              <AreaChart data={revenueData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>
+                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.2}/>
                     <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                {/* Displaying Grid Lines clearly */}
                 <CartesianGrid strokeDasharray="3 3" vertical={true} stroke="#f0f0f0" />
                 
                 <XAxis 
                   dataKey={currentConfig.dataKey}
                   tickFormatter={currentConfig.formatter}
                   axisLine={{ stroke: '#e5e7eb' }}
-                  tickLine={{ stroke: '#e5e7eb' }}
+                  tickLine={false}
                   tick={{ fill: '#9ca3af', fontSize: 12 }}
-                  minTickGap={5}
+                  dy={10}
                 />
                 
                 <YAxis 
                   tickFormatter={currencyFormatter}
                   axisLine={{ stroke: '#e5e7eb' }}
-                  tickLine={{ stroke: '#e5e7eb' }}
+                  tickLine={false}
                   tick={{ fill: '#9ca3af', fontSize: 12 }}
                 />
                 
@@ -127,7 +121,7 @@ const Graph = ({
                   type="monotone" 
                   dataKey="value" 
                   stroke="#8b5cf6" 
-                  strokeWidth={3}
+                  strokeWidth={2}
                   fillOpacity={1} 
                   fill="url(#colorRev)" 
                 />
@@ -136,39 +130,41 @@ const Graph = ({
           </div>
         </div>
 
-        {/* Usage Chart */}
-        <div className="space-y-4">
-          <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Punch Usage</h3>
-          <div className="h-[300px] w-full">
+        {/* Usage Chart Card */}
+        <div className="bg-white p-6 rounded-2xl border-2 border-gray-100 shadow-sm">
+          <h3 className="text-lg font-bold text-gray-800 mb-6">Punch Usage</h3>
+          <div className="h-[320px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={usageData}>
+              <LineChart data={usageData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={true} stroke="#f0f0f0" />
                 
                 <XAxis 
                   dataKey={currentConfig.dataKey}
                   tickFormatter={currentConfig.formatter}
                   axisLine={{ stroke: '#e5e7eb' }}
-                  tickLine={{ stroke: '#e5e7eb' }}
+                  tickLine={false}
                   tick={{ fill: '#9ca3af', fontSize: 12 }}
+                  dy={10}
                 />
                 
                 <YAxis 
                   tickFormatter={numberFormatter}
                   axisLine={{ stroke: '#e5e7eb' }}
-                  tickLine={{ stroke: '#e5e7eb' }}
+                  tickLine={false}
                   tick={{ fill: '#9ca3af', fontSize: 12 }}
                 />
                 
                 <Tooltip 
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
                   labelFormatter={currentConfig.formatter}
+                  formatter={(value) => [value, "Punches"]}
                 />
                 
                 <Line 
                   type="monotone" 
                   dataKey="value" 
                   stroke="#f59e0b" 
-                  strokeWidth={3}
+                  strokeWidth={2}
                   dot={{ r: 4, fill: '#f59e0b', strokeWidth: 2, stroke: '#fff' }}
                   activeDot={{ r: 6, strokeWidth: 0 }}
                 />
