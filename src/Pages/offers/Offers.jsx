@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/cards/Card";
 import Button from "../../components/buttons/Button";
-import { Tag, SquarePen, Trash2, ArrowDownToLine, FileSpreadsheet, FileText, Loader2 } from "lucide-react";
+import { Tag, SquarePen, Trash2, ArrowDownToLine, Clock, FileSpreadsheet, FileText } from "lucide-react";
 import offerImg from "../../../public/images/offer.png";
 import { PulseLoader } from "react-spinners";
 import { toast } from "react-toastify";
@@ -16,7 +16,8 @@ import {
   useUpdateOfferMutation,
   useDeleteOfferMutation
 } from "../../redux/api/offersApi";
-import Modal, { FormField, FormInput, FormTextarea, ModalSubmitBtn, FormImageUpload } from "../../components/Model";
+import { useGetVerticalsQuery } from "../../redux/api/verticalApi";
+import Modal, { FormField, FormInput, FormTextarea, ModalSubmitBtn, FormImageUpload, FormSelect } from "../../components/Model";
 import Pagination from "../../components/Pagination";
 
 const Offers = () => {
@@ -31,6 +32,7 @@ const Offers = () => {
   const [formData, setFormData] = useState({
     title: "",
     discount: "",
+    vertical: "",
     startDate: "",
     endDate: "",
     description: "",
@@ -39,10 +41,13 @@ const Offers = () => {
   const [errors, setErrors] = useState({});
 
 
-  const { data, isLoading } = useGetOffersQuery({
+  const { data, isLoading, isFetching } = useGetOffersQuery({
     page: currentPage,
-    status: activeTab.toLowerCase()
+    status: activeTab === "Active" ? "approved" : activeTab.toLowerCase()
   });
+  const { data: verticalsData } = useGetVerticalsQuery();
+  const verticals = verticalsData?.data || [];
+
   const [addOffer, { isLoading: isAdding }] = useAddOfferMutation();
   const [updateOffer, { isLoading: isUpdating }] = useUpdateOfferMutation();
   const [deleteOffer, { isLoading: isDeleting }] = useDeleteOfferMutation();
@@ -50,14 +55,31 @@ const Offers = () => {
   const offers = data?.data || (Array.isArray(data) ? data : []);
 
   // ✅ Dynamic Stats Cards Mapping with Fallback support
+
+  const verticalMap = useMemo(() => {
+    const map = {};
+    verticals.forEach((v) => {
+      map[v._id] = v.name;
+    });
+    return map;
+  }, [verticals]);
+
   const statsCards = useMemo(() => {
     // 1. If backend provides the array, use it directly (Parsing percent if needed)
     if (data?.statsCards && Array.isArray(data.statsCards)) {
-      return data.statsCards.map(stat => ({
-        ...stat,
-        parsedPercent: parseFloat(stat.percent?.replace(/[+%]/g, '')) || 0,
-        icon: stat.icon || Tag
-      }));
+      return data.statsCards.map(stat => {
+        let Icon = Tag;
+        const title = stat.title.toLowerCase();
+        if (title.includes('active')) Icon = Tag; // Keep Tag or use something else
+        if (title.includes('pending')) Icon = Clock;
+        if (title.includes('expired')) Icon = Trash2;
+
+        return {
+          ...stat,
+          parsedPercent: parseFloat(stat.percent?.replace(/[+%]/g, '')) || 0,
+          icon: Icon
+        };
+      });
     }
 
     // 2. Otherwise, map from legacy stats object (Fallback)
@@ -102,7 +124,14 @@ const Offers = () => {
     ];
   }, [data, offers]);
 
-  const pagination = data?.pagination || { total: 0, has_next_page: false, has_prev_page: false };
+  const pagination = data?.pagination || { 
+    total: 0, 
+    page: 1, 
+    per_page: 10, 
+    total_pages: 1, 
+    has_next_page: false, 
+    has_prev_page: false 
+  };
 
   // Sync tab changes to page 1
   useEffect(() => {
@@ -115,6 +144,7 @@ const Offers = () => {
     setFormData({
       title: offer.title,
       discount: offer.discount,
+      vertical: typeof offer.businessVertical === 'object' ? offer.businessVertical._id : offer.businessVertical || "",
       startDate: offer.startDate ? offer.startDate.split('T')[0] : "",
       endDate: offer.endDate ? offer.endDate.split('T')[0] : "",
       description: offer.description || "",
@@ -150,6 +180,7 @@ const Offers = () => {
     let newErrors = {};
     if (!formData.title) newErrors.title = "Offer Title is required";
     if (!formData.discount) newErrors.discount = "Discount is required";
+    if (!formData.vertical) newErrors.vertical = "Vertical is required";
     if (!formData.startDate) newErrors.startDate = "Start Date is required";
     if (!formData.endDate) newErrors.endDate = "Expiry Date is required";
     if (!formData.description) newErrors.description = "Description is required";
@@ -168,6 +199,7 @@ const Offers = () => {
     const offerData = new FormData();
     offerData.append("title", formData.title);
     offerData.append("discount", formData.discount);
+    offerData.append("businessVertical", formData.vertical);
     offerData.append("startDate", formData.startDate);
     offerData.append("endDate", formData.endDate);
     offerData.append("description", formData.description);
@@ -195,6 +227,7 @@ const Offers = () => {
     setFormData({
       title: "",
       discount: "",
+      vertical: "",
       startDate: "",
       endDate: "",
       description: "",
@@ -311,14 +344,14 @@ const Offers = () => {
   };
 
   const OfferListSection = ({ status, onEdit, onDelete }) => {
-    const { data, isLoading } = useGetOffersQuery({
+    const { data, isLoading, isFetching } = useGetOffersQuery({
       page: currentPage,
-      status: status.toLowerCase()
+      status: status === "Active" ? "approved" : status.toLowerCase()
     });
 
     const offers = data?.data || [];
 
-    if (isLoading) {
+    if (isLoading || isFetching) {
       return (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <OfferSkeleton />
@@ -346,12 +379,23 @@ const Offers = () => {
             key={offer._id}
             className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition"
           >
-            <div className="h-40 w-full overflow-hidden">
+            <div className="h-40 w-full overflow-hidden relative">
               <img
-                src={offer.image}
+                src={offer.image || offerImg}
                 alt={offer.title}
                 className="w-full h-full object-cover"
               />
+              {/* Status Badge */}
+              <div className="absolute top-3 right-3">
+                <span className={`text-[10px] font-bold px-3 py-1 rounded-full shadow-sm uppercase ${
+                  offer.status === 'approved' ? 'bg-green-500 text-white' :
+                  offer.status === 'pending' ? 'bg-yellow-400 text-black' :
+                  offer.status === 'rejected' ? 'bg-red-500 text-white' :
+                  'bg-gray-500 text-white'
+                }`}>
+                  {offer.status}
+                </span>
+              </div>
             </div>
 
             <div className="p-4">
@@ -402,7 +446,7 @@ const Offers = () => {
   };
 
   return (
-    <Layout>
+    <Layout title="Offers">
       <div className="p-1 md:p-2 bg-white min-h-screen">
 
         {/* Header */}
@@ -542,19 +586,37 @@ const Offers = () => {
             />
           </FormField>
 
-          {/* Discount */}
-          <FormField label="Discount (%)" error={errors.discount} required>
-            <FormInput
-              type="number"
-              name="discount"
-              value={formData.discount}
-              onChange={handleChange}
-              placeholder="e.g 10"
-              min="0"
-              max="100"
-              error={errors.discount}
-            />
-          </FormField>
+          {/* Discount + Vertical */}
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="Discount (%)" error={errors.discount} required>
+              <FormInput
+                type="number"
+                name="discount"
+                value={formData.discount}
+                onChange={handleChange}
+                placeholder="e.g 10"
+                min="0"
+                max="100"
+                error={errors.discount}
+              />
+            </FormField>
+
+            <FormField label="Vertical" error={errors.vertical} required>
+              <FormSelect
+                name="vertical"
+                value={formData.vertical}
+                onChange={handleChange}
+                error={errors.vertical}
+              >
+                <option value="">Select Vertical</option>
+                {verticals.map((v) => (
+                  <option key={v._id} value={v._id}>
+                    {v.name}
+                  </option>
+                ))}
+              </FormSelect>
+            </FormField>
+          </div>
 
           {/* Dates */}
           <div className="grid grid-cols-2 gap-4">
@@ -624,7 +686,7 @@ const Offers = () => {
               disabled={isDeleting}
               className="flex-1 px-4 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-2xl transition-all shadow-lg shadow-red-100 flex items-center justify-center gap-2"
             >
-              {isDeleting ? <Loader2 size={18} className="animate-spin" /> : "Delete"}
+              {isDeleting ? <PulseLoader size={8} color="#fff" /> : "Delete"}
             </button>
           </div>
         </div>

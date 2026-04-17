@@ -112,6 +112,12 @@ const BusinessProfile = () => {
 
   const handleEditSubmit = async (e) => {
     if (e) e.preventDefault();
+    
+    // Strict Mobile Validation
+    if (!/^\d{10}$/.test(editFormData.mobile)) {
+      return toast.error("Please enter a valid 10-digit mobile number");
+    }
+
     const formData = new FormData();
 
     formData.append("fullName", editFormData.fullName);
@@ -190,32 +196,33 @@ const BusinessProfile = () => {
 
   const docList = [
     { label: "Document 1", title: "Business Proof", key: "businessProof" },
-    { label: "Document 2", title: "ID Proof", key: "idProof" },
+    { label: "Document 2", title: "ID proof", key: "idProof" },
     { label: "Document 3", title: "Address Proof", key: "addressProof" },
-    { label: "Document 4", title: "GST Certificate", key: "gstCertificate" },
+    { label: "Document 5", title: "GST Certificate", key: "gstCertificate" },
   ];
 
   return (
-    <Layout>
-      <div className="p-1 sm:p-4 md:p-6 space-y-6 bg-white min-h-screen pb-10">
+    <Layout title="Business Profile">
+      <div className="p-1 sm:p-2 space-y-6 bg-white min-h-screen pb-10">
+        
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-2xl font-semibold text-gray-800">Business Profile</h1>
             <p className="text-gray-500 text-sm">Manage Your Business Information And Branding</p>
           </div>
-
+          
           <div className="flex gap-3 w-full sm:w-auto">
-            <Button
-              text="Edit Profile"
-              icon={SquarePen}
-              className="flex-1 sm:flex-none"
+            <Button 
+              text="Edit Profile" 
+              icon={SquarePen} 
+              className="flex-1 sm:flex-none" 
               onClick={() => setIsEditModalOpen(true)}
             />
             <div className="relative">
-              <button
-                onClick={() => setShowExportOptions(prev => !prev)}
-                className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold flex items-center gap-2"
+              <button 
+                onClick={() => setShowExportOptions(!showExportOptions)}
+                className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold shadow-md hover:scale-105 hover:shadow-lg active:scale-95 transition-all duration-200 text-sm sm:text-base flex items-center justify-center gap-2"
               >
                 <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" />
                 Export
@@ -243,11 +250,12 @@ const BusinessProfile = () => {
         </div>
 
         {/* Hero Card */}
-        <div
+        <div 
           className="rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative overflow-hidden"
           style={{ background: "linear-gradient(to right, #7E1080, #1A031A)" }}
         >
           <div className="flex items-center gap-5 relative z-10">
+            {/* Vendor Logo Placeholder */}
             <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center shadow-lg shrink-0 overflow-hidden">
               {profile?.businessLogo ? (
                 <img src={profile.businessLogo} alt="Logo" className="w-full h-full object-cover" />
@@ -255,97 +263,195 @@ const BusinessProfile = () => {
                 <User size={32} className="text-[#7E1080]" />
               )}
             </div>
+            
             <div className="text-white">
-              <h2 className="text-xl sm:text-2xl font-bold">{profile?.businessName || "-"}</h2>
-              <p className="text-white/80 text-sm">{profile?.businessType || "-"}</p>
+              <h2 className="text-xl sm:text-2xl font-bold">{profile?.businessName || "Your Business Name"}</h2>
+              <p className="text-white/80 text-sm">{profile?.businessType || "Business Category"}</p>
             </div>
           </div>
 
           <div className="relative z-10 shrink-0">
             {profile?.isVerifiedVendor ? (
-              <div className="flex items-center gap-2 border border-green-400 bg-green-500/10 px-4 py-2 rounded-full text-green-600 text-sm font-medium">
-                <CheckCircle size={16} />
+              <div className="flex items-center gap-2 border border-white/40 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full text-white text-sm font-medium">
+                <CheckCircle size={16} className="text-white" />
                 Verified Vendor
               </div>
             ) : (
-              <div className="flex items-center gap-2 border border-yellow-400 bg-yellow-500/10 px-4 py-2 rounded-full text-yellow-600 text-sm font-medium">
-                <X size={16} />
-                Documents Pending Verification
+              <div className="flex items-center gap-2 border border-white/40 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full text-white text-sm font-medium">
+                <X size={16} className="text-white" />
+                Pending Verification
               </div>
             )}
           </div>
         </div>
 
         {/* Info Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          
           {/* Business Information */}
-          <div className="bg-white border border-gray-200 rounded-2xl px-5 py-6 space-y-4 shadow-sm">
-            <h3 className="text-[#7E1080] font-bold flex items-center gap-2"><Briefcase size={20}/> Business Information</h3>
+          <div className="bg-white border border-gray-300 rounded-2xl px-5 py-6 space-y-4">
+            <h3 className="text-[#7E1080] font-semibold text-lg">Business Information</h3>
+            
             <div className="space-y-4">
               <div>
-                <label className="text-xs font-bold text-gray-400 uppercase">Business Type</label>
-                <p className="text-sm text-gray-700 font-medium px-1 mt-1">{profile?.businessType || "-"}</p>
-              </div>
-              <div>
-                <label className="text-xs font-bold text-gray-400 uppercase">Services</label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {profile?.services?.map((s, i) => (
-                    <span key={i} className="bg-purple-50 text-[#7E1080] px-3 py-1 rounded-lg text-xs font-bold border border-purple-100">{s}</span>
-                  )) || "-"}
+                <label className="block text-sm font-medium text-gray-700 mb-1">Business Type</label>
+                <div className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-500 text-sm">
+                  {profile?.businessType || "—"}
                 </div>
               </div>
+              
               <div>
-                <label className="text-xs font-bold text-gray-400 uppercase">Description</label>
-                <p className="text-sm text-gray-700 leading-relaxed px-1 mt-1">{profile?.description || "-"}</p>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Services</label>
+                <div className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-500 text-sm whitespace-nowrap overflow-hidden text-ellipsis">
+                  {profile?.services?.join(", ") || "—"}
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Business Name</label>
+                <div className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-500 text-sm">
+                  {profile?.businessName || "—"}
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <div className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-500 text-sm">
+                  {profile?.description || "—"}
+                </div>
               </div>
             </div>
           </div>
 
           {/* Contact Information */}
-          <div className="bg-white border border-gray-200 rounded-2xl px-5 py-6 space-y-4 shadow-sm">
-            <h3 className="text-[#7E1080] font-bold flex items-center gap-2"><Globe size={20}/> Contact details</h3>
+          <div className="bg-white border border-gray-300 rounded-2xl px-5 py-6 space-y-4">
+            <h3 className="text-[#7E1080] font-semibold text-lg">Contact Information</h3>
+            
             <div className="space-y-4">
               <div>
-                <label className="text-xs font-bold text-gray-400 uppercase">Contact No</label>
-                <p className="text-sm text-gray-700 font-medium px-1 mt-1">+91 {profile?.mobile || "-"}</p>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Contact No</label>
+                <div className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-500 text-sm">
+                  +91 {profile?.mobile || "—"}
+                </div>
               </div>
+              
               <div>
-                <label className="text-xs font-bold text-gray-400 uppercase">Email</label>
-                <p className="text-sm text-gray-700 font-medium px-1 mt-1">{profile?.email || "-"}</p>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                <div className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-500 text-sm">
+                  {profile?.email || "—"}
+                </div>
               </div>
+              
               <div>
-                <label className="text-xs font-bold text-gray-400 uppercase">Address</label>
-                <p className="text-sm text-gray-700 font-medium px-1 mt-1">{profile?.address || "-"}</p>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                <div className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-500 text-sm">
+                  {profile?.address || "—"}
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
+                <div className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-500 text-sm">
+                  {profile?.website || "—"}
+                </div>
               </div>
             </div>
           </div>
+
         </div>
 
         {/* Documents */}
-        <div className="bg-white border border-gray-200 rounded-2xl px-5 py-6 shadow-sm">
-          <h3 className="text-[#7E1080] font-bold mb-4 flex items-center gap-2"><FileText size={20}/> Verification Documents</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white border border-gray-300 rounded-2xl px-5 py-6">
+          <h3 className="text-[#7E1080] font-semibold text-lg mb-4">Documents</h3>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             {docList.map((doc, i) => (
-              <div key={i} className="bg-gray-50 rounded-xl p-4 flex items-center justify-between border border-gray-100 hover:border-purple-200 transition-colors group">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-white shadow-sm rounded-lg flex items-center justify-center text-purple-600 shrink-0 group-hover:bg-purple-600 group-hover:text-white transition-all">
+              <div key={i} className="bg-amber-50 rounded-xl p-4 flex items-center justify-between border border-amber-100 relative group">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-[#7E1080] rounded-lg flex items-center justify-center text-white shrink-0">
                     <FileText size={20} />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400 font-bold uppercase">{doc.label}</p>
-                    <p className="font-bold text-sm text-gray-800">{doc.title}</p>
+                    <p className="text-xs text-gray-500 mb-1">{doc.label}</p>
+                    <p className="font-semibold text-sm text-gray-800">{doc.title}</p>
                   </div>
                 </div>
                 {profile?.documents?.[doc.key] && (
                   <button
                     onClick={() => setSelectedDoc({ url: profile.documents[doc.key], title: doc.title })}
-                    className="p-2 bg-white shadow-sm hover:shadow-md rounded-full transition-all text-[#7E1080]"
+                    className="p-1.5 hover:bg-white rounded-full transition-colors text-[#7E1080]"
                   >
                     <Eye size={18} />
                   </button>
                 )}
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* Images */}
+        <div className="bg-white border border-gray-300 rounded-2xl px-5 py-6">
+          <h3 className="text-[#7E1080] font-semibold text-lg mb-4">Images</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <p className="text-sm font-medium text-gray-700 mb-2">Business Logo</p>
+              <div className="border-2 border-dashed border-gray-200 bg-gray-50 rounded-xl h-32 flex flex-col items-center justify-center text-gray-400 cursor-default overflow-hidden">
+                {profile?.businessLogo ? (
+                  <img src={profile.businessLogo} alt="Logo" className="w-full h-full object-contain p-2" />
+                ) : (
+                  <>
+                    <Upload size={24} className="mb-2" />
+                    <span className="text-sm">Upload Logo</span>
+                  </>
+                )}
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-700 mb-2">Cover Image</p>
+              <div className="border-2 border-dashed border-gray-200 bg-gray-50 rounded-xl h-32 flex flex-col items-center justify-center text-gray-400 cursor-default overflow-hidden">
+                {profile?.coverImage ? (
+                  <img src={profile.coverImage} alt="Cover" className="w-full h-full object-cover" />
+                ) : (
+                  <>
+                    <Upload size={24} className="mb-2" />
+                    <span className="text-sm">Upload Cover Image</span>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Social Media Links */}
+        <div className="bg-white border border-gray-300 rounded-2xl px-5 py-6">
+          <h3 className="text-[#7E1080] font-semibold text-lg mb-4">Social Media Links</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Facebook</label>
+              <div className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-400 text-sm">
+                {profile?.socialLinks?.facebook || "https://facebook.com/yourpage"}
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Instagram</label>
+              <div className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-400 text-sm">
+                {profile?.socialLinks?.instagram || "https://instagram.com/yourpage"}
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn</label>
+              <div className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-400 text-sm">
+                {profile?.socialLinks?.linkedIn || "https://linkedin.com/yourpage"}
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Youtube</label>
+              <div className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-gray-400 text-sm">
+                {profile?.socialLinks?.youtube || "https://youtube.com/yourpage"}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -392,7 +498,7 @@ const BusinessProfile = () => {
                   <FormInput type="email" name="email" value={editFormData.email} onChange={handleEditChange} />
                 </FormField>
                 <FormField label="Mobile" required>
-                  <FormInput name="mobile" value={editFormData.mobile} onChange={handleEditChange} />
+                  <FormInput name="mobile" value={editFormData.mobile} onChange={handleEditChange} maxLength={10} />
                 </FormField>
                 <FormField label="Website">
                   <FormInput name="website" value={editFormData.website} onChange={handleEditChange} />
@@ -464,10 +570,10 @@ const BusinessProfile = () => {
                 {docList.map(doc => (
                   <div key={doc.key} className="flex flex-col gap-1.5">
                     <label className="text-[11px] font-bold text-gray-500 uppercase ml-1">{doc.title}</label>
-                    <input 
-                      type="file" 
-                      name={doc.key} 
-                      onChange={handleFileChange} 
+                    <input
+                      type="file"
+                      name={doc.key}
+                      onChange={handleFileChange}
                       className="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-purple-100 transition-all"
                     />
                   </div>

@@ -40,7 +40,7 @@ const CallNotepad = () => {
   const typeParam = activeTab === "Follow Ups" ? "follow-up" : "enquiry";
   const statusParam = selectedStatus === "All status" ? "" : selectedStatus.toLowerCase();
 
-  const { data, isLoading } = useGetCallNotesQuery({
+  const { data, isLoading, isFetching } = useGetCallNotesQuery({
     status: statusParam,
     type: typeParam,
     page: currentPage,
@@ -145,10 +145,8 @@ const CallNotepad = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     if (name === "mobile") {
-      const numericValue = value.replace(/\D/g, "");
-      if (numericValue.length <= 10) {
-        setFormData((prev) => ({ ...prev, [name]: numericValue }));
-      }
+      const numericValue = value.replace(/\D/g, "").slice(0, 10);
+      setFormData((prev) => ({ ...prev, [name]: numericValue }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -161,9 +159,9 @@ const CallNotepad = () => {
     let newErrors = {};
     if (!formData.name.trim()) newErrors.name = "Full Name is required";
     if (!formData.mobile.trim()) {
-      newErrors.mobile = "Mobile Number is required";
+      newErrors.mobile = "Mobile number is required";
     } else if (!/^\d{10}$/.test(formData.mobile.trim())) {
-      newErrors.mobile = "Invalid mobile number (10 digits required)";
+      newErrors.mobile = "Enter a valid 10-digit mobile number";
     }
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
@@ -283,7 +281,7 @@ const CallNotepad = () => {
   };
 
   return (
-    <Layout>
+    <Layout title="Call Notepad">
       <div className="p-1 sm:p-2 bg-white min-h-screen">
 
         {/* 🔥 Header */}
@@ -334,6 +332,7 @@ const CallNotepad = () => {
               amount={stat.value.toString()}
               percentage={stat.percentValue}
               trend={stat.trend}
+              isDecrease={stat.trend === "down"}
               statusText={stat.subText || `${stat.trend} change`}
               icon={stat.icon}
             />
@@ -383,9 +382,8 @@ const CallNotepad = () => {
           />
         </div>
 
-        {/* ✅ MOBILE VIEW */}
         <div className="block md:hidden space-y-4">
-          {isLoading ? (
+          {isLoading || isFetching ? (
             Array(3).fill(0).map((_, i) => (
               <div key={i} className="bg-white rounded-2xl shadow p-4 space-y-4 border border-gray-100 animate-pulse">
                 <div className="flex justify-between">
@@ -464,15 +462,18 @@ const CallNotepad = () => {
                 selectedRows={selectedRows}
                 onRowSelect={handleRowSelect}
                 onSelectAll={handleSelectAll}
-                isLoading={isLoading}
-              />
-
-              <Pagination 
-                pagination={pagination}
-                onPageChange={setCurrentPage}
+                isLoading={isLoading || isFetching}
               />
             </div>
           </div>
+        </div>
+
+        {/* ✅ Pagination */}
+        <div className="mt-6">
+          <Pagination
+            pagination={pagination}
+            onPageChange={setCurrentPage}
+          />
         </div>
       </div>
 
@@ -519,6 +520,7 @@ const CallNotepad = () => {
                   name="mobile"
                   value={formData.mobile}
                   onChange={handleInputChange}
+                  maxLength={10}
                   placeholder="Mobile Number"
                   className={`w-full bg-gray-50 border ${errors.mobile ? "border-red-500" : "border-gray-200"} rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all`}
                 />

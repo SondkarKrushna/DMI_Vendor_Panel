@@ -25,7 +25,16 @@ const DMIPremiumCard = ({
     return () => observer.disconnect();
   }, []);
 
-  const numberParts = cardNumber.split(" ");
+  const formatCardNumber = (num) => {
+    if (!num) return "0000 0000 0000 0000";
+    // Remove existing spaces and split into 4-digit groups
+    const cleaned = num.toString().replace(/\s/g, "");
+    const parts = cleaned.match(/.{1,4}/g);
+    return parts ? parts.join(" ") : cleaned;
+  };
+
+  const formattedNumber = formatCardNumber(cardNumber);
+  const numberParts = formattedNumber.split(" ");
 
   return (
     <div

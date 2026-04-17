@@ -44,13 +44,18 @@ const Graph = ({
 
   const currentConfig = chartConfigs[selectedFilter] || chartConfigs.yearly;
 
-  // Formatting Y-Axis for Revenue ($)
+  // Formatting Y-Axis for Revenue (₹)
   const currencyFormatter = (val) => 
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
+    new Intl.NumberFormat('en-IN', { 
+      style: 'currency', 
+      currency: 'INR', 
+      maximumFractionDigits: 0,
+      notation: 'compact' 
+    }).format(val);
 
   // Formatting Y-Axis for Usage (Numbers)
   const numberFormatter = (val) => 
-    new Intl.NumberFormat('en-US', { notation: 'compact' }).format(val);
+    new Intl.NumberFormat('en-IN', { notation: 'compact' }).format(val);
 
   return (
     <div className="w-full p-6 bg-white rounded-3xl border border-gray-200 shadow-sm font-sans">

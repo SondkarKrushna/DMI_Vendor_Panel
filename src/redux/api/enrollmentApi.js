@@ -23,13 +23,13 @@ export const enrollmentApi = createApi({
     // filter can be: month | today | weekly | yearly | range
     // for range: pass startDate and endDate as well
     getEnrollments: builder.query({
-      query: ({ filter } = {}) => {
+      query: ({ filter, page = 1, limit = 10 } = {}) => {
         let url = "/api/vendor/get/enrollments";
         const params = new URLSearchParams();
 
-        if (filter) {
-          params.append("filter", filter);
-        }
+        if (filter) params.append("filter", filter);
+        if (page) params.append("page", page);
+        if (limit) params.append("limit", limit);
 
         const queryString = params.toString();
         return {

@@ -14,7 +14,7 @@ export const punchApi = createApi({
       query: (query) => `/api/cards/search?query=${query}`,
     }),
 
-    // ✅ CREATE PUNCH (also creates Razorpay order + invoice)
+    // ✅ CREATE PUNCH (creates order + generates QR code for payment)
     createPunch: builder.mutation({
       query: (data) => ({
         url: "/api/vendor/create-punch",

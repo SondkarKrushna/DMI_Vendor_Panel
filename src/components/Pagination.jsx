@@ -12,7 +12,7 @@ const Pagination = ({ pagination, onPageChange }) => {
   const perPage = pagination?.per_page || pagination?.limit || 10;
   const currentPage = pagination?.page || 1;
 
-  if (!pagination || (totalRecords <= perPage && totalPages <= 1)) {
+  if (!pagination || (totalRecords < 10 && totalPages <= 1)) {
     return null;
   }
 
@@ -62,13 +62,13 @@ const Pagination = ({ pagination, onPageChange }) => {
         </button>
       </div>
 
-      <div className="flex items-center gap-2">
+      {/* <div className="flex items-center gap-2">
         <div className="h-[1px] w-8 bg-gray-100"></div>
         <p className="text-[10px] text-gray-400 font-extrabold uppercase tracking-[0.2em] italic">
           Showing <span className="text-gray-600">{(currentPage - 1) * perPage + 1}</span> to <span className="text-gray-600">{Math.min(currentPage * perPage, totalRecords)}</span> of <span className="text-[#7E1080] underline decoration-purple-200 underline-offset-4">{totalRecords}</span> entries
         </p>
         <div className="h-[1px] w-8 bg-gray-100"></div>
-      </div>
+      </div> */}
     </div>
   );
 };

@@ -64,7 +64,7 @@ const Support = () => {
   ];
 
   return (
-    <Layout>
+    <Layout title="Support">
       <div className="max-w-6xl mx-auto py-8 px-4">
 
         {/* ── HERO SECTION ────────────────────────────────────────── */}

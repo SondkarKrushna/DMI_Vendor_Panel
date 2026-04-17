@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, Phone } from 'lucide-react';
 import { PulseLoader } from 'react-spinners';
@@ -11,6 +11,10 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
+
+  useEffect(() => {
+    document.title = "Login | DMI Vendor Panel";
+  }, []);
 
   // Local state for validation errors
   const [formErrors, setFormErrors] = useState({});

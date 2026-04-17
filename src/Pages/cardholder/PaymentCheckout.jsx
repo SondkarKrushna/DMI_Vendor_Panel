@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Layout from "../../components/layout/Layout";
-import { Loader2, ShieldCheck, CreditCard, ArrowLeft, CheckCircle2, XCircle } from "lucide-react";
+import { ShieldCheck, CreditCard, ArrowLeft, CheckCircle2, XCircle } from "lucide-react";
+import { PulseLoader } from "react-spinners";
 import { toast } from "react-toastify";
 import { useCreatePunchMutation, useVerifyPaymentMutation } from "../../redux/api/punchApi";
 
@@ -161,7 +162,7 @@ const PaymentCheckout = () => {
   if (!punchPayload) return null;
 
   return (
-    <Layout>
+    <Layout title="Payment Checkout">
       <div className="min-h-screen bg-gray-50 flex items-start justify-center pt-12 px-4">
         <div className="w-full max-w-xl">
 
@@ -300,7 +301,7 @@ const PaymentCheckout = () => {
                 >
                   {status === "processing" ? (
                     <>
-                      <Loader2 className="animate-spin w-5 h-5" />
+                      <PulseLoader size={8} color="#fff" />
                       Opening Payment Gateway...
                     </>
                   ) : (

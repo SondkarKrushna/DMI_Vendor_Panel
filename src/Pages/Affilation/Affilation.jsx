@@ -7,6 +7,7 @@ import * as XLSX from "xlsx-js-style";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { toast } from "react-toastify";
+import Pagination from "../../components/Pagination";
 
 import {
   Users,
@@ -23,7 +24,8 @@ import {
 } from "lucide-react";
 
 const Affilation = () => {
-  const { data: apiData, isFetching } = useGetAffiliationDashboardQuery();
+  const [currentPage, setCurrentPage] = useState(1);
+  const { data: apiData, isFetching } = useGetAffiliationDashboardQuery({ page: currentPage, limit: 10 });
   //console.log("Affiliation Dashboard Data:", apiData);
   const affiliationStats = useMemo(() => {
     if (!apiData?.stats) return [];
@@ -66,6 +68,13 @@ const Affilation = () => {
   }, [apiData]);
 
   const referralLink = apiData?.referralLink || "https://vendorDMI.com/ref/vEN2026001";
+  const pagination = apiData?.pagination || {
+    total: referrals.length || 0,
+    page: currentPage,
+    per_page: 10,
+    total_pages: Math.ceil((apiData?.total || referrals.length || 0) / 10)
+  };
+
   const [copied, setCopied] = useState(false);
   const [showExportOptions, setShowExportOptions] = useState(false);
 
@@ -157,7 +166,7 @@ const Affilation = () => {
   };
 
   return (
-    <Layout>
+    <Layout title="Affiliation">
       <div className="p-1 sm:p-2 space-y-5 bg-white min-h-screen">
 
         {/* Header */}
@@ -367,6 +376,10 @@ const Affilation = () => {
               <h1 className="text-center text-gray-500">No Referrals Yet</h1>
             )}
           </div>
+          <Pagination 
+            pagination={pagination}
+            onPageChange={setCurrentPage}
+          />
         </div>
 
       </div>

@@ -15,7 +15,8 @@ import BusinessProfile from "../Pages/Business profile/BusinessProfile";
 import Support from "../Pages/Support/Support";
 import Login from '../Pages/Auth/Login';
 import Register from '../Pages/Auth/Register';
-
+import NotFound from '../components/404';
+// import NotificationsModal from "../components/notifications/NotificationsModal";
 
 import ProtectedRoute from '../components/auth/ProtectedRoute';
 
@@ -39,10 +40,14 @@ const AppRoutes = () => {
         <Route path="/affilation" element={<ProtectedRoute><Affilation /></ProtectedRoute>} />
         <Route path="/Business-profile" element={<ProtectedRoute><BusinessProfile /></ProtectedRoute>} />
         <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
+        
 
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+
+        {/* ✅ This handles ALL unknown routes */}
+        <Route path="/*" element={<NotFound />} />
 
       </Routes>
     </BrowserRouter>

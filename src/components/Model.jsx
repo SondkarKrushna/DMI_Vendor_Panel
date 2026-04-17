@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { X, ChevronDown, Upload, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { X, ChevronDown, Upload, Image as ImageIcon } from 'lucide-react';
+import { PulseLoader } from 'react-spinners';
 
 /**
  * ══════════════════════════════════════════════════
@@ -15,6 +16,7 @@ const Modal = ({
   className = 'max-w-md',
   footer,
   disableBackdropClick = false,
+  noScroll = false,
   ariaLabelledBy = 'modal-title',
 }) => {
   // Close on Escape key
@@ -67,7 +69,7 @@ const Modal = ({
         <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent mx-8" />
 
         {/* Body - Comfortable Spacing & Custom Scrollbar */}
-        <div className="px-8 py-6 max-h-[75vh] overflow-y-auto custom-scrollbar flex flex-col gap-5">
+        <div className={`px-8 py-6 flex flex-col gap-5 ${!noScroll ? 'max-h-[75vh] overflow-y-auto custom-scrollbar' : ''}`}>
           {children}
         </div>
 
@@ -204,7 +206,7 @@ export const ModalSubmitBtn = ({ children, onClick, disabled, className = '' }) 
     disabled={disabled}
     className={`w-full py-4 mt-4 rounded-2xl font-bold text-sm text-white bg-gradient-to-r from-[#7E1080] to-[#1A031A] shadow-xl shadow-purple-100 hover:shadow-purple-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none ${className}`}
   >
-    {disabled && <Loader2 size={18} className="animate-spin" />}
+    {disabled && <PulseLoader size={8} color="#fff" />}
     {children}
   </button>
 );
@@ -217,6 +219,7 @@ Modal.propTypes = {
   className: PropTypes.string,
   footer: PropTypes.node,
   disableBackdropClick: PropTypes.bool,
+  noScroll: PropTypes.bool,
   ariaLabelledBy: PropTypes.string,
 };
 

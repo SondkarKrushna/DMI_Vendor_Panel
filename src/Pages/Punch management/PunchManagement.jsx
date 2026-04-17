@@ -71,7 +71,8 @@ const PunchManagement = () => {
   // API Hooks
   const [searchCard, { isFetching: isSearching }] = useLazySearchCardHolderQuery();
   const [createPunch, { isLoading: isPunching }] = useCreatePunchMutation();
-  const { data: servicesData } = useGetServicesQuery();
+  const { data: servicesResponse } = useGetServicesQuery();
+  const servicesData = servicesResponse?.data || [];
 
   const queryParams = {
     page: currentPage,
@@ -216,7 +217,7 @@ const PunchManagement = () => {
   };
 
   return (
-    <Layout>
+    <Layout title="Punch Management">
       <div className="p-1 sm:p-2 bg-white min-h-screen">
         {/* 🔥 Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -294,16 +295,13 @@ const PunchManagement = () => {
         {/* ✅ Dynamic History Table */}
         <div className="hidden md:block">
           <Table columns={columns} data={tableData} selectedRows={selectedRows} onRowSelect={handleRowSelect} onSelectAll={handleSelectAll} isLoading={isLoadingPunches} />
-          <Pagination 
-            pagination={pagination}
-            onPageChange={setCurrentPage}
-          />
         </div>
-
-        {/* ✅ Mobile Responsive View */}
         <div className="block md:hidden space-y-4">
           {isLoadingPunches ? (
-            <div className="py-20 flex justify-center"><div className="w-10 h-10 border-4 border-[#7E1080] border-t-transparent rounded-full animate-spin"></div></div>
+            <div className="py-20 flex justify-center flex-col items-center gap-4">
+              <div className="w-10 h-10 border-4 border-[#7E1080] border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-sm text-gray-400 animate-pulse font-medium">Loading Records...</p>
+            </div>
           ) : tableData.length === 0 ? (
             <div className="py-20 text-center text-gray-400 font-medium">No punch records found</div>
           ) : (
@@ -325,6 +323,14 @@ const PunchManagement = () => {
               </div>
             ))
           )}
+        </div>
+
+        {/* ✅ Pagination */}
+        <div className="mt-6">
+          <Pagination
+            pagination={pagination}
+            onPageChange={setCurrentPage}
+          />
         </div>
       </div>
 

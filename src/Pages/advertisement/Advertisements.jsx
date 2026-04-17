@@ -9,6 +9,7 @@ import { PulseLoader } from "react-spinners";
 import * as XLSX from "xlsx-js-style";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import Pagination from "../../components/Pagination";
 
 import {
   Megaphone,
@@ -20,7 +21,6 @@ import {
   ArrowDownToLine,
   FileSpreadsheet,
   FileText,
-  Loader2,
 } from "lucide-react";
 import Modal, { FormField, FormInput, FormSelect, FormTextarea, FormImageUpload, ModalSubmitBtn } from "../../components/Model";
 import { MdArrowForward } from "react-icons/md";
@@ -28,8 +28,9 @@ import {
   useGetAdvertisementsQuery,
   useAddAdvertisementMutation,
   useUpdateAdvertisementMutation,
-  useDeleteAdvertisementMutation
+  /* useDeleteAdvertisementMutation */
 } from "../../redux/api/advertisementsApi";
+import { useGetVerticalsQuery } from "../../redux/api/verticalApi";
 
 const Advertisements = () => {
   const [search, setSearch] = useState("");
@@ -37,9 +38,10 @@ const Advertisements = () => {
   const [activeTab, setActiveTab] = useState("Classified");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAd, setEditingAd] = useState(null);
-  const [confirmModal, setConfirmModal] = useState({ show: false, id: null });
+  /* const [confirmModal, setConfirmModal] = useState({ show: false, id: null }); */
   const [errors, setErrors] = useState({});
   const [showExportOptions, setShowExportOptions] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const [formData, setFormData] = useState({
     type: "classified", // defaults to classified
     businessVertical: "",
@@ -51,15 +53,31 @@ const Advertisements = () => {
 
   const tabs = ["Classified", "Commercial"];
 
-  const { data, isLoading, isError } = useGetAdvertisementsQuery({ type: activeTab.toLowerCase() });
+  const { data, isLoading, isError, isFetching } = useGetAdvertisementsQuery({ type: activeTab.toLowerCase(), page: currentPage, limit: 10 });
   const [addAdvertisement, { isLoading: isAdding }] = useAddAdvertisementMutation();
   const [updateAdvertisement, { isLoading: isUpdating }] = useUpdateAdvertisementMutation();
-  const [deleteAdvertisement] = useDeleteAdvertisementMutation();
+  /* const [deleteAdvertisement] = useDeleteAdvertisementMutation(); */
 
-  const responseData = data?.data || data || {};
-  const ads = responseData.ads || (Array.isArray(responseData) ? responseData : []);
+  const { data: verticalsResponse } = useGetVerticalsQuery();
+  const verticals = verticalsResponse?.data || [];
+
+  const ads = data?.ads || [];
+  const pagination = data?.pagination || {
+    total: 0,
+    page: 1,
+    limit: 10,
+    pages: 1
+  };
 
   // ✅ Dynamic Stats Cards Mapping with Fallback support
+  const verticalMap = useMemo(() => {
+    const map = {};
+    verticals.forEach((v) => {
+      map[v._id] = v.name;
+    });
+    return map;
+  }, [verticals]);
+
   const statsCards = useMemo(() => {
     // 1. If backend provides statsCards array
     if (data?.statsCards && Array.isArray(data.statsCards)) {
@@ -77,7 +95,7 @@ const Advertisements = () => {
     }
 
     // 2. Otherwise, map from legacy stats object (Fallback)
-    const s = data?.stats || responseData.stats || {};
+    const s = data?.stats || {};
     return [
       {
         title: "Total Ads",
@@ -90,10 +108,10 @@ const Advertisements = () => {
       },
       {
         title: "Active Ads",
-        value: s.activeAds || s.active || ads.filter(a => a.status?.toLowerCase() === 'active').length || 0,
-        percent: s.activePercent || "42%",
-        parsedPercent: parseFloat(s.activePercent) || 0,
-        trend: s.activeTrend || "up",
+        value: data?.stats?.activeAds ?? ads.filter(a => a.status?.toLowerCase() === 'active').length,
+        percent: data?.stats?.activePercent || "0.0%",
+        parsedPercent: parseFloat(data?.stats?.activePercent) || 0,
+        trend: data?.stats?.activeTrend || "neutral",
         subText: "Currently visible to users",
         icon: CheckCircle
       },
@@ -107,19 +125,19 @@ const Advertisements = () => {
         icon: XCircle
       }
     ];
-  }, [data, responseData, ads]);
+  }, [data, ads]);
 
   const filteredAds = ads.filter((ad) => {
     const matchesSearch = search === "" || ad.title?.toLowerCase().includes(search.toLowerCase()) || ad.description?.toLowerCase().includes(search.toLowerCase());
-    const matchesFilter = businessFilter === 'all' || ad.businessVertical?.toLowerCase() === businessFilter;
+    const matchesFilter = businessFilter === 'all' || ad.businessVertical === businessFilter;
     return matchesSearch && matchesFilter;
   });
 
   const businessVerticalOptions = [
     { label: 'All Business', value: 'all' },
-    ...Array.from(new Set(ads.map(a => a.businessVertical).filter(Boolean))).map(val => ({
-      label: val,
-      value: val.toLowerCase()
+    ...verticals.map(v => ({
+      label: v.name,
+      value: v._id
     }))
   ];
 
@@ -164,7 +182,7 @@ const Advertisements = () => {
     setEditingAd(ad);
     setFormData({
       type: ad.type || "classified",
-      businessVertical: ad.businessVertical || "",
+      businessVertical: typeof ad.businessVertical === 'object' ? ad.businessVertical._id : ad.businessVertical || "",
       title: ad.title || "",
       description: ad.description || "",
       endDate: ad.endDate ? ad.endDate.split('T')[0] : "",
@@ -173,6 +191,7 @@ const Advertisements = () => {
     setIsModalOpen(true);
   };
 
+  /*
   const handleDelete = async () => {
     if (!confirmModal.id) return;
     try {
@@ -183,7 +202,7 @@ const Advertisements = () => {
       toast.error(error?.data?.message || "Failed to delete advertisement");
     }
   };
-
+  */
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     if (name === "imageUrl") {
@@ -250,7 +269,7 @@ const Advertisements = () => {
   };
 
   return (
-    <Layout>
+    <Layout title="Advertisements">
       <div className="p-1 sm:p-2 space-y-5 bg-white min-h-screen">
 
         {/* Header */}
@@ -347,10 +366,32 @@ const Advertisements = () => {
 
         {/* Advertisement Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4 bg-[#F3F4F6] rounded-3xl">
-          {isLoading ? (
-            <div className="col-span-full flex justify-center py-10">
-              <PulseLoader color="#7E1080" />
-            </div>
+          {isLoading || (data && !ads.length && isLoading) || (data && isFetching) ? (
+            Array.from({ length: 6 }).map((_, index) => (
+              <div
+                key={index}
+                className="bg-white rounded-[24px] shadow-sm p-4 border border-gray-100 animate-pulse"
+              >
+                {/* Image Skeleton */}
+                <div className="w-full h-44 bg-gray-200 rounded-[18px] mb-4"></div>
+
+                {/* Title */}
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+
+                {/* Subtitle */}
+                <div className="h-3 bg-gray-200 rounded w-1/2 mb-4"></div>
+
+                {/* Footer */}
+                <div className="flex justify-between items-center mt-6">
+                  <div className="h-3 bg-gray-200 rounded w-1/3"></div>
+
+                  <div className="flex gap-2">
+                    <div className="w-10 h-10 bg-gray-200 rounded-xl"></div>
+                    <div className="w-10 h-10 bg-gray-200 rounded-xl"></div>
+                  </div>
+                </div>
+              </div>
+            ))
           ) : filteredAds.length === 0 ? (
             <div className="col-span-full flex flex-col items-center justify-center py-16 text-center bg-white rounded-2xl border border-dashed border-gray-200">
               <Megaphone className="w-12 h-12 text-gray-300 mb-3" />
@@ -390,7 +431,9 @@ const Advertisements = () => {
                   {item.title || "Free IT Courses"}
                 </h3>
                 <p className="text-[14px] text-gray-500 font-medium mt-0.5">
-                  {item.businessVertical || "IT Company"}
+                  {typeof item.businessVertical === 'object' 
+                    ? item.businessVertical.name 
+                    : (verticalMap[item.businessVertical] || item.businessVertical || "General")}
                 </p>
 
                 {/* Footer: Date and Buttons */}
@@ -411,20 +454,21 @@ const Advertisements = () => {
                     >
                       <SquarePen size={18} className="text-[#7E1080]" />
                     </button>
-                    {/* Delete Button */}
+                    {/* Delete Button (Commented)
                     <button
                       onClick={() => setConfirmModal({ show: true, id: item._id })}
                       className="w-10 h-10 flex items-center justify-center rounded-xl bg-[#FBE8FF] border border-[#E9D5FF] transition-transform active:scale-95"
                     >
                       <Trash2 size={18} className="text-[#FF0000]" />
                     </button>
+                    */}
                   </div>
                 </div>
               </div>
             </div>
           ))}
         </div>
-
+        <Pagination pagination={pagination} onPageChange={setCurrentPage} />
       </div>
       {/* Add / Edit Modal */}
       <Modal
@@ -455,18 +499,11 @@ const Advertisements = () => {
                 error={errors.businessVertical}
               >
                 <option value="" disabled>Select Vertical</option>
-                <option value="Education">Education</option>
-                <option value="Technology">Technology</option>
-                <option value="Healthcare">Healthcare</option>
-                <option value="Finance">Finance</option>
-                <option value="Retail">Retail</option>
-                <option value="Real Estate">Real Estate</option>
-                <option value="Entertainment">Entertainment</option>
-                <option value="Food & Beverage">Food & Beverage</option>
-                <option value="Travel & Tourism">Travel & Tourism</option>
-                <option value="Auto & Transport">Auto & Transport</option>
-                <option value="Lifestyle">Lifestyle</option>
-                <option value="Others">Others</option>
+                {verticals.map((v) => (
+                  <option key={v._id} value={v._id}>
+                    {v.name}
+                  </option>
+                ))}
               </FormSelect>
             </FormField>
           </div>
@@ -517,7 +554,7 @@ const Advertisements = () => {
         </div>
       </Modal>
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Confirmation Modal (Commented Out)
       <Modal
         isOpen={confirmModal.show}
         onClose={() => setConfirmModal({ show: false, id: null })}
@@ -548,6 +585,8 @@ const Advertisements = () => {
           </div>
         </div>
       </Modal>
+      */}
+
     </Layout>
   );
 };

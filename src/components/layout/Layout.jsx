@@ -1,9 +1,17 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 
-const Layout = ({ children }) => {
+const Layout = ({ children, title }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    if (title) {
+      document.title = `${title} | DMI Vendor Panel`;
+    } else {
+      document.title = "DMI Vendor Panel";
+    }
+  }, [title]);
 
   const toggleSidebar = () => {
     setIsSidebarOpen((prev) => !prev);

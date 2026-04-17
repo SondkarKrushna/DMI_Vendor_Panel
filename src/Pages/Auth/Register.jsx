@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, User, ArrowRight, Phone } from 'lucide-react';
 import { PulseLoader } from 'react-spinners';
@@ -8,6 +8,10 @@ import { toast } from 'react-toastify';
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [formErrors, setFormErrors] = useState({});
+
+  useEffect(() => {
+    document.title = "Register | DMI Vendor Panel";
+  }, []);
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -55,7 +59,7 @@ const Register = () => {
     if (name === 'mobile') {
       const val = value.replace(/\D/g, '');
       if (val.length <= 10) {
-        setFormData({ ...formData, mobile: val });
+      setFormData({ ...formData, mobile: val });
       }
       if (formErrors.mobile) {
         setFormErrors({ ...formErrors, mobile: "" });

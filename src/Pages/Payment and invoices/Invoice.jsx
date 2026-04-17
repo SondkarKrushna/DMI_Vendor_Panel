@@ -28,7 +28,7 @@ const Invoice = () => {
   const [currentPage, setCurrentPage] = useState(1);
 
   const { data: servicesData } = useGetActiveServicesQuery();
-  const { data: invoicesResponse, isLoading } = useGetInvoicesQuery({
+  const { data: invoicesResponse, isLoading, isFetching } = useGetInvoicesQuery({
     serviceId: selectedServiceId || undefined,
     page: currentPage,
     search: searchValue,
@@ -207,7 +207,7 @@ const Invoice = () => {
   };
 
   return (
-    <Layout>
+    <Layout title="Invoices">
       <div className="p-1 sm:p-2 bg-white min-h-screen">
 
         {/* 🔥 Header */}
@@ -259,6 +259,7 @@ const Invoice = () => {
                 percentage={stat.parsedPercent || 0}
                 statusText={stat.subText || `${stat.trend} change`}
                 trend={stat.trend}
+                isDecrease={stat.trend === "down"}
                 icon={stat.icon}
               />
             ))}
@@ -293,11 +294,11 @@ const Invoice = () => {
           />
         </div>
 
-        {/* ✅ MOBILE VIEW */}
         <div className="block md:hidden space-y-4">
-          {isLoading ? (
-            <div className="flex justify-center py-10">
-              <div className="w-8 h-8 border-4 border-[#7E1080] border-t-transparent rounded-full animate-spin"></div>
+          {isLoading || isFetching ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-4">
+              <div className="w-10 h-10 border-4 border-[#7E1080] border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-sm text-gray-400 animate-pulse font-medium">Loading Invoices...</p>
             </div>
           ) : filteredData.length === 0 ? (
             <div className="text-center py-10 text-gray-500">No invoices found.</div>
@@ -354,26 +355,26 @@ const Invoice = () => {
         {/* ✅ TABLE VIEW */}
         <div className="hidden md:block">
           <div className="overflow-x-auto">
-            <div className="min-w-[900px]">
+            <div className="min-w-[1000px]">
               <Table
                 columns={columns}
                 data={filteredData}
                 selectedRows={selectedRows}
                 onRowSelect={handleRowSelect}
                 onSelectAll={handleSelectAll}
-                isLoading={isLoading}
-              />
-
-              {/* Pagination UI */}
-
-              <Pagination 
-                pagination={pagination}
-                onPageChange={setCurrentPage}
+                isLoading={isLoading || isFetching}
               />
             </div>
           </div>
         </div>
 
+        {/* ✅ Pagination */}
+        <div className="mt-6">
+          <Pagination
+            pagination={pagination}
+            onPageChange={setCurrentPage}
+          />
+        </div>
       </div>
     </Layout>
   );

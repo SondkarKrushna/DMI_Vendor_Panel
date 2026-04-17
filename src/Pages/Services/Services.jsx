@@ -29,6 +29,8 @@ import * as XLSX from "xlsx-js-style";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import Pagination from "../../components/Pagination";
+import { useGetCardsQuery } from "../../redux/api/cardApi";
+import { useGetVerticalsQuery } from "../../redux/api/verticalApi";
 
 const Services = () => {
   const [search, setSearch] = useState("");
@@ -42,6 +44,7 @@ const Services = () => {
     name: "",
     price: "",
     cardType: "",
+    vertical: "",
     discount: "",
     description: "",
     image: null
@@ -78,7 +81,7 @@ const Services = () => {
     doc.save("services.pdf");
   };
 
-  const { data, isLoading, isError } = useGetServicesQuery({
+  const { data, isLoading, isError, isFetching } = useGetServicesQuery({
     page: currentPage,
     per_page: 10,
     search: search,
@@ -88,8 +91,15 @@ const Services = () => {
   const [updateService, { isLoading: isUpdating }] = useUpdateServiceMutation();
   const [deleteService] = useDeleteServiceMutation();
 
+  const { data: verticalsResponse } = useGetVerticalsQuery();
+  const verticals = verticalsResponse?.data || [];
+
   const services = data?.data || (Array.isArray(data) ? data : []);
-  
+
+  const { data: cardsResponse, isLoading: cardsLoading } = useGetCardsQuery();
+
+  const cardTypes = cardsResponse?.data || [];
+
   // ✅ Dynamic Stats Cards Mapping with Fallback support
   const statsCards = useMemo(() => {
     // 1. If backend provides the array, use it directly (Parsing percent if needed)
@@ -125,7 +135,7 @@ const Services = () => {
       {
         title: "Active Services",
         value: s.active || services.filter(s => s.status?.toLowerCase() === 'active').length || 0,
-        percent: s.activePercent || "42%", 
+        percent: s.activePercent || "42%",
         parsedPercent: parseFloat(s.activePercent) || 0,
         trend: s.activeTrend || "up",
         subText: "Visible on customer app",
@@ -165,7 +175,8 @@ const Services = () => {
     setFormData({
       name: service.serviceName,
       price: service.price,
-      cardType: service.cardType,
+      cardType: typeof service.cardType === 'object' ? service.cardType._id : (cardTypes.find(c => c.name === service.cardType)?._id || service.cardType),
+      vertical: typeof service.vertical === 'object' ? service.vertical._id : service.vertical || "",
       discount: service.discountRate,
       description: service.description || "",
       image: service.image
@@ -200,6 +211,7 @@ const Services = () => {
     if (!formData.name) newErrors.name = "Service Name is required";
     if (!formData.price) newErrors.price = "Price is required";
     if (!formData.cardType) newErrors.cardType = "Card Type is required";
+    if (!formData.vertical) newErrors.vertical = "Vertical is required";
     if (formData.discount === "") newErrors.discount = "Discount is required";
     if (!formData.description) newErrors.description = "Description is required";
     if (!editingService && !formData.image) newErrors.image = "Image is required";
@@ -215,6 +227,7 @@ const Services = () => {
     serviceData.append("serviceName", formData.name);
     serviceData.append("price", formData.price);
     serviceData.append("cardType", formData.cardType);
+    serviceData.append("businessVertical", formData.vertical);
     serviceData.append("discountRate", formData.discount);
     serviceData.append("description", formData.description);
     if (formData.image instanceof File) {
@@ -243,12 +256,12 @@ const Services = () => {
       name: "",
       price: "",
       cardType: "",
+      vertical: "",
       discount: "",
       description: "",
       image: null
     });
   };
-
   const columns = [
     {
       header: "SERVICE ID",
@@ -271,8 +284,7 @@ const Services = () => {
       header: "SERVICE",
       accessor: "serviceName",
       Cell: ({ row }) => (
-        <div>
-          {/* ✅ Changed row.name to row.serviceName */}
+        <div className="flex flex-col">
           <p className="font-semibold text-gray-900">{row.serviceName}</p>
           <p className="text-xs text-gray-400 font-normal truncate max-w-[150px]">{row.description || "N/A"}</p>
         </div>
@@ -286,6 +298,10 @@ const Services = () => {
     {
       header: "CARD TYPE",
       accessor: "cardType",
+      Cell: ({ value }) => {
+        if (typeof value === 'object' && value?.name) return value.name;
+        return cardTypeMap[value] || value || "—";
+      },
     },
     {
       header: "DISCOUNT",
@@ -295,44 +311,38 @@ const Services = () => {
     {
       header: "STATUS",
       accessor: "status",
-      Cell: ({ value }) => {
-        const status = value?.toLowerCase();
-        const styles = {
-          pending: "bg-[#FFF8E7] text-[#FAB800]",
-          active: "bg-[#E6F9F0] text-[#00C853]",
-          inactive: "bg-[#FFEBEB] text-[#FF5252]",
-        };
-        return (
-          <span className={`px-4 py-1 rounded-full text-xs font-bold ${styles[status] || "bg-gray-100 text-gray-700"}`}>
-            {value}
-          </span>
-        );
-      },
+      Cell: ({ value }) => (
+        <span className={`px-3 py-1 rounded-full text-xs font-bold ${value?.toLowerCase() === 'pending' ? 'bg-[#FFF8E7] text-[#FAB800]' :
+          value?.toLowerCase() === 'active' || value?.toLowerCase() === 'approved' ? 'bg-[#E6F9F0] text-[#00C853]' :
+            'bg-[#FFEBEB] text-[#FF5252]'
+          }`}>
+          {value || 'Pending'}
+        </span>
+      ),
     },
     {
       header: "ACTION",
-      accessor: "action",
+      accessor: "_id",
       Cell: ({ row }) => (
-        <div className="flex items-center gap-3">
-          <button
+        <div className="flex gap-2">
+          {/* <button
             onClick={() => handleEdit(row)}
-            className="text-purple-600 hover:text-purple-800 transition"
+            className="p-1.5 hover:bg-gray-100 rounded-lg text-purple-600 transition-colors"
           >
             <Edit3 size={18} />
-          </button>
-
+          </button> */}
           <button
             onClick={() => setViewedCardholder({ ...row, viewType: 'service' })}
-            className="text-yellow-500 hover:text-yellow-700 transition"
+            className="p-1.5 hover:bg-gray-100 rounded-lg text-yellow-500 transition-colors"
           >
             <Eye size={18} />
           </button>
-          <button
+          {/* <button
             onClick={() => handleDelete(row._id)}
-            className="text-red-500 hover:text-red-700 transition"
+            className="p-1.5 hover:bg-gray-100 rounded-lg text-red-500 transition-colors"
           >
             <Trash2 size={18} />
-          </button>
+          </button> */}
         </div>
       ),
     },
@@ -355,8 +365,24 @@ const Services = () => {
     );
   };
 
+  const cardTypeMap = useMemo(() => {
+    const map = {};
+    cardTypes.forEach((c) => {
+      map[c._id] = c.name;
+    });
+    return map;
+  }, [cardTypes]);
+
+  const verticalMap = useMemo(() => {
+    const map = {};
+    verticals.forEach((v) => {
+      map[v._id] = v.name;
+    });
+    return map;
+  }, [verticals]);
+
   return (
-    <Layout>
+    <Layout title="Services">
       <div className="p-1 sm:p-2 bg-white min-h-screen">
 
         {/* Header */}
@@ -367,14 +393,14 @@ const Services = () => {
           </div>
 
           <div className="flex gap-3 w-full sm:w-auto">
-            <Button
+            {/* <Button
               text="Add Service"
               className="flex-1 sm:flex-none"
               onClick={() => {
                 resetForm();
                 setShowModal(true);
               }}
-            />
+            /> */}
             <div className="relative">
               <button
                 onClick={() => setShowExportOptions(prev => !prev)}
@@ -415,6 +441,7 @@ const Services = () => {
               percentage={stat.parsedPercent || 0}
               statusText={stat.subText || `${stat.trend} change`}
               trend={stat.trend}
+              isDecrease={stat.trend === "down"}
               icon={stat.icon || Briefcase}
             />
           ))}
@@ -439,11 +466,23 @@ const Services = () => {
 
         {/* ✅ MOBILE VIEW */}
         <div className="block md:hidden space-y-4 mb-4">
-          {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-4">
-              <div className="w-10 h-10 border-4 border-gray-100 border-t-[#7E1080] rounded-full animate-spin"></div>
-              <p className="text-sm text-gray-400 animate-pulse font-medium">Loading Services...</p>
-            </div>
+          {isLoading || isFetching ? (
+            Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="bg-white rounded-2xl shadow p-4 space-y-3 border border-gray-100 animate-pulse">
+                <div className="flex gap-3">
+                  <div className="w-16 h-16 rounded-xl bg-gray-200" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 bg-gray-200 rounded w-1/4" />
+                    <div className="h-4 bg-gray-200 rounded w-3/4" />
+                    <div className="h-3 bg-gray-200 rounded w-1/2" />
+                  </div>
+                </div>
+                <div className="pt-3 border-t border-gray-50 space-y-2">
+                  <div className="h-4 bg-gray-200 rounded w-full" />
+                  <div className="h-4 bg-gray-200 rounded w-full" />
+                </div>
+              </div>
+            ))
           ) : filteredServices.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200">
               <Briefcase className="w-10 h-10 text-gray-300 mb-3" />
@@ -462,25 +501,24 @@ const Services = () => {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <button
+                  {/* <button
                     onClick={() => handleEdit(item)}
                     className="text-purple-600"
                   >
                     <Edit3 size={16} />
-                  </button>
+                  </button> */}
                   <button
                     onClick={() => setViewedCardholder({ ...item, viewType: 'service' })}
                     className="text-yellow-500"
                   >
                     <Eye size={16} />
                   </button>
-                  <button className="text-yellow-500"><Eye size={16} /></button>
-                  <button
+                  {/* <button
                     onClick={() => handleDelete(item._id)}
                     className="text-red-500"
                   >
                     <Trash2 size={16} />
-                  </button>
+                  </button> */}
                 </div>
               </div>
 
@@ -491,16 +529,14 @@ const Services = () => {
                 </div>
                 <div className="flex justify-between text-sm py-1">
                   <span className="text-gray-500">Card Type</span>
-                  <span>{item.cardType}</span>
-                </div>
-                <div className="flex justify-between text-sm py-1">
-                  <span className="text-gray-500">Discount</span>
-                  <span>{item.discountRate}%</span>
+                  <span>
+                    {typeof item.cardType === 'object' ? item.cardType.name : (cardTypeMap[item.cardType] || item.cardType)}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center text-sm py-1">
                   <span className="text-gray-500">Status</span>
                   <span className={`px-3 py-1 rounded-full text-xs font-bold ${item.status?.toLowerCase() === 'pending' ? 'bg-[#FFF8E7] text-[#FAB800]' :
-                    item.status?.toLowerCase() === 'active' ? 'bg-[#E6F9F0] text-[#00C853]' :
+                    item.status?.toLowerCase() === 'active' || item.status?.toLowerCase() === 'approved' ? 'bg-[#E6F9F0] text-[#00C853]' :
                       'bg-[#FFEBEB] text-[#FF5252]'
                     }`}>{item.status}</span>
                 </div>
@@ -508,12 +544,6 @@ const Services = () => {
             </div>
           ))}
         </div>
-
-        {/* Pagination Controls */}
-        <Pagination 
-          pagination={pagination}
-          onPageChange={setCurrentPage}
-        />
 
         {/* ✅ TABLE VIEW */}
         <div className="hidden md:block">
@@ -525,11 +555,15 @@ const Services = () => {
                 selectedRows={selectedRows}
                 onRowSelect={handleRowSelect}
                 onSelectAll={handleSelectAll}
-                isLoading={isLoading}
+                isLoading={isLoading || isFetching}
               />
             </div>
           </div>
         </div>
+        <Pagination
+          pagination={pagination}
+          onPageChange={setCurrentPage}
+        />
 
       </div>
       {/* Model */}
@@ -550,35 +584,18 @@ const Services = () => {
             />
           </FormField>
 
-          {/* Price */}
-          <FormField label="Price" error={errors.price} required>
-            <FormInput
-              type="number"
-              name="price"
-              value={formData.price}
-              onChange={handleChange}
-              placeholder="0.00"
-              min="0"
-              error={errors.price}
-            />
-          </FormField>
-
-          {/* Card Type + Discount */}
+          {/* Price + Discount */}
           <div className="grid grid-cols-2 gap-4">
-            <FormField label="Card Type" error={errors.cardType} required>
-              <FormSelect
-                name="cardType"
-                value={formData.cardType}
+            <FormField label="Price" error={errors.price} required>
+              <FormInput
+                type="number"
+                name="price"
+                value={formData.price}
                 onChange={handleChange}
-                error={errors.cardType}
-              >
-                <option value="" disabled>Select Card Type</option>
-                <option value="Silver">Silver</option>
-                <option value="Gold">Gold</option>
-                <option value="Platinum">Platinum</option>
-                <option value="Diamond">Diamond</option>
-                <option value="Vip">Vip</option>
-              </FormSelect>
+                placeholder="0.00"
+                min="0"
+                error={errors.price}
+              />
             </FormField>
 
             <FormField label="Discount (%)" error={errors.discount} required>
@@ -592,6 +609,46 @@ const Services = () => {
                 max="100"
                 error={errors.discount}
               />
+            </FormField>
+          </div>
+
+          {/* Card Type + Vertical */}
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="Card Type" error={errors.cardType} required>
+              <FormSelect
+                name="cardType"
+                value={formData.cardType}
+                onChange={handleChange}
+                error={errors.cardType}
+              >
+                <option value="">Select Card Type</option>
+
+                {cardsLoading ? (
+                  <option disabled>Loading...</option>
+                ) : (
+                  cardTypes.map((card) => (
+                    <option key={card._id} value={card._id}>
+                      {card.name}
+                    </option>
+                  ))
+                )}
+              </FormSelect>
+            </FormField>
+
+            <FormField label="Vertical" error={errors.vertical} required>
+              <FormSelect
+                name="vertical"
+                value={formData.vertical}
+                onChange={handleChange}
+                error={errors.vertical}
+              >
+                <option value="">Select Vertical</option>
+                {verticals.map((v) => (
+                  <option key={v._id} value={v._id}>
+                    {v.name}
+                  </option>
+                ))}
+              </FormSelect>
             </FormField>
           </div>
 

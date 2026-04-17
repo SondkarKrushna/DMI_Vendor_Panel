@@ -5,9 +5,11 @@ import { useLogoutVendorMutation } from "../../redux/api/authapi";
 import { useDispatch } from "react-redux";
 import { authApi } from "../../redux/api/authapi";
 import { useGetProfileQuery } from "../../redux/api/profileApi";
+import NotificationsModal from "../notifications/NotificationsModal";
 
 const Header = ({ toggleSidebar }) => {
   const [showProfile, setShowProfile] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const profileRef = useRef();
 
   const navigate = useNavigate();
@@ -65,6 +67,7 @@ const Header = ({ toggleSidebar }) => {
         </button>
 
         <button
+          onClick={() => setShowNotifications(true)}
           className="flex items-center gap-2 text-white px-4 py-2 rounded-full shadow-md hover:opacity-90 transition"
           style={{
             background: "linear-gradient(to right, #7E1080, #1A031A)",
@@ -242,6 +245,11 @@ const Header = ({ toggleSidebar }) => {
           )}
         </div>
       </div>
+      {/* Notifications Modal */}
+      <NotificationsModal 
+        isOpen={showNotifications} 
+        onClose={() => setShowNotifications(false)} 
+      />
     </div>
   );
 };

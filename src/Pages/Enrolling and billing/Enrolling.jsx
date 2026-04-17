@@ -12,6 +12,8 @@ import Modal, { FormField, FormInput, FormSelect, ModalSubmitBtn, FormImageUploa
 import * as XLSX from "xlsx-js-style";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { useGetCardsQuery } from "../../redux/api/cardApi";
+import Pagination from "../../components/Pagination";
 
 const Enrolling = () => {
   const [selectedRows, setSelectedRows] = useState([]);
@@ -23,11 +25,12 @@ const Enrolling = () => {
   const [dateRange, setDateRange] = useState({ startDate: "", endDate: "" });
   const [showRangePicker, setShowRangePicker] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   // ✅ Form state
   const initialFormState = {
     cardType: "",
-    chfNumber: "",
+    // chfNumber: "",
     fullName: "",
     mobile: "",
     email: "",
@@ -73,10 +76,13 @@ const Enrolling = () => {
   // ✅ API Hooks
   const [createEnrollment, { isLoading: isCreating }] = useCreateEnrollmentMutation();
 
-  const queryParams =
-    activeFilter === "custom" && dateRange.startDate && dateRange.endDate
+  const queryParams = {
+    ...(activeFilter === "custom" && dateRange.startDate && dateRange.endDate
       ? { filter: `custom-${dateRange.startDate},${dateRange.endDate}` }
-      : { filter: activeFilter };
+      : { filter: activeFilter }),
+    page: currentPage,
+    limit: 10
+  };
 
   const {
     data,
@@ -84,13 +90,22 @@ const Enrolling = () => {
     refetch,
   } = useGetEnrollmentsQuery(queryParams);
 
-  const enrollmentsResponse = data?.data || data || {};
-  const enrollments = enrollmentsResponse.enrollments || (Array.isArray(enrollmentsResponse) ? enrollmentsResponse : []);
+  const { data: cardsResponse, isLoading: cardsLoading } = useGetCardsQuery();
+
+  const cardTypes = cardsResponse?.data || [];
+
+  const enrollments = data?.data || (Array.isArray(data) ? data : []);
+  const pagination = data?.pagination || {
+    total: enrollments.length || 0,
+    page: currentPage,
+    per_page: 10,
+    total_pages: Math.ceil((data?.total || enrollments.length || 0) / 10)
+  };
 
   // ✅ Dynamic Stats Cards Mapping with Fallback support
   const statsCards = useMemo(() => {
     // 1. If backend provides the array, use it directly (Parsing percent)
-    const backendStats = data?.statsCards || enrollmentsResponse.statsCards;
+    const backendStats = data?.statsCards;
     if (backendStats && Array.isArray(backendStats)) {
       return backendStats.map(stat => ({
         ...stat,
@@ -100,7 +115,7 @@ const Enrolling = () => {
     }
 
     // 2. Otherwise, map from legacy stats object (Fallback)
-    const s = data?.stats || enrollmentsResponse.stats || {};
+    const s = data?.stats || {};
     return [
       {
         title: "Total Enrollments",
@@ -121,7 +136,7 @@ const Enrolling = () => {
         icon: Calendar
       }
     ];
-  }, [data, enrollmentsResponse, enrollments]);
+  }, [data, enrollments]);
 
   // ✅ Filter options
   const filterOptions = [
@@ -135,23 +150,26 @@ const Enrolling = () => {
   // ✅ Validation
   const validate = () => {
     const newErrors = {};
+
     if (!formData.cardType.trim()) newErrors.cardType = "Card type is required";
-    if (!formData.chfNumber.trim()) {
-      newErrors.chfNumber = "CHF number is required";
-    } else if (!/^CHF-/i.test(formData.chfNumber.trim())) {
-      newErrors.chfNumber = "Must start with CHF- (e.g. CHF-1234)";
-    }
+
+    // ❌ REMOVE THIS BLOCK COMPLETELY
+    // if (!formData.chfNumber.trim()) { ... }
+
     if (!formData.fullName.trim()) newErrors.fullName = "Full name is required";
+
     if (!formData.mobile.trim()) {
       newErrors.mobile = "Mobile number is required";
     } else if (!/^\d{10}$/.test(formData.mobile.trim())) {
       newErrors.mobile = "Enter a valid 10-digit mobile number";
     }
+
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
       newErrors.email = "Enter a valid email address";
     }
+
     if (!formData.image) newErrors.image = "Image is required";
 
     setErrors(newErrors);
@@ -159,7 +177,12 @@ const Enrolling = () => {
   };
 
   const handleChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (field === "mobile") {
+      const val = value.replace(/\D/g, "").slice(0, 10);
+      setFormData((prev) => ({ ...prev, [field]: val }));
+    } else {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+    }
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
@@ -186,8 +209,8 @@ const Enrolling = () => {
     if (!validate()) return;
     try {
       const data = new FormData();
-      data.append("cardType", formData.cardType.trim());
-      data.append("chfNumber", formData.chfNumber.trim());
+      data.append("cardType", formData.cardType);
+      // data.append("chfNumber", formData.chfNumber.trim());
       data.append("fullName", formData.fullName.trim());
       data.append("mobile", formData.mobile.trim());
       data.append("email", formData.email.trim());
@@ -215,7 +238,7 @@ const Enrolling = () => {
     name: item.userId?.fullName || "—",
     contact: `${item.userId?.mobile || "—"}\n${item.userId?.email || "—"}`,
     cardType: item.cardId?.cardType || "—",
-    cardNumber: item.cardId?.chfNo || item.cardId?.chNo || "—",
+    cardNumber: item.cardId?.cardNumber || item.cardId?.chNo || "—",
     status: item.status || "—",
     enrollmentStatus: item.paymentStatus || "—",
     date: item.createdAt ? new Date(item.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—",
@@ -228,7 +251,7 @@ const Enrolling = () => {
   );
 
   const columns = [
-    { header: "USER", accessor: "id" },
+    { header: "CHF Number", accessor: "id" },
     { header: "NAME", accessor: "name" },
     { header: "CONTACT", accessor: "contact", Cell: ({ value }) => <div className="whitespace-pre-line text-sm text-gray-600">{value}</div> },
     { header: "CARD TYPE", accessor: "cardType" },
@@ -252,14 +275,16 @@ const Enrolling = () => {
   };
 
   useEffect(() => {
+    setCurrentPage(1);
+  }, [activeFilter, searchQuery, dateRange]);
+
+  useEffect(() => {
     return () => { if (imagePreview) URL.revokeObjectURL(imagePreview); };
   }, [imagePreview]);
 
-  const cardTypes = ["Gold", "Silver", "Platinum", "Premium"];
-
   return (
     <>
-      <Layout>
+      <Layout title="Enrolling & Billing">
         <div className="p-1 sm:p-2 bg-white min-h-screen">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div>
@@ -368,6 +393,7 @@ const Enrolling = () => {
               <Table columns={columns} data={tableData} selectedRows={selectedRows} onRowSelect={handleRowSelect} onSelectAll={handleSelectAll} isLoading={isFetching} />
             </div>
           </div>
+          <Pagination pagination={pagination} onPageChange={setCurrentPage} />
         </div>
 
         <Modal
@@ -377,27 +403,29 @@ const Enrolling = () => {
         >
           <div className="flex flex-col gap-4">
             <div className="grid grid-cols-2 gap-4">
-              <FormField label="Card Type" error={errors.cardType} required>
+              <FormField
+                label="Card Type"
+                error={errors.cardType}
+                required
+                className="col-span-2"
+              >
                 <FormSelect
                   value={formData.cardType}
                   onChange={(e) => handleChange("cardType", e.target.value)}
                   error={errors.cardType}
                 >
                   <option value="">Select</option>
-                  {cardTypes.map((type) => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </FormSelect>
-              </FormField>
 
-              <FormField label="CHF Number" error={errors.chfNumber} required>
-                <FormInput
-                  type="text"
-                  placeholder="CHF-1234"
-                  value={formData.chfNumber}
-                  onChange={(e) => handleChange("chfNumber", e.target.value)}
-                  error={errors.chfNumber}
-                />
+                  {cardsLoading ? (
+                    <option disabled>Loading...</option>
+                  ) : (
+                    cardTypes.map((card) => (
+                      <option key={card._id} value={card._id}>
+                        {card.name}
+                      </option>
+                    ))
+                  )}
+                </FormSelect>
               </FormField>
             </div>
 

@@ -3,7 +3,7 @@ import Layout from "../../components/layout/Layout";
 import Graph from "../../components/Graphs/Graph";
 import Card from "../../components/cards/Card";
 // import Button from "../../components/buttons/Button";
-import { Users, ArrowDownToLine, FileSpreadsheet, FileText } from "lucide-react"
+import { Users, ArrowDownToLine, FileSpreadsheet, FileText, Percent, Tag, Clock } from "lucide-react"
 import { toast } from "react-toastify";
 import { useGetDashboardQuery } from "../../redux/api/dashboardApi"
 import * as XLSX from "xlsx-js-style";
@@ -71,7 +71,7 @@ const Dashboard = () => {
     }
 
     if (selectedGraphFilter === "monthly") {
-      return date.toLocaleDateString("en-US", { day: "numeric" });
+      return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
     }
 
     if (selectedGraphFilter === "yearly") {
@@ -81,23 +81,72 @@ const Dashboard = () => {
     return date.toLocaleDateString();
   };
 
+  const getRelativeTime = (dateStr) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffInMinutes = Math.floor((now - date) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return "Just now";
+    if (diffInMinutes < 60) return `${diffInMinutes} min ago`;
+    
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+  };
+
+  const getInitials = (title) => {
+    if (!title) return "O";
+    return title.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
   const revenueData = useMemo(() => {
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    
+    if (selectedGraphFilter === "yearly") {
+      const baseYearly = months.map(m => ({ label: m, value: 0 }));
+      if (apiData?.data?.charts?.revenueOverview) {
+        apiData.data.charts.revenueOverview.forEach(item => {
+          const monthLabel = formatChartLabel(item.date);
+          const target = baseYearly.find(b => b.label === monthLabel);
+          if (target) target.value += item.revenue;
+        });
+      }
+      return baseYearly;
+    }
+
+    if (selectedGraphFilter === "monthly") {
+      const weeks = [
+        { label: "Week 1", value: 0 },
+        { label: "Week 2", value: 0 },
+        { label: "Week 3", value: 0 },
+        { label: "Week 4", value: 0 },
+      ];
+      if (apiData?.data?.charts?.revenueOverview) {
+        apiData.data.charts.revenueOverview.forEach(item => {
+          const day = new Date(item.date).getDate();
+          if (day <= 7) weeks[0].value += item.revenue;
+          else if (day <= 14) weeks[1].value += item.revenue;
+          else if (day <= 21) weeks[2].value += item.revenue;
+          else weeks[3].value += item.revenue;
+        });
+      }
+      return weeks;
+    }
+
     if (!apiData?.data?.charts?.revenueOverview) {
       return [
-        { month: "Jan", value: 15000 },
-        { month: "Feb", value: 22000 },
-        { month: "Mar", value: 18000 },
-        { month: "Apr", value: 26000 },
-        { month: "May", value: 31000 },
-        { month: "Jun", value: 28000 },
-        { month: "Jul", value: 34000 },
-        { month: "Aug", value: 30000 },
-        { month: "Sep", value: 38000 },
-        { month: "Oct", value: 42000 },
-        { month: "Nov", value: 39000 },
-        { month: "Dec", value: 45000 },
+        { label: "Mon", value: 0 },
+        { label: "Tue", value: 0 },
+        { label: "Wed", value: 0 },
+        { label: "Thu", value: 0 },
+        { label: "Fri", value: 0 },
+        { label: "Sat", value: 0 },
+        { label: "Sun", value: 0 }
       ];
     }
+
     return apiData.data.charts.revenueOverview.map((item) => ({
       label: formatChartLabel(item.date),
       value: item.revenue,
@@ -105,22 +154,51 @@ const Dashboard = () => {
   }, [apiData, selectedGraphFilter]);
 
   const usageData = useMemo(() => {
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+    if (selectedGraphFilter === "yearly") {
+      const baseYearly = months.map(m => ({ label: m, value: 0 }));
+      if (apiData?.data?.charts?.punchUsage) {
+        apiData.data.charts.punchUsage.forEach(item => {
+          const monthLabel = formatChartLabel(item.date);
+          const target = baseYearly.find(b => b.label === monthLabel);
+          if (target) target.value += item.punches;
+        });
+      }
+      return baseYearly;
+    }
+
+    if (selectedGraphFilter === "monthly") {
+      const weeks = [
+        { label: "Week 1", value: 0 },
+        { label: "Week 2", value: 0 },
+        { label: "Week 3", value: 0 },
+        { label: "Week 4", value: 0 },
+      ];
+      if (apiData?.data?.charts?.punchUsage) {
+        apiData.data.charts.punchUsage.forEach(item => {
+          const day = new Date(item.date).getDate();
+          if (day <= 7) weeks[0].value += item.punches;
+          else if (day <= 14) weeks[1].value += item.punches;
+          else if (day <= 21) weeks[2].value += item.punches;
+          else weeks[3].value += item.punches;
+        });
+      }
+      return weeks;
+    }
+
     if (!apiData?.data?.charts?.punchUsage) {
       return [
-        { month: "Jan", value: 3000 },
-        { month: "Feb", value: 3800 },
-        { month: "Mar", value: 4200 },
-        { month: "Apr", value: 3900 },
-        { month: "May", value: 4600 },
-        { month: "Jun", value: 5200 },
-        { month: "Jul", value: 4800 },
-        { month: "Aug", value: 5500 },
-        { month: "Sep", value: 6100 },
-        { month: "Oct", value: 5800 },
-        { month: "Nov", value: 6400 },
-        { month: "Dec", value: 7000 },
+        { label: "Mon", value: 0 },
+        { label: "Tue", value: 0 },
+        { label: "Wed", value: 0 },
+        { label: "Thu", value: 0 },
+        { label: "Fri", value: 0 },
+        { label: "Sat", value: 0 },
+        { label: "Sun", value: 0 }
       ];
     }
+
     return apiData.data.charts.punchUsage.map((item) => ({
       label: formatChartLabel(item.date),
       value: item.punches,
@@ -128,7 +206,7 @@ const Dashboard = () => {
   }, [apiData, selectedGraphFilter]);
 
   return (
-    <Layout>
+    <Layout title="Dashboard">
       <div className="p-1 md:p-2 bg-white min-h-screen">
 
         {/* Header */}
@@ -201,71 +279,76 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
           {/* Expiring Offers */}
-          <div className="bg-white p-5 border border-gray-300 rounded-2xl shadow-md">
-            <h2 className="text-lg font-semibold mb-4">
+          <div className="bg-white p-6 border border-gray-100 rounded-2xl shadow-sm">
+            <h2 className="text-lg font-semibold text-gray-800 mb-6">
               Expires Offers
             </h2>
 
-            {ExpiredOffers.map((item, index) => (
-              <div
-                key={index}
-                className="flex justify-between items-center bg-yellow-50 p-4 rounded-xl mb-3"
-              >
-                <div>
-                  <p className="font-medium">
-                    {item.title}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Expires in {item.daysLeft} Days
-                  </p>
+            <div className="space-y-4">
+              {ExpiredOffers.length > 0 ? ExpiredOffers.map((item, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-4 bg-[#FFFCF0] border border-[#FEF3C7] rounded-2xl"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-[#FBBF24] rounded-xl flex items-center justify-center text-white">
+                      <Percent size={24} />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-gray-800">{item.title}</h3>
+                      <p className="text-sm text-gray-500">Expires in {item.daysLeft || 0} Days</p>
+                    </div>
+                  </div>
+                  <span className="px-4 py-1.5 bg-white border border-[#FBBF24] text-[#FBBF24] text-xs font-bold rounded-xl shadow-sm">
+                    Expiring Soon
+                  </span>
                 </div>
-
-                <span className="px-3 py-1 text-xs bg-yellow-200 text-yellow-800 rounded-full">
-                  Expiring Soon
-                </span>
-              </div>
-            ))}
+              )) : (
+                <div className="py-10 text-center text-gray-400">
+                  <Tag className="mx-auto mb-2 opacity-20" size={48} />
+                  <p>No offers expiring soon</p>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Recent Offers */}
-          <div className="bg-white p-5 border border-gray-300 rounded-2xl shadow-md">
-            <h2 className="text-lg font-semibold mb-4">
+          <div className="bg-white p-6 border border-gray-100 rounded-2xl shadow-sm">
+            <h2 className="text-lg font-semibold text-gray-800 mb-6">
               Recent Offers
             </h2>
 
-            <div className="space-y-3">
-              {ActiveOffers.map((item, index) => (
+            <div className="space-y-4">
+              {ActiveOffers.length > 0 ? ActiveOffers.map((item, index) => (
                 <div
                   key={index}
-                  className="flex justify-between items-center bg-gray-100 px-4 py-3 rounded-xl"
+                  className="flex items-center justify-between p-4 bg-gray-50/50 hover:bg-gray-50 rounded-2xl transition-colors"
                 >
-                  {/* Left */}
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-yellow-400 text-white flex items-center justify-center rounded-full font-bold text-sm">
-                      {item.initials}
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-[#F59E0B] rounded-full flex items-center justify-center text-white font-bold text-lg shadow-sm">
+                      {getInitials(item.title)}
                     </div>
-
                     <div>
-                      <p className="font-medium text-gray-800">
-                        {item.title}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {item.offer}
-                      </p>
+                      <h3 className="font-bold text-gray-800">{item.title}</h3>
+                      <p className="text-sm text-gray-500">Special Offer</p>
                     </div>
                   </div>
-
-                  {/* Right */}
                   <div className="text-right">
-                    <p className="text-green-600 font-semibold">
+                    <p className="font-bold text-green-600 text-lg">
                       {item.discount}%
                     </p>
-                    <p className="text-xs text-gray-400">
-                      {item.time}
+                    <p className="text-xs text-gray-400 flex items-center gap-1 justify-end">
+                      <Clock size={10} />
+                      {getRelativeTime(item.createdAt)}
                     </p>
                   </div>
                 </div>
-              ))}
+              )) : (
+                <div className="py-10 text-center text-gray-400">
+                  <Clock className="mx-auto mb-2 opacity-20" size={48} />
+                  <p>No recent offers found</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

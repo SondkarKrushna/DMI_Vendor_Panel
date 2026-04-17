@@ -10,6 +10,8 @@ import { punchApi } from "./api/punchApi";
 import { invoiceApi } from "./api/invoiceApi";
 import { dashboardApi } from "./api/dashboardApi";
 import { affiliationApi } from "./api/affiliationApi";
+import { cardApi } from "./api/cardApi";
+import { verticalApi } from "./api/verticalApi";
 
 export const store = configureStore({
     reducer: {
@@ -24,6 +26,8 @@ export const store = configureStore({
         [invoiceApi.reducerPath]: invoiceApi.reducer,
         [dashboardApi.reducerPath]: dashboardApi.reducer,
         [affiliationApi.reducerPath]: affiliationApi.reducer,
+        [cardApi.reducerPath]: cardApi.reducer,
+        [verticalApi.reducerPath]: verticalApi.reducer,
     },
 
     middleware: (getDefaultMiddleware) =>
@@ -39,5 +43,7 @@ export const store = configureStore({
             invoiceApi.middleware,
             dashboardApi.middleware,
             affiliationApi.middleware,
+            cardApi.middleware,
+            verticalApi.middleware,
         ),
 });
