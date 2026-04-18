@@ -299,7 +299,7 @@ const Dashboard = () => {
                       <p className="text-sm text-gray-500">Expires in {item.daysLeft || 0} Days</p>
                     </div>
                   </div>
-                  <span className="px-4 py-1.5 bg-white border border-[#FBBF24] text-[#FBBF24] text-xs font-bold rounded-xl shadow-sm">
+                  <span className="px-4 py-1.5 bg-[#FEF2D0] border border-[#F59E0B] text-[#FAB800] text-xs font-semibold rounded-xl">
                     Expiring Soon
                   </span>
                 </div>
