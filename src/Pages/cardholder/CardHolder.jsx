@@ -24,6 +24,7 @@ const CardHolder = () => {
   // Punch Form State
   const [punchForm, setPunchForm] = useState({
     serviceId: "",
+    paymentMethod: "cash",
   });
 
   // Family Member Details State
@@ -148,10 +149,11 @@ const CardHolder = () => {
     }
   };
 
-  // Create punch & generate QR code
-  const handleGenerateQR = async () => {
+  // Create punch
+  const handleSubmitPunch = async () => {
     if (!cardData) return toast.error("Please search and select a cardholder first");
     if (!punchForm.serviceId) return toast.error("Please select a service");
+    if (!punchForm.paymentMethod) return toast.error("Please select a payment method");
 
     // Validate family details if family punch
     if (punchFor === "family") {
@@ -168,7 +170,7 @@ const CardHolder = () => {
       chfNo: cardData.chfNo || "",
       serviceId: punchForm.serviceId,
       // service: punchForm.serviceId,
-      paymentMethod: "online",
+      paymentMethod: punchForm.paymentMethod,
       punchFor: punchFor,
     };
 
@@ -184,13 +186,13 @@ const CardHolder = () => {
     }
 
     try {
-      const res = await createPunch(payload).unwrap();
-      setQrData(res);
+      await createPunch(payload).unwrap();
       setPunchStatus("success");
-      toast.success("QR Code generated! Ask cardholder to scan and pay.");
+      toast.success("Punch submitted successfully!");
+      handleNewPunch();
     } catch (err) {
       setPunchStatus("failed");
-      toast.error(err?.data?.message || "Failed to generate QR code");
+      toast.error(err?.data?.message || "Failed to submit punch");
     }
   };
 
@@ -198,7 +200,7 @@ const CardHolder = () => {
   const handleNewPunch = () => {
     setQrData(null);
     setPunchStatus("idle");
-    setPunchForm({ serviceId: "" });
+    setPunchForm({ serviceId: "", paymentMethod: "cash" });
     setFamilyDetails({ memberName: "", dob: "", age: "", gender: "", std: "", currentInstitute: "" });
     setPunchFor("self");
   };
@@ -432,6 +434,20 @@ const CardHolder = () => {
                     : (selectedService?.cardType || cardData?.cardType || "—")}
                 </div>
               </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-600 block mb-2">
+                  Payment Method
+                </label>
+                <select
+                  value={punchForm.paymentMethod}
+                  onChange={(e) => setPunchForm(prev => ({ ...prev, paymentMethod: e.target.value }))}
+                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200"
+                >
+                  <option value="cash">Cash</option>
+                  <option value="online">Online</option>
+                </select>
+              </div>
             </div>
 
             {/* Punch Summary */}
@@ -452,6 +468,10 @@ const CardHolder = () => {
                   <span className="text-gray-600">Discount</span>
                   <span className="font-semibold">{selectedService?.discountRate || "0"}%</span>
                 </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Payment Method</span>
+                  <span className="font-semibold capitalize">{punchForm.paymentMethod || "—"}</span>
+                </div>
                 <div className="pt-3 border-t border-[#FEF3C7] flex justify-between items-center mt-4">
                   <span className="text-lg font-bold text-gray-800">
                     Payable Amount
@@ -465,19 +485,16 @@ const CardHolder = () => {
 
             <div className="flex justify-end">
               <button
-                onClick={handleGenerateQR}
+                onClick={handleSubmitPunch}
                 disabled={!cardData || !punchForm.serviceId || isCreatingPunch}
                 className="bg-[#581c56] hover:bg-[#4a1848] text-white px-10 py-3 rounded-xl font-bold transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {isCreatingPunch ? (
-                  <>
-                    <PulseLoader size={8} color="#fff" />
-                    Generating...
-                  </>
+                  <PulseLoader size={8} color="#fff" />
                 ) : (
                   <>
-                    <QrCode size={20} />
-                    Generate Payment QR
+                    <CheckCircle2 size={20} />
+                    Submit Punch
                   </>
                 )}
               </button>
@@ -522,6 +539,20 @@ const CardHolder = () => {
                     ? (selectedService?.cardType?.name || cardData?.cardType?.name)
                     : (selectedService?.cardType || cardData?.cardType || "—")}
                 </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-600 block mb-2">
+                  Payment Method
+                </label>
+                <select
+                  value={punchForm.paymentMethod}
+                  onChange={(e) => setPunchForm(prev => ({ ...prev, paymentMethod: e.target.value }))}
+                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200"
+                >
+                  <option value="cash">Cash</option>
+                  <option value="online">Online</option>
+                </select>
               </div>
             </div>
 
@@ -642,6 +673,10 @@ const CardHolder = () => {
                   <span className="text-gray-600">Discount</span>
                   <span className="font-semibold">{selectedService?.discountRate || "0"}%</span>
                 </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Payment Method</span>
+                  <span className="font-semibold">{punchForm.paymentMethod || "—"}</span>
+                </div>
                 <div className="pt-3 border-t border-[#FEF3C7] flex justify-between items-center mt-4">
                   <span className="text-lg font-bold text-gray-800">
                     Payable Amount
@@ -655,19 +690,16 @@ const CardHolder = () => {
 
             <div className="flex justify-end">
               <button
-                onClick={handleGenerateQR}
+                onClick={handleSubmitPunch}
                 disabled={!cardData || !punchForm.serviceId || isCreatingPunch}
                 className="bg-[#581c56] hover:bg-[#4a1848] text-white px-10 py-3 rounded-xl font-bold transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {isCreatingPunch ? (
-                  <>
-                    <PulseLoader size={8} color="#fff" />
-                    Generating...
-                  </>
+                  <PulseLoader size={8} color="#fff" />
                 ) : (
                   <>
-                    <QrCode size={20} />
-                    Generate Payment QR
+                    <CheckCircle2 size={20} />
+                    Submit Punch
                   </>
                 )}
               </button>
@@ -675,134 +707,13 @@ const CardHolder = () => {
           </div>
         )}
 
-        {/* ═══════════════════════════════════════════════════════════════ */}
-        {/* QR CODE PAYMENT MODAL */}
-        {/* ═══════════════════════════════════════════════════════════════ */}
-        <Modal
-          isOpen={!!qrData && punchStatus === "success"}
-          onClose={handleNewPunch}
-          title="Payment QR Code"
-          className="max-w-4xl"
-          noScroll={true}
-        >
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center py-2">
-
-            {/* QR Code Display */}
-            <div className="flex flex-col items-center justify-center">
-              <div className="bg-white border-2 border-dashed border-purple-200 rounded-3xl p-6 shadow-inner">
-                {qrData?.razorpayOrder?.qrCodeBase64 ? (
-                  <img
-                    src={qrData.razorpayOrder.qrCodeBase64}
-                    alt="Payment QR Code"
-                    className="w-64 h-64 object-contain mx-auto"
-                  />
-                ) : qrData?.razorpayOrder?.short_url ? (
-                  <div className="w-64 h-64 flex flex-col items-center justify-center text-center">
-                    <QrCode size={64} className="text-[#7E1080] mb-4" />
-                    <a
-                      href={qrData.razorpayOrder.short_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[#7E1080] font-semibold underline text-sm break-all"
-                    >
-                      {qrData.razorpayOrder.short_url}
-                    </a>
-                    <p className="text-xs text-gray-400 mt-2">Click or share this link for payment</p>
-                  </div>
-                ) : (
-                  <div className="w-64 h-64 flex items-center justify-center">
-                    <p className="text-gray-400 text-sm">QR Code not available</p>
-                  </div>
-                )}
-              </div>
-              <div className="mt-4 text-center">
-                <p className="text-sm text-gray-500">
-                  Ask cardholder to scan this QR code to complete payment
-                </p>
-                {qrData?.razorpayOrder?.short_url && (
-                  <div className="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-2xl">
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Payment Link</p>
-                    <a
-                      href={qrData.razorpayOrder.short_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 text-sm font-medium underline break-all hover:text-blue-800 transition-colors"
-                    >
-                      {qrData.razorpayOrder.short_url}
-                    </a>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Payment Info */}
-            <div className="space-y-4">
-              <div className="bg-green-50 border border-green-100 rounded-2xl p-5 space-y-3">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Payment Details</p>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Payable Amount</span>
-                  <span className="font-bold text-green-600 text-lg">
-                    ₹{qrData?.data?.payableAmount || payableAmount.toFixed(2)}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Payment Method</span>
-                  <span className="font-semibold capitalize">{qrData?.data?.paymentMethod || "Online"}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Payment Status</span>
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${qrData?.data?.paymentStatus === "completed"
-                    ? "bg-green-100 text-green-700"
-                    : "bg-yellow-100 text-yellow-700"
-                    }`}>
-                    {qrData?.data?.paymentStatus || "Pending"}
-                  </span>
-                </div>
-              </div>
-
-              <div className="bg-gray-50 border border-gray-100 rounded-2xl p-5 space-y-3">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Cardholder Info</p>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Name</span>
-                  <span className="font-semibold">{cardData?.userId?.fullName || cardData?.fullName || "—"}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">CHF No</span>
-                  <span className="font-semibold">{cardData?.chfNo || "—"}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Card Type</span>
-                  <span className="font-semibold">
-                    {typeof cardData?.cardType === 'object' ? cardData.cardType.name : (cardData?.cardType || "—")}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Service</span>
-                  <span className="font-semibold">{selectedService?.serviceName || "—"}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Punch For</span>
-                  <span className="font-semibold capitalize">{punchFor}{punchFor === "family" ? ` — ${familyDetails.memberName}` : ""}</span>
-                </div>
-              </div>
-
-              <button
-                onClick={handleNewPunch}
-                className="w-full bg-[#581c56] hover:bg-[#4a1848] text-white py-3.5 rounded-2xl font-bold transition-all shadow-md active:scale-95"
-              >
-                Done
-              </button>
-            </div>
-          </div>
-        </Modal>
-
         {/* Failed State */}
         {punchStatus === "failed" && (
           <div className="bg-white rounded-2xl border border-red-100 p-8 shadow-sm mb-8 text-center">
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <XCircle size={36} className="text-red-500" />
             </div>
-            <h3 className="text-xl font-bold text-gray-800 mb-2">QR Generation Failed</h3>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">Punch Submission Failed</h3>
             <p className="text-gray-500 mb-6">Something went wrong. Please try again.</p>
             <div className="flex flex-col sm:flex-row justify-center gap-3 w-full">
               <button
@@ -812,7 +723,7 @@ const CardHolder = () => {
                 Reset
               </button>
               <button
-                onClick={handleGenerateQR}
+                onClick={handleSubmitPunch}
                 className="w-full px-6 py-2.5 bg-[#581c56] hover:bg-[#4a1848] text-white rounded-xl font-bold transition-all shadow-md"
               >
                 Try Again
