@@ -35,7 +35,7 @@ const Sidebar = React.memo(({ isSidebarOpen, toggleSidebar }) => {
     { to: '/offers', icon: <Tag size={20} />, label: 'Offers Management' },
     { to: '/services', icon: <Settings size={20} />, label: 'Service Management' },
     { to: '/invoice', icon: <DollarSign size={20} />, label: 'Payments & Invoices' },
-    { to: '/enrolling', icon: <UserPlus size={20} />, label: 'Enrollment & Billing' },
+    // { to: '/enrolling', icon: <UserPlus size={20} />, label: 'Enrollment & Billing' },
     { to: '/card-holder', icon: <CreditCard size={20} />, label: 'Cardholder Punch' },
     { to: '/call-notepad', icon: <Phone size={20} />, label: 'Call note Pad' },
   ];
