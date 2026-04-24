@@ -59,7 +59,7 @@ const Login = () => {
       const res = await loginVendor({
         identifier,
         password,
-        enrollmentType: "Vendor"
+        role: "vendor"
       }).unwrap();
 
       // 3. Success Handling
