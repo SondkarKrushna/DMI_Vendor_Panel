@@ -70,8 +70,6 @@ const Login = () => {
       toast.success(res.message || "Login successful!");
       navigate('/dashboard');
 
-
-
     } catch (err) {
       // 4. API Error Handling
       console.error("Login failed:", err);

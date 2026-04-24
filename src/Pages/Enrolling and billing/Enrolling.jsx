@@ -14,6 +14,8 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { useGetCardsQuery } from "../../redux/api/cardApi";
 import Pagination from "../../components/Pagination";
+import { formatDate } from "../../utils/dateUtils";
+
 
 const Enrolling = () => {
   const [selectedRows, setSelectedRows] = useState([]);
@@ -241,7 +243,7 @@ const Enrolling = () => {
     cardNumber: item.cardId?.cardNumber || item.cardId?.chNo || "—",
     status: item.status || "—",
     enrollmentStatus: item.paymentStatus || "—",
-    date: item.createdAt ? new Date(item.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—",
+    date: formatDate(item.createdAt),
   }));
 
   const tableData = allTableData.filter(item =>

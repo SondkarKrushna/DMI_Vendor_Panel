@@ -11,6 +11,8 @@ import * as XLSX from "xlsx-js-style";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import Modal from "../../components/Model";
+import { formatDate } from "../../utils/dateUtils";
+
 
 const CardHolder = () => {
   const [chfQuery, setChfQuery] = useState("");
@@ -334,12 +336,12 @@ const CardHolder = () => {
               cardName={(cardData?.userId?.fullName || "--").toUpperCase()}
               validThru={
                 cardData?.expiryDate
-                  ? new Date(cardData.expiryDate).toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" }).replace(/\//g, " - ")
-                  : "DD - MM - YYYY"
+                  ? formatDate(cardData.expiryDate)
+                  : "DD-MM-YYYY"
               }
               membershipDate={
                 cardData?.issueDate || cardData?.createdAt
-                  ? new Date(cardData.issueDate || cardData.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" })
+                  ? formatDate(cardData.issueDate || cardData.createdAt)
                   : "DD-MM-YYYY"
               }
             />

@@ -19,6 +19,8 @@ import {
 import { useGetVerticalsQuery } from "../../redux/api/verticalApi";
 import Modal, { FormField, FormInput, FormTextarea, ModalSubmitBtn, FormImageUpload, FormSelect } from "../../components/Model";
 import Pagination from "../../components/Pagination";
+import { formatDate } from "../../utils/dateUtils";
+
 
 const Offers = () => {
   const [activeTab, setActiveTab] = useState(() => {
@@ -273,8 +275,8 @@ const Offers = () => {
       index + 1,
       offer.title,
       offer.discount,
-      new Date(offer.startDate).toLocaleDateString(),
-      new Date(offer.endDate).toLocaleDateString(),
+      formatDate(offer.startDate),
+      formatDate(offer.endDate),
       offer.description
     ]));
 
@@ -325,8 +327,8 @@ const Offers = () => {
       tableRows.push([
         offer.title,
         `${offer.discount}%`,
-        new Date(offer.startDate).toLocaleDateString(),
-        new Date(offer.endDate).toLocaleDateString(),
+        formatDate(offer.startDate),
+        formatDate(offer.endDate),
         offer.description,
       ]);
     });
@@ -411,7 +413,7 @@ const Offers = () => {
                 <div className="flex justify-between">
                   <span className="text-gray-500">Valid Till</span>
                   <span className="font-medium">
-                    {new Date(offer.endDate).toLocaleDateString()}
+                    {formatDate(offer.endDate)}
                   </span>
                 </div>
                 <div className="flex justify-between">

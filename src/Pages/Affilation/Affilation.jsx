@@ -8,6 +8,8 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { toast } from "react-toastify";
 import Pagination from "../../components/Pagination";
+import { formatDate } from "../../utils/dateUtils";
+
 
 import {
   Users,
@@ -83,7 +85,7 @@ const Affilation = () => {
     const header = [["Referred User", "Referral Date", "Points Awarded", "Status"]];
     const rows = referrals.map((r) => [
       r.referredUser?.fullName || "Unknown",
-      r.referralDate ? new Date(r.referralDate).toLocaleDateString() : "—",
+      formatDate(r.referralDate),
       r.pointsAwarded || 0,
       r.status || "Pending",
     ]);
@@ -107,7 +109,7 @@ const Affilation = () => {
       head: [["Referred User", "Referral Date", "Points Awarded", "Status"]],
       body: referrals.map((r) => [
         r.referredUser?.fullName || "Unknown",
-        r.referralDate ? new Date(r.referralDate).toLocaleDateString() : "—",
+        formatDate(r.referralDate),
         r.pointsAwarded || 0,
         r.status || "Pending",
       ]),
@@ -366,7 +368,7 @@ const Affilation = () => {
               referrals.map((referral, index) => (
                 <div key={index} className="border border-gray-200 border-l-4 border-l-amber-500 rounded-xl p-4">
                   <p className="font-medium">{referral.referredUser?.fullName || "Unknown"}</p>
-                  <p className="text-xs text-gray-500">{new Date(referral.referralDate).toLocaleDateString()}</p>
+                  <p className="text-xs text-gray-500">{formatDate(referral.referralDate)}</p>
                   <p className="text-sm mt-2 font-semibold text-right">
                     {referral.pointsAwarded} Points
                   </p>

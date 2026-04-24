@@ -175,8 +175,8 @@ const Services = () => {
     setFormData({
       name: service.serviceName,
       price: service.price,
-      cardType: typeof service.cardType === 'object' ? service.cardType._id : (cardTypes.find(c => c.name === service.cardType)?._id || service.cardType),
-      vertical: typeof service.vertical === 'object' ? service.vertical._id : service.vertical || "",
+      cardType: (service.cardType && typeof service.cardType === 'object') ? service.cardType._id : (cardTypes.find(c => c.name === service.cardType)?._id || service.cardType),
+      vertical: (service.vertical && typeof service.vertical === 'object') ? service.vertical._id : service.vertical || "",
       discount: service.discountRate,
       description: service.description || "",
       image: service.image
@@ -530,7 +530,7 @@ const Services = () => {
                 <div className="flex justify-between text-sm py-1">
                   <span className="text-gray-500">Card Type</span>
                   <span>
-                    {typeof item.cardType === 'object' ? item.cardType.name : (cardTypeMap[item.cardType] || item.cardType)}
+                    {(item.cardType && typeof item.cardType === 'object') ? item.cardType.name : (cardTypeMap[item.cardType] || item.cardType || "—")}
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-sm py-1">

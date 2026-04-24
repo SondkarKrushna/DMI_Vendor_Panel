@@ -19,6 +19,8 @@ import * as XLSX from "xlsx-js-style";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import Pagination from "../../components/Pagination";
+import { formatDate } from "../../utils/dateUtils";
+
 
 const Invoice = () => {
   const [selectedRows, setSelectedRows] = useState([]);
@@ -133,11 +135,7 @@ const Invoice = () => {
     service: inv.items?.[0]?.name || "N/A",
     amount: `₹${inv.amount.toLocaleString()}`,
     payment: inv.paymentMethod || "N/A",
-    date: new Date(inv.invoiceDate).toLocaleDateString("en-IN", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    }),
+    date: formatDate(inv.invoiceDate),
     _id: inv._id,
   }));
 

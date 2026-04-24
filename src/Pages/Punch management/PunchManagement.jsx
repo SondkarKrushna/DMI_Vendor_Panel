@@ -17,6 +17,8 @@ import * as XLSX from "xlsx-js-style";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import Pagination from "../../components/Pagination";
+import { formatDate } from "../../utils/dateUtils";
+
 
 const PunchManagement = () => {
   const [selectedRows, setSelectedRows] = useState([]);
@@ -188,9 +190,9 @@ const PunchManagement = () => {
     contact: `${p.mobile || p.userId?.mobile || "—"}\n${p.email || p.userId?.email || "—"}`,
     service: p.serviceId?.serviceName || p.serviceName || "—",
     date: p.punchDate
-      ? new Date(p.punchDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+      ? formatDate(p.punchDate)
       : p.createdAt
-        ? new Date(p.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+        ? formatDate(p.createdAt)
         : "—",
     amount: p.amount != null ? `₹${p.amount.toLocaleString('en-IN')}` : "—",
     discount: p.discount != null ? `₹${p.discount}` : "—",

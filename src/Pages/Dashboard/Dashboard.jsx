@@ -6,19 +6,26 @@ import Card from "../../components/cards/Card";
 import { Users, ArrowDownToLine, FileSpreadsheet, FileText, Percent, Tag, Clock } from "lucide-react"
 import { toast } from "react-toastify";
 import { useGetDashboardQuery } from "../../redux/api/dashboardApi"
+import { useGetProfileQuery } from "../../redux/api/profileApi";
 import * as XLSX from "xlsx-js-style";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import Pagination from "../../components/Pagination";
+import { formatDate } from "../../utils/dateUtils";
 const Dashboard = () => {
   const graphOptions = ["weekly", "monthly", "yearly"];
   const [selectedGraphFilter, setSelectedGraphFilter] = useState("weekly");
   const [showExportOptions, setShowExportOptions] = useState(false);
 
+  // Fetch dashboard data
   const {
     data: apiData,
     isFetching,
     refetch,
   } = useGetDashboardQuery({ graphFilter: selectedGraphFilter });
+
+  // Fetch profile data to get vendor name
+  const { data: profileData } = useGetProfileQuery();
 
   // Extract API data with fallbacks
   const dashboardStats = useMemo(() => {
@@ -78,7 +85,7 @@ const Dashboard = () => {
       return date.toLocaleDateString("en-US", { month: "short" });
     }
 
-    return date.toLocaleDateString();
+    return formatDate(dateStr);
   };
 
   const getRelativeTime = (dateStr) => {
@@ -212,7 +219,9 @@ const Dashboard = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-800">Hello !! Tech Spark Technologies</h1>
+            <h1 className="text-2xl font-semibold text-gray-800">
+              Hello !! {profileData?.profile?.fullName || "Vendor"}
+            </h1>
             <p className="text-sm text-gray-500">Here's what's happening with your business today</p>
           </div>
 

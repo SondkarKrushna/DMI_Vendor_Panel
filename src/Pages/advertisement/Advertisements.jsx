@@ -10,6 +10,8 @@ import * as XLSX from "xlsx-js-style";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import Pagination from "../../components/Pagination";
+import { formatDate } from "../../utils/dateUtils";
+
 
 import {
   Megaphone,
@@ -147,7 +149,7 @@ const Advertisements = () => {
     const rows = filteredAds.map((ad) => [
       ad.title, ad.businessVertical, ad.type,
       ad.status || "Pending",
-      ad.endDate ? new Date(ad.endDate).toLocaleDateString() : "—"
+      formatDate(ad.endDate)
     ]);
     const ws = XLSX.utils.aoa_to_sheet([...header, ...rows]);
     const range = XLSX.utils.decode_range(ws['!ref']);
@@ -170,7 +172,7 @@ const Advertisements = () => {
       body: filteredAds.map((ad) => [
         ad.title, ad.businessVertical, ad.type,
         ad.status || "Pending",
-        ad.endDate ? new Date(ad.endDate).toLocaleDateString() : "—"
+        formatDate(ad.endDate)
       ]),
       startY: 20,
     });
@@ -439,11 +441,7 @@ const Advertisements = () => {
                 {/* Footer: Date and Buttons */}
                 <div className="flex justify-between items-center mt-6">
                   <p className="text-[13px] font-semibold text-gray-800">
-                    Valid Till {item.endDate ? new Date(item.endDate).toLocaleDateString('en-GB', {
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric'
-                    }) : "20 Feb 2026"}
+                    Valid Till {formatDate(item.endDate)}
                   </p>
 
                   <div className="flex gap-2">

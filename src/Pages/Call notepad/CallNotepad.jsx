@@ -16,6 +16,8 @@ import {
   useUpdateCallNoteStatusMutation,
 } from "../../redux/api/callNotesApi";
 import Pagination from "../../components/Pagination";
+import { formatDate } from "../../utils/dateUtils";
+
 
 const CallNotepad = () => {
   const [selectedRows, setSelectedRows] = useState([]);
@@ -100,7 +102,7 @@ const CallNotepad = () => {
     const header = [["Call ID", "Name", "Mobile", "Email", "Call Note", "Date", "Status"]];
     const rows = notes.map((n) => [
       n.callId, n.name, n.mobile, n.email, n.note,
-      n.date ? new Date(n.date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—",
+      formatDate(n.date),
       n.status
     ]);
     const ws = XLSX.utils.aoa_to_sheet([...header, ...rows]);
@@ -123,7 +125,7 @@ const CallNotepad = () => {
       head: [["Call ID", "Name", "Mobile", "Email", "Note", "Date", "Status"]],
       body: notes.map((n) => [
         n.callId, n.name, n.mobile, n.email, n.note,
-        n.date ? new Date(n.date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—",
+        formatDate(n.date),
         n.status
       ]),
       startY: 20,
@@ -222,11 +224,7 @@ const CallNotepad = () => {
             <Calendar size={14} className="text-[#FFB800]" />
           </div>
           <span>
-            {new Date(value).toLocaleDateString("en-GB", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            })}
+            {formatDate(value)}
           </span>
         </div>
       ),
@@ -424,11 +422,7 @@ const CallNotepad = () => {
                   <div className="w-7 h-7 flex items-center justify-center rounded-md bg-[#7E1080]">
                     <Calendar size={14} className="text-[#FFB800]" />
                   </div>
-                  <span>{new Date(item.date).toLocaleDateString("en-GB", {
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric"
-                  })}</span>
+                  <span>{formatDate(item.date)}</span>
                 </div>
                 <span
                   className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${item.status === "pending"
