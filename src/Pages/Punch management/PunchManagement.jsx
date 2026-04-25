@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import useDebounce from "../../hooks/useDebounce";
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/cards/Card";
 import Table from "../../components/table/Table";
@@ -24,6 +25,7 @@ const PunchManagement = () => {
   const [selectedRows, setSelectedRows] = useState([]);
   const [viewedCardholder, setViewedCardholder] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebounce(searchTerm, 400);
   const [activeFilter, setActiveFilter] = useState("monthly");
   const [currentPage, setCurrentPage] = useState(1);
   const [dateRange, setDateRange] = useState({ startDate: "", endDate: "" });
@@ -86,7 +88,7 @@ const PunchManagement = () => {
 
   const { data: punchesResponse, isFetching: isLoadingPunches, refetch } = useGetPunchesQuery({
     ...queryParams,
-    search: searchTerm
+    search: debouncedSearch
   });
 
   const punches = punchesResponse?.data || punchesResponse?.punches || (Array.isArray(punchesResponse) ? punchesResponse : []);
@@ -140,7 +142,7 @@ const PunchManagement = () => {
 
   const columns = [
     { header: "CARDHOLDER", accessor: "name" },
-    { header: "CHF NO", accessor: "chf" },
+    // { header: "CHF NO", accessor: "chf" },
     {
       header: "CONTACT",
       accessor: "contact",
@@ -186,7 +188,7 @@ const PunchManagement = () => {
   const tableData = punches.map((p) => ({
     id: p._id,
     name: p.fullName || p.userId?.fullName || "—",
-    chf: p?.cardId?.chfNo || "—",
+    // chf: p?.cardId?.chfNo || "—",
     contact: `${p.mobile || p.userId?.mobile || "—"}\n${p.email || p.userId?.email || "—"}`,
     service: p.serviceId?.serviceName || p.serviceName || "—",
     date: p.punchDate
@@ -208,7 +210,7 @@ const PunchManagement = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeFilter, dateRange.startDate, dateRange.endDate, searchTerm]);
+  }, [activeFilter, dateRange.startDate, dateRange.endDate, debouncedSearch]);
 
   const handleRowSelect = (id) => {
     setSelectedRows((prev) => prev.includes(id) ? prev.filter((row) => row !== id) : [...prev, id]);

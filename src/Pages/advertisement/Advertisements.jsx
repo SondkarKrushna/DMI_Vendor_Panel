@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import useDebounce from "../../hooks/useDebounce";
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/cards/Card";
 import SearchBar from "../../components/search/SearchBar";
@@ -36,6 +37,7 @@ import { useGetVerticalsQuery } from "../../redux/api/verticalApi";
 
 const Advertisements = () => {
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 400);
   const [businessFilter, setBusinessFilter] = useState("all");
   const [activeTab, setActiveTab] = useState("Classified");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -44,6 +46,10 @@ const Advertisements = () => {
   const [errors, setErrors] = useState({});
   const [showExportOptions, setShowExportOptions] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch]);
   const [formData, setFormData] = useState({
     type: "classified", // defaults to classified
     businessVertical: "",
@@ -55,7 +61,13 @@ const Advertisements = () => {
 
   const tabs = ["Classified", "Commercial"];
 
-  const { data, isLoading, isError, isFetching } = useGetAdvertisementsQuery({ type: activeTab.toLowerCase(), page: currentPage, limit: 10 });
+  const { data, isLoading, isError, isFetching } = useGetAdvertisementsQuery({
+  type: activeTab.toLowerCase(),
+  page: currentPage,
+  limit: 10,
+  businessVertical: businessFilter !== "all" ? businessFilter : undefined,
+  search: debouncedSearch || undefined
+});
   const [addAdvertisement, { isLoading: isAdding }] = useAddAdvertisementMutation();
   const [updateAdvertisement, { isLoading: isUpdating }] = useUpdateAdvertisementMutation();
   /* const [deleteAdvertisement] = useDeleteAdvertisementMutation(); */
@@ -130,10 +142,21 @@ const Advertisements = () => {
   }, [data, ads]);
 
   const filteredAds = ads.filter((ad) => {
-    const matchesSearch = search === "" || ad.title?.toLowerCase().includes(search.toLowerCase()) || ad.description?.toLowerCase().includes(search.toLowerCase());
-    const matchesFilter = businessFilter === 'all' || ad.businessVertical === businessFilter;
-    return matchesSearch && matchesFilter;
-  });
+  const matchesSearch =
+    search === "" ||
+    ad.title?.toLowerCase().includes(search.toLowerCase()) ||
+    ad.description?.toLowerCase().includes(search.toLowerCase());
+
+  const adVerticalId =
+    typeof ad.businessVertical === "object"
+      ? ad.businessVertical._id
+      : ad.businessVertical;
+
+  const matchesFilter =
+    businessFilter === "all" || adVerticalId === businessFilter;
+
+  return matchesSearch && matchesFilter;
+});
 
   const businessVerticalOptions = [
     { label: 'All Business', value: 'all' },

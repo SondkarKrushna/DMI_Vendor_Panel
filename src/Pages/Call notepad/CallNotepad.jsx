@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
+import useDebounce from "../../hooks/useDebounce";
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/cards/Card";
 import Button from "../../components/buttons/Button";
@@ -25,6 +26,7 @@ const CallNotepad = () => {
   const [activeTab, setActiveTab] = useState("Follow Ups");
   const [selectedStatus, setSelectedStatus] = useState("All status");
   const [searchValue, setSearchValue] = useState("");
+  const debouncedSearch = useDebounce(searchValue, 400);
   const [confirmModal, setConfirmModal] = useState({ show: false, id: null });
   const [currentPage, setCurrentPage] = useState(1);
   const [showExportOptions, setShowExportOptions] = useState(false);
@@ -46,7 +48,7 @@ const CallNotepad = () => {
     status: statusParam,
     type: typeParam,
     page: currentPage,
-    search: searchValue,
+    search: debouncedSearch,
   });
 
   const pagination = data?.pagination || {
@@ -91,7 +93,7 @@ const CallNotepad = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeTab, selectedStatus, searchValue]);
+  }, [activeTab, selectedStatus, debouncedSearch]);
 
   const [addCallNote, { isLoading: isAdding }] = useAddCallNoteMutation();
   const [updateStatus, { isLoading: isUpdating }] = useUpdateCallNoteStatusMutation();

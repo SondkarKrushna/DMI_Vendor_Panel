@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
+import useDebounce from "../../hooks/useDebounce";
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/cards/Card";
 import Button from "../../components/buttons/Button";
@@ -27,6 +28,7 @@ const Enrolling = () => {
   const [dateRange, setDateRange] = useState({ startDate: "", endDate: "" });
   const [showRangePicker, setShowRangePicker] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 400);
   const [currentPage, setCurrentPage] = useState(1);
 
   // ✅ Form state
@@ -247,9 +249,9 @@ const Enrolling = () => {
   }));
 
   const tableData = allTableData.filter(item =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.cardNumber.toLowerCase().includes(searchQuery.toLowerCase())
+    item.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+    item.id.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+    item.cardNumber.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
   );
 
   const columns = [
@@ -278,7 +280,7 @@ const Enrolling = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeFilter, searchQuery, dateRange]);
+  }, [activeFilter, debouncedSearchQuery, dateRange]);
 
   useEffect(() => {
     return () => { if (imagePreview) URL.revokeObjectURL(imagePreview); };

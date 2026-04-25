@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import useDebounce from "../../hooks/useDebounce";
 import Layout from "../../components/layout/Layout";
 import Card from "../../components/cards/Card";
 import Button from "../../components/buttons/Button";
@@ -34,6 +35,7 @@ import { useGetVerticalsQuery } from "../../redux/api/verticalApi";
 
 const Services = () => {
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 400);
   const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedRows, setSelectedRows] = useState([]);
@@ -84,7 +86,7 @@ const Services = () => {
   const { data, isLoading, isError, isFetching } = useGetServicesQuery({
     page: currentPage,
     per_page: 10,
-    search: search,
+    search: debouncedSearch,
     status: statusFilter === "all" ? undefined : statusFilter
   });
   const [addService, { isLoading: isAdding }] = useAddServiceMutation();
@@ -159,14 +161,14 @@ const Services = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search]);
+  }, [debouncedSearch]);
 
   const statusOptions = [
     { label: 'All Status', value: 'all' },
-    ...Array.from(new Set(services.map(s => s.status).filter(Boolean))).map(val => ({
-      label: val,
-      value: val.toLowerCase()
-    }))
+    { label: 'Active', value: 'active' },
+    { label: 'Pending', value: 'pending' },
+    // { label: 'Approved', value: 'approved' },
+    // { label: 'Inactive', value: 'inactive' },
   ];
 
   const handleEdit = (service) => {

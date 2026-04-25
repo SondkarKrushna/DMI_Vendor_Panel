@@ -217,7 +217,7 @@ const CardHolder = () => {
             <p className="text-sm text-gray-500">Process Service Punches For Cardholders</p>
           </div>
 
-          <div className="flex gap-3 w-full sm:w-auto">
+          {/* <div className="flex gap-3 w-full sm:w-auto">
             <div className="relative">
               <button
                 onClick={() => setShowExportOptions(prev => !prev)}
@@ -245,7 +245,7 @@ const CardHolder = () => {
                 </div>
               )}
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Search & Card Section */}
@@ -264,13 +264,13 @@ const CardHolder = () => {
                     CHF Number
                   </label>
                   <input
-                    type="text"
-                    placeholder="Search by CHF"
-                    value={chfQuery}
-                    onChange={(e) => setChfQuery(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                    className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200"
-                  />
+  type="text"
+  placeholder="Search by CHF"
+  value={chfQuery}
+  onChange={(e) => setChfQuery(e.target.value.toUpperCase())}
+  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+  className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200"
+/>
                   {chfQuery && (
                     <button
                       onClick={() => setChfQuery("")}

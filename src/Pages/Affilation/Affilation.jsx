@@ -177,7 +177,7 @@ const Affilation = () => {
             <h1 className="text-2xl font-semibold text-gray-800">Affiliation Program</h1>
             <p className="text-sm text-gray-500">Earn Rewards By Referring New Vendors</p>
           </div>
-          <div className="flex gap-3 w-full sm:w-auto">
+          {/* <div className="flex gap-3 w-full sm:w-auto">
             <div className="relative">
               <button
                 onClick={() => setShowExportOptions(prev => !prev)}
@@ -205,7 +205,7 @@ const Affilation = () => {
                 </div>
               )}
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Cards */}

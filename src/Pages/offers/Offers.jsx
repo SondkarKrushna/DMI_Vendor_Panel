@@ -89,7 +89,7 @@ const Offers = () => {
     return [
       {
         title: "Total Offers",
-        value: s.total || offers.length || 0,
+        value: s.total ?? offers.length ?? 0,
         percent: s.totalPercent || "0.0%",
         parsedPercent: parseFloat(s.totalPercent) || 0,
         trend: s.totalTrend || "neutral",
@@ -98,7 +98,7 @@ const Offers = () => {
       },
       {
         title: "Active Offers",
-        value: s.active || offers.filter(o => o.status?.toLowerCase() === 'active').length || 0,
+        value: s.active ?? offers.filter(o => o.status?.toLowerCase() === 'active' || o.status?.toLowerCase() === 'approved').length ?? 0,
         percent: s.activePercent || "0.0%",
         parsedPercent: parseFloat(s.activePercent) || 0,
         trend: s.activeTrend || "neutral",
@@ -107,7 +107,7 @@ const Offers = () => {
       },
       {
         title: "Pending Offers",
-        value: s.pending || offers.filter(o => o.status?.toLowerCase() === 'pending').length || 0,
+        value: s.pending ?? offers.filter(o => o.status?.toLowerCase() === 'pending').length ?? 0,
         percent: s.pendingPercent || "0.0%",
         parsedPercent: parseFloat(s.pendingPercent) || 0,
         trend: s.pendingTrend || "neutral",
@@ -116,7 +116,7 @@ const Offers = () => {
       },
       {
         title: "Expired Offers",
-        value: s.expired || offers.filter(o => o.status?.toLowerCase() === 'expired').length || 0,
+        value: s.expired ?? offers.filter(o => o.status?.toLowerCase() === 'expired').length ?? 0,
         percent: s.expiredPercent || "0.0%",
         parsedPercent: parseFloat(s.expiredPercent) || 0,
         trend: s.expiredTrend || "neutral",
@@ -345,14 +345,7 @@ const Offers = () => {
     doc.save("offers.pdf");
   };
 
-  const OfferListSection = ({ status, onEdit, onDelete }) => {
-    const { data, isLoading, isFetching } = useGetOffersQuery({
-      page: currentPage,
-      status: status === "Active" ? "approved" : status.toLowerCase()
-    });
-
-    const offers = data?.data || [];
-
+  const OfferListSection = ({ offers, isLoading, isFetching, status, onEdit, onDelete }) => {
     if (isLoading || isFetching) {
       return (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -533,22 +526,25 @@ const Offers = () => {
                   : "bg-gray-200 hover:bg-gray-300 text-gray-600"
                 }`}
             >
-              {tab}
+              {tab} ({
+                tab === "Active" ? (data?.stats?.active ?? 0) :
+                tab === "Pending" ? (data?.stats?.pending ?? 0) :
+                (data?.stats?.expired ?? 0)
+              })
             </button>
           ))}
         </div>
 
         {/* Offer Cards */}
         <div className="mt-6 bg-gray-100 p-4 rounded-2xl">
-          {["Active", "Pending", "Expired"].map((tabStatus) => (
-            <div key={tabStatus} className={activeTab === tabStatus ? "block" : "hidden"}>
-              <OfferListSection
-                status={tabStatus}
-                onEdit={handleEdit}
-                onDelete={(id) => setConfirmModal({ show: true, id })}
-              />
-            </div>
-          ))}
+          <OfferListSection
+            status={activeTab}
+            offers={offers}
+            isLoading={isLoading}
+            isFetching={isFetching}
+            onEdit={handleEdit}
+            onDelete={(id) => setConfirmModal({ show: true, id })}
+          />
         </div>
 
         {/* Pagination UI */}

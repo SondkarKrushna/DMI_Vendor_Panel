@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import useDebounce from "../../hooks/useDebounce";
 import Layout from "../../components/layout/Layout";
 import Table from "../../components/table/Table";
 import Card from "../../components/cards/Card";
@@ -27,13 +28,14 @@ const Invoice = () => {
   const [selectedService, setSelectedService] = useState("All services");
   const [selectedServiceId, setSelectedServiceId] = useState("");
   const [searchValue, setSearchValue] = useState("");
+  const debouncedSearch = useDebounce(searchValue, 400);
   const [currentPage, setCurrentPage] = useState(1);
 
   const { data: servicesData } = useGetActiveServicesQuery();
   const { data: invoicesResponse, isLoading, isFetching } = useGetInvoicesQuery({
     serviceId: selectedServiceId || undefined,
     page: currentPage,
-    search: searchValue,
+    search: debouncedSearch,
   });
 
   const activeServices = servicesData?.data || [];
@@ -140,14 +142,14 @@ const Invoice = () => {
   }));
 
   const filteredData = tableData.filter((item) =>
-    item.name.toLowerCase().includes(searchValue.toLowerCase()) ||
-    item.id.toLowerCase().includes(searchValue.toLowerCase()) ||
-    item.service.toLowerCase().includes(searchValue.toLowerCase())
+    item.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+    item.id.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+    item.service.toLowerCase().includes(debouncedSearch.toLowerCase())
   );
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedServiceId, searchValue]);
+  }, [selectedServiceId, debouncedSearch]);
 
   // ✅ Columns
   const columns = [
