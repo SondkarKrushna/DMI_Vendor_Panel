@@ -225,7 +225,7 @@ const Dashboard = () => {
             <p className="text-sm text-gray-500">Here's what's happening with your business today</p>
           </div>
 
-          <div className="flex gap-3 w-full sm:w-auto">
+          {/* <div className="flex gap-3 w-full sm:w-auto">
             <div className="relative">
               <button
                 onClick={() => setShowExportOptions(prev => !prev)}
@@ -253,7 +253,7 @@ const Dashboard = () => {
                 </div>
               )}
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Cards Section */}
