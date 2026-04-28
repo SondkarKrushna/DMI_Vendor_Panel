@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Phone } from 'lucide-react';
+import { Lock, ArrowRight, Phone } from 'lucide-react';
 import { PulseLoader } from 'react-spinners';
-import { useLoginVendorMutation } from '../../redux/api/authapi';
+import { useSendOtpMutation, useVerifyOtpMutation } from '../../redux/api/authapi';
 import { toast } from 'react-toastify';
 
 
 
 const Login = () => {
-  const [showPassword, setShowPassword] = useState(false);
   const [identifier, setIdentifier] = useState('');
-  const [password, setPassword] = useState('');
+  const [otp, setOtp] = useState('');
+  const [isOtpSent, setIsOtpSent] = useState(false);
 
   useEffect(() => {
     document.title = "Login | DMI Vendor Panel";
@@ -20,13 +20,15 @@ const Login = () => {
   const [formErrors, setFormErrors] = useState({});
 
   const navigate = useNavigate();
-  const [loginVendor, { isLoading }] = useLoginVendorMutation();
+  const [sendOtp, { isLoading: isSendingOtp }] = useSendOtpMutation();
+  const [verifyOtp, { isLoading: isVerifyingOtp }] = useVerifyOtpMutation();
+
+  const isLoading = isSendingOtp || isVerifyingOtp;
 
   // Validation Logic
-
-  const validate = () => {
+  const validateMobile = () => {
     const errors = {};
-    const phoneRegex = /^[0-9]{10}$/; // Adjust regex based on your country requirements
+    const phoneRegex = /^[0-9]{10}$/;
 
     if (!identifier) {
       errors.identifier = "Mobile number is required";
@@ -34,37 +36,62 @@ const Login = () => {
       errors.identifier = "Please enter a valid 10-digit mobile number";
     }
 
-    if (!password) {
-      errors.password = "Password is required";
-    } else if (password.length < 6) {
-      errors.password = "Password must be at least 6 characters";
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const validateOtp = () => {
+    const errors = {};
+    if (!otp) {
+      errors.otp = "OTP is required";
+    } else if (otp.length < 4) {
+      errors.otp = "OTP must be at least 4 digits";
     }
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
+  const handleSendOtp = async () => {
+    if (!validateMobile()) return;
+
+    try {
+      const res = await sendOtp({
+        mobile: identifier,
+        role: "vendor"
+      }).unwrap();
+
+      toast.success(res.message || "OTP sent successfully!");
+      setIsOtpSent(true);
+      setFormErrors({});
+    } catch (err) {
+      console.error("Failed to send OTP:", err);
+      const errorMessage = err?.data?.message || err?.error || "Failed to send OTP. Please try again.";
+      toast.error(errorMessage);
+    }
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    // 1. Client-side Validation
-    const errorMsg = validate();
-
-    if (errorMsg !== true) {
-      message.error(errorMsg || "Please fill all the details");
+    if (!isOtpSent) {
+      handleSendOtp();
       return;
     }
+
+    if (!validateMobile() || !validateOtp()) return;
+
     try {
       // 2. API Call
-      const res = await loginVendor({
-        identifier,
-        password,
+      const res = await verifyOtp({
+        mobile: identifier,
+        otp: otp,
         role: "vendor"
       }).unwrap();
 
       // 3. Success Handling
       localStorage.setItem("token", res.token);
-      localStorage.setItem("role", res.user?.role);
+      localStorage.setItem("role", res.user?.role || "vendor");
       localStorage.setItem("user", JSON.stringify(res.user));
 
       toast.success(res.message || "Login successful!");
@@ -73,8 +100,6 @@ const Login = () => {
     } catch (err) {
       // 4. API Error Handling
       console.error("Login failed:", err);
-
-      // Capturing the error message from API response
       const errorMessage = err?.data?.message || err?.error || "Login failed. Please try again.";
       toast.error(errorMessage);
     }
@@ -124,34 +149,23 @@ const Login = () => {
                   type="text"
                   inputMode="numeric"
                   value={identifier}
+                  disabled={isOtpSent}
                   onChange={(e) => {
-                    // 1. Remove non-numeric characters
                     const val = e.target.value.replace(/\D/g, '');
-
-                    // 2. Limit input to exactly 10 digits
                     if (val.length <= 10) {
                       setIdentifier(val);
                     }
-
-                    // 3. Clear error message when user starts typing again
                     if (formErrors.identifier) {
                       setFormErrors({ ...formErrors, identifier: "" });
-                    }
-                  }}
-                  // Optional: Add blur validation to check length when user leaves the field
-                  onBlur={() => {
-                    if (identifier.length > 0 && identifier.length < 10) {
-                      setFormErrors({ ...formErrors, identifier: "Mobile number must be exactly 10 digits" });
                     }
                   }}
                   className={`w-full pl-12 pr-4 py-4 bg-gray-50 border transition-all rounded-2xl outline-none ${formErrors.identifier
                     ? 'border-red-500 focus:ring-2 focus:ring-red-200'
                     : 'border-gray-200 focus:ring-2 focus:ring-[#7E1080]'
-                    }`}
+                    } ${isOtpSent ? 'opacity-70 cursor-not-allowed' : ''}`}
                   placeholder="Enter 10-digit number"
                 />
 
-                {/* Success indicator when exactly 10 digits are entered */}
                 {identifier.length === 10 && !formErrors.identifier && (
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-green-500 text-xs font-bold">
                     ✓ Valid
@@ -159,43 +173,53 @@ const Login = () => {
                 )}
               </div>
 
-              {/* Validation Message Display */}
               {formErrors.identifier && (
-                <p className="text-red-500 text-xs mt-1 ml-2 font-medium animate-pulse">
+                <p className="text-red-500 text-xs mt-1 ml-2 font-medium">
                   {formErrors.identifier}
                 </p>
               )}
             </div>
 
-            {/* PASSWORD */}
-            <div className="group">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 ${formErrors.password ? 'text-red-400' : 'text-gray-400'}`} size={20} />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    if (formErrors.password) setFormErrors({ ...formErrors, password: "" });
-                  }}
-                  className={`w-full pl-12 pr-12 py-4 bg-gray-50 border ${formErrors.password ? 'border-red-500 focus:ring-red-200' : 'border-gray-200 focus:ring-[#7E1080]'} rounded-2xl outline-none transition-all`}
-                  placeholder="Enter Password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
+            {/* OTP FIELD */}
+            {isOtpSent && (
+              <div className="group animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    Enter OTP
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsOtpSent(false);
+                      setOtp('');
+                    }}
+                    className="text-xs text-[#7E1080] font-bold hover:underline"
+                  >
+                    Change Number
+                  </button>
+                </div>
+                <div className="relative">
+                  <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 ${formErrors.otp ? 'text-red-400' : 'text-gray-400'}`} size={20} />
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={otp}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      if (val.length <= 6) {
+                        setOtp(val);
+                      }
+                      if (formErrors.otp) setFormErrors({ ...formErrors, otp: "" });
+                    }}
+                    className={`w-full pl-12 pr-4 py-4 bg-gray-50 border ${formErrors.otp ? 'border-red-500 focus:ring-red-200' : 'border-gray-200 focus:ring-[#7E1080]'} rounded-2xl outline-none transition-all`}
+                    placeholder="Enter OTP"
+                  />
+                </div>
+                {formErrors.otp && (
+                  <p className="text-red-500 text-xs mt-1 ml-2">{formErrors.otp}</p>
+                )}
               </div>
-              {formErrors.password && (
-                <p className="text-red-500 text-xs mt-1 ml-2">{formErrors.password}</p>
-              )}
-            </div>
+            )}
 
             {/* SUBMIT BUTTON */}
             <button
@@ -205,7 +229,7 @@ const Login = () => {
             >
               {isLoading ? <PulseLoader size={8} color="#fff" /> : (
                 <>
-                  Sign In <ArrowRight size={18} />
+                  {isOtpSent ? "Verify & Sign In" : "Send OTP"} <ArrowRight size={18} />
                 </>
               )}
             </button>

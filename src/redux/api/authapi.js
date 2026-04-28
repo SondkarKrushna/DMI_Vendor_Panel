@@ -13,6 +13,20 @@ export const authApi = createApi({
                 body: data,
             }),
         }),
+        sendOtp: builder.mutation({
+            query: (data) => ({
+                url: "/api/auth/send-otp",
+                method: "POST",
+                body: data,
+            }),
+        }),
+        verifyOtp: builder.mutation({
+            query: (data) => ({
+                url: "/api/auth/verify-otp",
+                method: "POST",
+                body: data,
+            }),
+        }),
         registerVendor: builder.mutation({
             query: (data) => ({
                 url: "/api/auth/register",
@@ -29,4 +43,4 @@ export const authApi = createApi({
     }),
 });
 
-export const { useLoginVendorMutation, useRegisterVendorMutation, useLogoutVendorMutation } = authApi;
+export const { useLoginVendorMutation, useRegisterVendorMutation, useLogoutVendorMutation, useSendOtpMutation, useVerifyOtpMutation } = authApi;
