@@ -44,7 +44,7 @@ const Sidebar = React.memo(({ isSidebarOpen, toggleSidebar }) => {
     { to: '/punch-management', icon: <User size={20} />, label: 'Punch Management' },
     { to: '/advertisements', icon: <Megaphone size={20} />, label: 'Advertisements' },
     { to: '/affilation', icon: <Users size={20} />, label: 'Affiliation program' },
-    { to: '/business-profile', icon: <Briefcase size={20} />, label: 'Business Profile' },
+    // { to: '/business-profile', icon: <Briefcase size={20} />, label: 'Business Profile' },
     { to: '/support', icon: <HelpCircle size={20} />, label: 'Support' },
   ];
 

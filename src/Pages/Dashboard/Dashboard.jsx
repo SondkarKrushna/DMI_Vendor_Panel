@@ -220,7 +220,7 @@ const Dashboard = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div>
             <h1 className="text-2xl font-semibold text-gray-800">
-              Hello !! {profileData?.profile?.fullName || "Vendor"}
+              Hello !! {profileData?.user?.fullName || "Vendor"}
             </h1>
             <p className="text-sm text-gray-500">Here's what's happening with your business today</p>
           </div>

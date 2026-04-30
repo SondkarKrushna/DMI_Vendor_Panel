@@ -10,7 +10,7 @@ export const profileApi = createApi({
 
   endpoints: (builder) => ({
     getProfile: builder.query({
-      query: () => "/api/vendor/profile/get",
+      query: () => "/api/auth/profile",
       providesTags: ["Profile"],
     }),
     editProfile: builder.mutation({
