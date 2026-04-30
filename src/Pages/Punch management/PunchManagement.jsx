@@ -111,7 +111,7 @@ const PunchManagement = () => {
       if (card) {
         setPunchForm({
           cardType: card.cardType || "",
-          chfNo: card.chNo || card.chfNumber || "",
+          chfNo: card.chfNo || card.chNo || card.chfNumber || "",
           fullName: card.userId?.fullName || card.fullName || "",
           mobile: card.userId?.mobile || card.mobile || "",
           email: card.userId?.email || card.email || "",
@@ -142,7 +142,7 @@ const PunchManagement = () => {
 
   const columns = [
     { header: "CARDHOLDER", accessor: "name" },
-    // { header: "CHF NO", accessor: "chf" },
+    { header: "CHF NO", accessor: "chf" },
     {
       header: "CONTACT",
       accessor: "contact",
@@ -188,6 +188,8 @@ const PunchManagement = () => {
   const tableData = punches.map((p) => ({
     id: p._id,
     name: p.fullName || p.userId?.fullName || "—",
+
+    chf: p?.cardId?.chfNo || p?.cardId?.chNo || p?.chfNo || p?.chfNumber || "—",
     // chf: p?.cardId?.chfNo || "—",
     contact: `${p.mobile || p.userId?.mobile || "—"}\n${p.email || p.userId?.email || "—"}`,
     service: p.serviceId?.serviceName || p.serviceName || "—",
@@ -257,6 +259,13 @@ const PunchManagement = () => {
                 </div>
               )}
             </div>
+
+            <button
+              onClick={() => { setPunchForm(initialFormState); setViewedCardholder({ viewType: 'create' }); }}
+              className="px-4 py-2 sm:px-6 sm:py-2.5 rounded-xl bg-[#7E1080] hover:bg-[#620d63] text-white font-bold flex items-center gap-2 shadow-lg shadow-purple-100 transition-all active:scale-95"
+            >
+              <Plus className="w-5 h-5" /> Record Punch
+            </button>
           </div>
         </div>
 
@@ -316,7 +325,7 @@ const PunchManagement = () => {
                     <div className="w-10 h-10 rounded-2xl bg-purple-50 text-[#7E1080] flex items-center justify-center font-bold text-sm uppercase">{item.name?.substring(0, 2)}</div>
                     <div> <p className="font-bold text-gray-900">{item.name}</p> <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{item.chf}</p> </div>
                   </div>
-                  <div className="flex gap-2"> <Printer size={16} className="text-purple-400" /> <Eye size={16} className="text-amber-400" /> </div>
+                  <div className="flex gap-2"> <Printer size={16} className="text-purple-400" /> <Eye size={16} className="text-amber-400 cursor-pointer" onClick={() => setViewedCardholder({ ...item, viewType: 'cardholder' })} /> </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div> <p className="text-[10px] text-gray-400 font-bold uppercase">Service</p> <p className="text-xs font-bold text-[#7E1080] truncate">{item.service}</p> </div>
@@ -340,7 +349,63 @@ const PunchManagement = () => {
 
 
       {/* Cardholder Details Modal */}
-      <CardholderDetailsModal isOpen={!!viewedCardholder} onClose={() => setViewedCardholder(null)} cardholder={viewedCardholder} />
+      <CardholderDetailsModal isOpen={!!viewedCardholder && viewedCardholder.viewType !== 'create'} onClose={() => setViewedCardholder(null)} cardholder={viewedCardholder} />
+
+      {/* Record Punch Modal */}
+      <Modal
+        isOpen={viewedCardholder?.viewType === 'create'}
+        onClose={() => setViewedCardholder(null)}
+        title="Record New Service Punch"
+      >
+        <div className="space-y-5">
+          <div className="flex gap-2">
+            <FormInput
+              placeholder="Search by CHF Number or Mobile..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1"
+            />
+            <button
+              onClick={handleSearchCard}
+              disabled={isSearching}
+              className="px-4 py-2 bg-[#7E1080] text-white rounded-xl font-bold text-sm disabled:opacity-50"
+            >
+              {isSearching ? "..." : "Search"}
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField label="Full Name">
+              <FormInput value={punchForm.fullName} readOnly className="bg-gray-50" />
+            </FormField>
+            <FormField label="CHF Number">
+              <FormInput value={punchForm.chfNo} readOnly className="bg-gray-50" />
+            </FormField>
+            <FormField label="Mobile">
+              <FormInput value={punchForm.mobile} readOnly className="bg-gray-50" />
+            </FormField>
+            <FormField label="Card Type">
+              <FormInput value={punchForm.cardType} readOnly className="bg-gray-50" />
+            </FormField>
+          </div>
+
+          <FormField label="Select Service" required>
+            <FormSelect
+              value={punchForm.serviceId}
+              onChange={(e) => setPunchForm(prev => ({ ...prev, serviceId: e.target.value }))}
+            >
+              <option value="">Select a service</option>
+              {servicesData.map(s => (
+                <option key={s._id} value={s._id}>{s.serviceName} - ₹{s.price}</option>
+              ))}
+            </FormSelect>
+          </FormField>
+
+          <ModalSubmitBtn onClick={handlePunchSubmit} disabled={isPunching}>
+            {isPunching ? "Recording..." : "Confirm Punch"}
+          </ModalSubmitBtn>
+        </div>
+      </Modal>
     </Layout>
   );
 };

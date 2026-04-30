@@ -14,14 +14,16 @@ import {
   FileSpreadsheet,
   FileText,
 } from "lucide-react";
-import { useGetInvoicesQuery, useGetActiveServicesQuery } from "../../redux/api/invoiceApi";
+import {
+  useGetInvoicesQuery,
+  useGetActiveServicesQuery,
+} from "../../redux/api/invoiceApi";
 import { toast } from "react-toastify";
 import * as XLSX from "xlsx-js-style";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import Pagination from "../../components/Pagination";
 import { formatDate } from "../../utils/dateUtils";
-
 
 const Invoice = () => {
   const [selectedRows, setSelectedRows] = useState([]);
@@ -32,78 +34,137 @@ const Invoice = () => {
   const [currentPage, setCurrentPage] = useState(1);
 
   const { data: servicesData } = useGetActiveServicesQuery();
-  const { data: invoicesResponse, isLoading, isFetching } = useGetInvoicesQuery({
+  const {
+    data: invoicesResponse,
+    isLoading,
+    isFetching,
+  } = useGetInvoicesQuery({
     serviceId: selectedServiceId || undefined,
     page: currentPage,
     search: debouncedSearch,
   });
 
   const activeServices = servicesData?.data || [];
-  const invoices = invoicesResponse?.data || (Array.isArray(invoicesResponse) ? invoicesResponse : []);
+  const invoices =
+    invoicesResponse?.data ||
+    (Array.isArray(invoicesResponse) ? invoicesResponse : []);
 
   // ✅ Dynamic Stats Cards Mapping with Fallback
   const statsCards = useMemo(() => {
-    // 1. If backend provides statsCards array
-    if (invoicesResponse?.statsCards && Array.isArray(invoicesResponse.statsCards)) {
-      return invoicesResponse.statsCards.map(stat => ({
-        ...stat,
-        parsedPercent: parseFloat(stat.percent?.replace(/[+%]/g, '')) || 0,
-        icon: stat.title.toLowerCase().includes('revenue') ? DollarSign : Calendar
-      }));
+    // ✅ PRIORITY 1: Use statsCards from API
+    if (invoicesResponse?.statsCards?.length) {
+      return invoicesResponse.statsCards.map((stat) => {
+        const isRevenue = stat.title.toLowerCase().includes("revenue") || stat.title.toLowerCase().includes("amount");
+        let amount;
+        
+        if (isRevenue) {
+          // If revenue < 1000, show normal ₹ value instead of Lakh format (0.0L)
+          amount = stat.value < 1000 
+            ? `₹${stat.value.toLocaleString('en-IN')}` 
+            : (stat.formatted || `₹${stat.value.toLocaleString('en-IN')}`);
+        } else {
+          // For counts (Invoices, etc), show the plain value
+          amount = stat.value.toString();
+        }
+
+        return {
+          title: stat.title,
+          value: stat.value,
+          amount,
+          percentage: parseFloat(stat.percent?.replace(/[+%]/g, "")) || 0,
+          trend: stat.trend || "neutral",
+          statusText: stat.subText || "",
+          icon: isRevenue ? DollarSign : Calendar,
+        };
+      });
     }
 
-    // 2. Fallback to legacy stats or computed values
-    const s = invoicesResponse?.stats || {};
-    const totalRev = invoices.reduce((sum, inv) => sum + (inv.amount || 0), 0);
+    // ✅ PRIORITY 2: fallback to stats object
+    const stats = invoicesResponse?.stats || {};
 
     return [
       {
         title: "Total Revenue",
-        value: s.totalRevenue || totalRev,
-        formatted: `₹${(s.totalRevenue || totalRev).toLocaleString()}`,
-        parsedPercent: parseFloat(s.revenuePercent) || 42,
-        trend: s.revenueTrend || "up",
-        subText: "Total earnings",
-        icon: DollarSign
+        value: stats.totalRevenue || 0,
+        amount: `₹${(stats.totalRevenue || 0).toLocaleString()}`,
+        percentage: 0,
+        trend: "neutral",
+        statusText: "Total earnings",
+        icon: DollarSign,
       },
       {
-        title: "This Month",
-        value: s.thisMonthRevenue || totalRev,
-        formatted: `₹${(s.thisMonthRevenue || totalRev).toLocaleString()}`,
-        parsedPercent: parseFloat(s.monthPercent) || -30,
-        trend: s.monthTrend || "down",
-        subText: "Earnings this month",
-        icon: Calendar
-      }
+        title: "Month Revenue",
+        value: stats.thisMonthRevenue || 0,
+        amount: `₹${(stats.thisMonthRevenue || 0).toLocaleString()}`,
+        percentage: 0,
+        trend: "neutral",
+        statusText: "Current month revenue",
+        icon: Calendar,
+      },
     ];
-  }, [invoicesResponse, invoices]);
-
+  }, [invoicesResponse]);
 
   const [showExportOptions, setShowExportOptions] = useState(false);
 
   const exportToExcel = () => {
-    if (!tableData.length) { toast.error("No data to export"); return; }
-    const header = [["Invoice ID", "Name", "Service", "Amount", "Payment Method", "Date"]];
-    const rows = tableData.map((item) => [item.id, item.name, item.service, item.amount, item.payment, item.date]);
+    if (!tableData.length) {
+      toast.error("No data to export");
+      return;
+    }
+    const header = [
+      ["Invoice ID", "Name", "Service", "Amount", "Payment Method", "Date"],
+    ];
+    const rows = tableData.map((item) => [
+      item.id,
+      item.name,
+      item.service,
+      item.amount,
+      item.payment,
+      item.date,
+    ]);
     const ws = XLSX.utils.aoa_to_sheet([...header, ...rows]);
-    const range = XLSX.utils.decode_range(ws['!ref']);
+    const range = XLSX.utils.decode_range(ws["!ref"]);
     for (let col = range.s.c; col <= range.e.c; col++) {
       const cell = ws[XLSX.utils.encode_cell({ r: 0, c: col })];
-      if (cell) cell.s = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "7E1080" } }, alignment: { horizontal: "center" } };
+      if (cell)
+        cell.s = {
+          font: { bold: true, color: { rgb: "FFFFFF" } },
+          fill: { fgColor: { rgb: "7E1080" } },
+          alignment: { horizontal: "center" },
+        };
     }
-    ws["!cols"] = [{ wch: 18 }, { wch: 22 }, { wch: 20 }, { wch: 14 }, { wch: 18 }, { wch: 16 }];
+    ws["!cols"] = [
+      { wch: 18 },
+      { wch: 22 },
+      { wch: 20 },
+      { wch: 14 },
+      { wch: 18 },
+      { wch: 16 },
+    ];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Invoices");
     XLSX.writeFile(wb, "Invoices_Report.xlsx");
   };
 
   const exportToPDF = () => {
-    if (!tableData.length) { toast.error("No data to export"); return; }
+    if (!tableData.length) {
+      toast.error("No data to export");
+      return;
+    }
     const doc = new jsPDF();
     doc.text("Payments & Invoices", 14, 10);
     autoTable(doc, {
-      head: [["Invoice ID", "Name", "Service", "Amount", "Payment Method", "Date"]],
-      body: tableData.map((item) => [item.id, item.name, item.service, item.amount, item.payment, item.date]),
+      head: [
+        ["Invoice ID", "Name", "Service", "Amount", "Payment Method", "Date"],
+      ],
+      body: tableData.map((item) => [
+        item.id,
+        item.name,
+        item.service,
+        item.amount,
+        item.payment,
+        item.date,
+      ]),
       startY: 20,
     });
     doc.save("invoices.pdf");
@@ -122,7 +183,7 @@ const Invoice = () => {
     total_pages: 1,
     has_next_page: false,
     has_prev_page: false,
-    total: 0
+    total: 0,
   };
 
   const handleServiceChange = (label) => {
@@ -141,10 +202,11 @@ const Invoice = () => {
     _id: inv._id,
   }));
 
-  const filteredData = tableData.filter((item) =>
-    item.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-    item.id.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-    item.service.toLowerCase().includes(debouncedSearch.toLowerCase())
+  const filteredData = tableData.filter(
+    (item) =>
+      item.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      item.id.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      item.service.toLowerCase().includes(debouncedSearch.toLowerCase()),
   );
 
   useEffect(() => {
@@ -174,10 +236,9 @@ const Invoice = () => {
           </div>
           <span>{value}</span>
         </div>
-      )
+      ),
     },
     {
-
       header: "ACTION",
       accessor: "action",
       Cell: () => (
@@ -192,9 +253,7 @@ const Invoice = () => {
 
   const handleRowSelect = (id) => {
     setSelectedRows((prev) =>
-      prev.includes(id)
-        ? prev.filter((row) => row !== id)
-        : [...prev, id]
+      prev.includes(id) ? prev.filter((row) => row !== id) : [...prev, id],
     );
   };
 
@@ -209,18 +268,21 @@ const Invoice = () => {
   return (
     <Layout title="Invoices">
       <div className="p-1 sm:p-2 bg-white min-h-screen">
-
         {/* 🔥 Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-800">Payments & Invoices</h1>
-            <p className="text-sm text-gray-500">Track all transactions and revenue</p>
+            <h1 className="text-2xl font-semibold text-gray-800">
+              Payments & Invoices
+            </h1>
+            <p className="text-sm text-gray-500">
+              Track all transactions and revenue
+            </p>
           </div>
 
           <div className="flex gap-3 w-full sm:w-auto">
             <div className="relative">
               <button
-                onClick={() => setShowExportOptions(prev => !prev)}
+                onClick={() => setShowExportOptions((prev) => !prev)}
                 className="flex-1 sm:flex-none px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg bg-[#f5c518] hover:bg-[#d4a017] text-black font-semibold flex items-center gap-2"
               >
                 <ArrowDownToLine className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -229,14 +291,20 @@ const Invoice = () => {
               {showExportOptions && (
                 <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
                   <button
-                    onClick={() => { exportToExcel(); setShowExportOptions(false); }}
+                    onClick={() => {
+                      exportToExcel();
+                      setShowExportOptions(false);
+                    }}
                     className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm flex items-center gap-2"
                   >
                     <FileSpreadsheet size={16} className="text-green-600" />
                     Export as Excel
                   </button>
                   <button
-                    onClick={() => { exportToPDF(); setShowExportOptions(false); }}
+                    onClick={() => {
+                      exportToPDF();
+                      setShowExportOptions(false);
+                    }}
                     className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm flex items-center gap-2"
                   >
                     <FileText size={16} className="text-red-500" />
@@ -255,15 +323,15 @@ const Invoice = () => {
               <Card
                 key={idx}
                 title={stat.title}
-                amount={stat.formatted || `₹${stat.value.toLocaleString()}`}
-                percentage={stat.parsedPercent || 0}
-                statusText={stat.subText || `${stat.trend} change`}
+                amount={stat.amount}
+                percentage={stat.percentage}
+                statusText={stat.statusText}
                 trend={stat.trend}
                 isDecrease={stat.trend === "down"}
                 icon={stat.icon}
               />
             ))}
-
+ 
             {/* Empty placeholders to maintain 4-grid layout if needed */}
             {statsCards.length < 3 && (
               <>
@@ -285,11 +353,11 @@ const Invoice = () => {
                 value: selectedServiceId,
                 onChange: (val) => {
                   setSelectedServiceId(val);
-                  const s = serviceOptions.find(o => o.value === val);
+                  const s = serviceOptions.find((o) => o.value === val);
                   if (s) setSelectedService(s.label);
                 },
-                options: serviceOptions
-              }
+                options: serviceOptions,
+              },
             ]}
           />
         </div>
@@ -298,14 +366,20 @@ const Invoice = () => {
           {isLoading || isFetching ? (
             <div className="flex flex-col items-center justify-center py-20 gap-4">
               <div className="w-10 h-10 border-4 border-[#7E1080] border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-sm text-gray-400 animate-pulse font-medium">Loading Invoices...</p>
+              <p className="text-sm text-gray-400 animate-pulse font-medium">
+                Loading Invoices...
+              </p>
             </div>
           ) : filteredData.length === 0 ? (
-            <div className="text-center py-10 text-gray-500">No invoices found.</div>
+            <div className="text-center py-10 text-gray-500">
+              No invoices found.
+            </div>
           ) : (
             filteredData.map((item, index) => (
-              <div key={index} className="bg-white rounded-2xl shadow p-4 space-y-3">
-
+              <div
+                key={index}
+                className="bg-white rounded-2xl shadow p-4 space-y-3"
+              >
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-semibold text-gray-500">
                     {item.id}
@@ -340,13 +414,11 @@ const Invoice = () => {
                   </div>
                 </div>
 
-
                 <div className="flex justify-end gap-3 pt-2">
                   <Eye className="text-yellow-500" size={18} />
                   <Printer className="text-purple-600" size={18} />
                   <Download className="text-orange-500" size={18} />
                 </div>
-
               </div>
             ))
           )}
@@ -370,10 +442,7 @@ const Invoice = () => {
 
         {/* ✅ Pagination */}
         <div className="mt-6">
-          <Pagination
-            pagination={pagination}
-            onPageChange={setCurrentPage}
-          />
+          <Pagination pagination={pagination} onPageChange={setCurrentPage} />
         </div>
       </div>
     </Layout>

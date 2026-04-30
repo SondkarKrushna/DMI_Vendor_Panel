@@ -190,7 +190,7 @@ const PunchView = ({ data }) => {
         </div>
         <div>
           <h3 className="text-xl font-bold text-gray-900">{data.name || "—"}</h3>
-          <p className="text-xs text-amber-600 font-semibold mt-0.5">CHF: {data.chf || "—"}</p>
+          <p className="text-xs text-amber-600 font-semibold mt-0.5"> {data.chf || "—"}</p>
         </div>
       </div>
 

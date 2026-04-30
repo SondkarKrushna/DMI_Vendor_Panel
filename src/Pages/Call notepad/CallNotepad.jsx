@@ -160,24 +160,41 @@ const CallNotepad = () => {
   };
 
   const validate = () => {
-    let newErrors = {};
-    if (!formData.name.trim()) newErrors.name = "Full Name is required";
-    if (!formData.mobile.trim()) {
-      newErrors.mobile = "Mobile number is required";
-    } else if (!/^\d{10}$/.test(formData.mobile.trim())) {
-      newErrors.mobile = "Enter a valid 10-digit mobile number";
-    }
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Invalid email format";
-    }
-    if (!formData.note.trim()) newErrors.note = "Call Note is required";
-    if (!formData.date) newErrors.date = "Date is required";
+  let newErrors = {};
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  if (!formData.name.trim()) newErrors.name = "Full Name is required";
+
+  if (!formData.mobile.trim()) {
+    newErrors.mobile = "Mobile number is required";
+  } else if (!/^\d{10}$/.test(formData.mobile.trim())) {
+    newErrors.mobile = "Enter a valid 10-digit mobile number";
+  }
+
+  if (!formData.email.trim()) {
+    newErrors.email = "Email is required";
+  } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+    newErrors.email = "Invalid email format";
+  }
+
+  if (!formData.note.trim()) newErrors.note = "Call Note is required";
+
+  if (!formData.date) {
+    newErrors.date = "Date is required";
+  } else {
+    const selectedDate = new Date(formData.date);
+    const today = new Date();
+
+    // Remove time part for accurate comparison
+    today.setHours(0, 0, 0, 0);
+
+    if (selectedDate < today) {
+      newErrors.date = "Please select today or a future date";
+    }
+  }
+
+  setErrors(newErrors);
+  return Object.keys(newErrors).length === 0;
+};
 
   const handleSubmit = async (e) => {
     e.preventDefault();
